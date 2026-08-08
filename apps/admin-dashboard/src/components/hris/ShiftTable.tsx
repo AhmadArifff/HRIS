@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 export interface MasterShift {
   id: string;
@@ -21,7 +22,6 @@ export interface ShiftAssignment {
   date: string;
 }
 
-// Helper function to calculate total work hours from startTime and endTime
 export const calculateTotalWorkHours = (start: string, end: string): number => {
   if (!start || !end) return 0;
   const [startH, startM] = start.split(":").map(Number);
@@ -30,7 +30,6 @@ export const calculateTotalWorkHours = (start: string, end: string): number => {
   let startMinutes = startH * 60 + startM;
   let endMinutes = endH * 60 + endM;
 
-  // Handles overnight shifts (e.g. 21:00 to 06:00)
   if (endMinutes <= startMinutes) {
     endMinutes += 24 * 60;
   }
@@ -57,6 +56,18 @@ export const ShiftTable: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"master" | "assignment">("master");
   const [shifts, setShifts] = useState<MasterShift[]>(mockMasterShifts);
   const [assignments, setAssignments] = useState<ShiftAssignment[]>(mockAssignments);
+  
+  // Toast notifications state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Modals state
   const [showAddShiftModal, setShowAddShiftModal] = useState(false);
@@ -81,7 +92,7 @@ export const ShiftTable: React.FC = () => {
   const handleAddShiftSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newShiftName.trim()) {
-      alert("⚠️ Guard Clause: Nama Shift Wajib Diisi.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Nama Shift wajib diisi!");
       return;
     }
     const calculatedHours = calculateTotalWorkHours(newStartTime, newEndTime);
@@ -96,9 +107,14 @@ export const ShiftTable: React.FC = () => {
       activeEmployees: 0,
     };
     setShifts((prev) => [...prev, newMaster]);
-    console.log("[AUDIT_LOG] SHIFT_MASTER_CREATED", newMaster);
     setShowAddShiftModal(false);
     setNewShiftName("");
+
+    addToast(
+      "success",
+      "Master Shift Ditambahkan!",
+      `Shift "${newMaster.name}" (${newMaster.totalWorkHours} Jam Kerja) berhasil disimpan.`
+    );
   };
 
   // Handle Edit Master Shift Submit
@@ -111,8 +127,14 @@ export const ShiftTable: React.FC = () => {
     setShifts((prev) =>
       prev.map((item) => (item.id === editingShift.id ? updatedShift : item))
     );
-    console.log("[AUDIT_LOG] SHIFT_MASTER_UPDATED", updatedShift);
+    const shiftName = editingShift.name;
     setEditingShift(null);
+
+    addToast(
+      "success",
+      "Perubahan Shift Disimpan",
+      `Konfigurasi jam kerja master shift "${shiftName}" telah diperbarui.`
+    );
   };
 
   // Handle Assign Shift Submit
@@ -128,8 +150,13 @@ export const ShiftTable: React.FC = () => {
       date: assignDate,
     };
     setAssignments((prev) => [newAssign, ...prev]);
-    console.log("[AUDIT_LOG] SHIFT_ASSIGNMENT_CREATED", newAssign);
     setShowAssignShiftModal(false);
+
+    addToast(
+      "success",
+      "Plotting Shift Berhasil!",
+      `Jadwal ${newAssign.shiftName} telah ditugaskan ke ${newAssign.employeeName} (${newAssign.date}).`
+    );
   };
 
   // Handle Edit Assignment Submit
@@ -139,12 +166,20 @@ export const ShiftTable: React.FC = () => {
     setAssignments((prev) =>
       prev.map((item) => (item.id === editingAssignment.id ? editingAssignment : item))
     );
-    console.log("[AUDIT_LOG] SHIFT_ASSIGNMENT_UPDATED", editingAssignment);
+    const empName = editingAssignment.employeeName;
     setEditingAssignment(null);
+
+    addToast(
+      "success",
+      "Plotting Diperbarui!",
+      `Jadwal shift harian untuk ${empName} berhasil disesuaikan.`
+    );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       {/* Header & Controls */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -432,7 +467,6 @@ export const ShiftTable: React.FC = () => {
                 </div>
               </div>
 
-              {/* Total Jam Kerja Preview Edit */}
               <div className="p-3 bg-brand-50/60 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 rounded-xl flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                   Kalkulasi Durasi Kerja Baru:

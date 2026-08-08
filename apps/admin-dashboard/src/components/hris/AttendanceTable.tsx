@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 export interface AttendanceRecord {
   id: string;
@@ -35,6 +36,18 @@ export const AttendanceTable: React.FC = () => {
   const [sortField, setSortField] = useState<keyof AttendanceRecord>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   // Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
   const [startDate, setStartDate] = useState("2026-08-01");
@@ -45,18 +58,16 @@ export const AttendanceTable: React.FC = () => {
   const handleExportSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsExporting(true);
-    console.log("[AUDIT_LOG] ATTENDANCE_RECAP_EXPORTED", {
-      start_date: startDate,
-      end_date: endDate,
-      format: exportFormat,
-      timestamp: new Date().toISOString()
-    });
 
     setTimeout(() => {
       setIsExporting(false);
       setShowExportModal(false);
-      alert(`🎉 Laporan Rekap Absensi (${startDate} s/d ${endDate}) BERHASIL diekspor dalam format ${exportFormat}!`);
-    }, 1200);
+      addToast(
+        "success",
+        "Ekspor Rekap Berhasil!",
+        `Laporan absensi (${startDate} s/d ${endDate}) format ${exportFormat} telah diunduh.`
+      );
+    }, 1000);
   };
 
   const filteredRecords = mockAttendanceData.filter(
@@ -93,7 +104,9 @@ export const AttendanceTable: React.FC = () => {
   );
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 p-5 lg:p-6 dark:border-gray-800">
         <div>
           <h3 className="text-base font-semibold text-gray-800 dark:text-white">
@@ -293,9 +306,7 @@ export const AttendanceTable: React.FC = () => {
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────
-          MODAL EXPORT REKAP ABSENSI
-      ───────────────────────────────────────────── */}
+      {/* MODAL EXPORT REKAP ABSENSI */}
       {showExportModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">

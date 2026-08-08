@@ -881,8 +881,8 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`+ Tambah Karyawan`** | Modal / Form `/employee/add` | Admin, HR | Menolak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Success: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
-| **`Edit Data` (Ikon Pensil)** | Inline / Page `/employee/edit/[id]` | Admin, HR | Cek ID Karyawan valid. | `PUT /api/employees/:id` | Toast Success: "Data karyawan diperbarui", Audit Log `UPDATE_EMPLOYEE`. |
+| **`+ Tambah Karyawan`** | Modal / Form `/employee/add` | Admin, HR | Menolak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Notification Top-Right: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
+| **`Edit Data` (Ikon Pensil)** | Inline / Page `/employee/edit/[id]` | Admin, HR | Cek ID Karyawan valid. | `PUT /api/employees/:id` | Toast Notification Top-Right: "Data karyawan diperbarui", Audit Log `UPDATE_EMPLOYEE`. |
 | **`Detail Karyawan` (Ikon Mata)** | Drawer / Page 360-View | Admin, HR, Manager | Cek token & hak akses departemen. | `GET /api/employees/:id/profile` | Menampilkan Profil 360 lengkap (Kontrak, Riwayat Absensi, Gaji). |
 | **`Tampilkan [5/10/20] Entri`** | Table Control | All Roles | Re-render halaman data berdasarkan entri terpilih. | Client-side Pagination Query `?limit=10&page=1` | Tabel diperbarui secara instan. |
 | **`Pencarian Karyawan`** | Table Search Bar | All Roles | Debounce input 300ms untuk meminimalisir re-render / API call. | `GET /api/employees?search=query` | Filter baris tabel secara dinamis. |
@@ -913,8 +913,8 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`+ Tambah Komponen Gaji`** | Modal Form `AddPayrollComponentModal` | HR, Finance | Guard: Menolak jika Nama Komponen atau Tipe (Tunjangan/Potongan) atau Besaran/Rumus kosong. | `POST /api/payroll-components` | Modal Dialog Form Interaktif. Komponen baru langsung aktif di tabel master penggajian. |
-| **`Generate Payroll`** | `/payroll/generate` | HR, Finance | Guard: Menolak jika periode bulan berjalan sudah pernah di-generate (*Prevent Duplicate Batch*). | `POST /api/payroll/generate-batch` <br/> State: `STATUS_PAYROLL` &rarr; `PROCESSED` | Modal Loader Progress Bar 0-100%, Toast: "Payroll X Karyawan Selesai Di-generate". |
+| **`+ Tambah Komponen Gaji`** | Modal Form `AddPayrollComponentModal` | HR, Finance | Guard: Menolak jika Nama Komponen atau Tipe (Tunjangan/Potongan) atau Besaran/Rumus kosong. | `POST /api/payroll-components` | **Toast Notification Top-Right (Success/Failed)**. Komponen baru aktif di tabel penggajian. |
+| **`Generate Payroll`** | `/payroll/generate` | HR, Finance | Guard: Menolak jika periode bulan berjalan sudah pernah di-generate (*Prevent Duplicate Batch*). | `POST /api/payroll/generate-batch` <br/> State: `STATUS_PAYROLL` &rarr; `PROCESSED` | Modal Loader Progress Bar 0-100%, **Toast Notification Top-Right: "Payroll Selesai Di-generate"**. |
 | **`Publish & Distribusi Slip`**| `/payroll/generate` | HR, Finance | Guard: Hanya aktif jika status Payroll = `PROCESSED`. | `POST /api/payroll/publish` <br/> State: `STATUS_PAYROLL` &rarr; `PUBLISHED` | Email otomatis berisi lampiran PDF Slip Gaji terenkripsi ke seluruh Karyawan. |
 
 ---
@@ -932,10 +932,10 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`Kirim Evaluasi KPI`** | `/performance` | All Employees | Guard: Wajib mengisi seluruh kuesioner evaluasi 360 (Skala 1-5). | `POST /api/performance-reviews` <br/> State: `STATUS_REVIEW` &rarr; `SUBMITTED` | Toast Success: "Evaluasi Kinerja 360 Terkirim", Status berubah Completed. |
-| **`Kirim Ajuan Klaim`** | `/reimbursement` | All Employees | Guard: Nominal > 0 & Wajib unggah foto/PDF bukti struk transaksi. | `POST /api/reimbursements` <br/> State: `STATUS_REIMBURSEMENT` &rarr; `PENDING` | Toast Success: "Klaim reimbursement terkirim ke Tim Keuangan". |
-| **`Kelola Checklist Offboarding`**| Modal Form `ChecklistClearanceModal` | HR, IT | Guard: Hanya bisa diselesaikan jika seluruh checklist pengembalian aset tercentang. | `PUT /api/offboarding/:id/clearance` <br/> State: `asset_cleared` &rarr; `true`, `STATUS_EMPLOYEE` &rarr; `TERMINATED` | Modal Dialog Form Interaktif. Progress Bar mencapai 100%, Sertifikat Pengalaman Kerja diterbitkan. |
-| **`Unduh Laporan Offboarding`**| Modal Form `DownloadOffboardingModal` | HR | Guard: Mengunduh rekapitutasi clearance offboarding. | `GET /api/offboarding/export` | Modal Dialog Form Interaktif. File laporan terunduh. |
+| **`Kirim Evaluasi KPI`** | `/performance` | All Employees | Guard: Wajib mengisi seluruh kuesioner evaluasi 360 (Skala 1-5). | `POST /api/performance-reviews` <br/> State: `STATUS_REVIEW` &rarr; `SUBMITTED` | **Toast Notification Top-Right: "Evaluasi Kinerja Terkirim"**, Status berubah Completed. |
+| **`Kirim Ajuan Klaim`** | `/reimbursement` | All Employees | Guard: Nominal > 0 & Wajib unggah foto/PDF bukti struk transaksi. | `POST /api/reimbursements` <br/> State: `STATUS_REIMBURSEMENT` &rarr; `PENDING` | **Toast Notification Top-Right: "Klaim Terkirim"**. |
+| **`Kelola Checklist Offboarding`**| Modal Form `ChecklistClearanceModal` | HR, IT | Guard: Hanya bisa diselesaikan jika seluruh checklist pengembalian aset tercentang. | `PUT /api/offboarding/:id/clearance` <br/> State: `asset_cleared` &rarr; `true`, `STATUS_EMPLOYEE` &rarr; `TERMINATED` | **Toast Notification Top-Right: "Clearance Selesai"**. Sertifikat Pengalaman Kerja diterbitkan. |
+| **`Unduh Laporan Offboarding`**| Modal Form `DownloadOffboardingModal` | HR | Guard: Mengunduh rekapitutasi clearance offboarding. | `GET /api/offboarding/export` | **Toast Notification Top-Right: "Laporan Diunduh"**. File laporan terunduh. |
 
 ---
 

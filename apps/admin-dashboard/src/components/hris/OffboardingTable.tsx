@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 interface OffboardingRecord {
   id: string;
@@ -56,6 +57,18 @@ export const OffboardingTable = () => {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   // Toggle Single Asset Checklist Item
   const handleToggleAsset = (recordId: string, assetKey: keyof OffboardingRecord["assetChecklist"]) => {
     setData((prev) =>
@@ -80,17 +93,26 @@ export const OffboardingTable = () => {
 
   // Finalize Clearance Button
   const handleFinalizeClearance = (record: OffboardingRecord) => {
-    // PRD §7.6: Guard Clause Offboarding Clearance
     if (!record.assetCleared) {
-      alert("⚠️ Guard Clause: Seluruh checklist pengembalian aset (Laptop, ID Card, Akses) WAJIB tercentang hijau sebelum clearance diselesaikan.");
+      addToast(
+        "error",
+        "Clearance Gagal!",
+        "Guard Clause: Seluruh checklist pengembalian aset (Laptop, ID Card, Akses) WAJIB tercentang hijau sebelum clearance diselesaikan."
+      );
       return;
     }
 
     setData((prev) =>
       prev.map((item) => (item.id === record.id ? { ...item, status: "Completed" } : item))
     );
-    alert(`✅ Clearance Offboarding untuk ${record.name} Selesai!\nStatus Karyawan diperbarui menjadi TERMINATED (Parkir). Sertifikat Pengalaman Kerja diterbitkan.`);
+    const name = record.name;
     setShowChecklistModal(null);
+
+    addToast(
+      "success",
+      "Clearance Offboarding Selesai!",
+      `Status Karyawan ${name} diperbarui menjadi TERMINATED (Parkir). Sertifikat Pengalaman Kerja diterbitkan.`
+    );
   };
 
   const handleDownloadSubmit = (e: React.FormEvent) => {
@@ -99,12 +121,18 @@ export const OffboardingTable = () => {
     setTimeout(() => {
       setIsDownloading(false);
       setShowDownloadModal(false);
-      alert("🎉 Laporan Rekap Offboarding & Clearance Aset BERHASIL diunduh!");
-    }, 1200);
+      addToast(
+        "success",
+        "Laporan Diunduh!",
+        "Laporan Rekapitulasi Offboarding & Clearance Aset berhasil diunduh."
+      );
+    }, 1000);
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 p-5 lg:p-6 dark:border-gray-800">
         <div>
           <h3 className="text-base font-semibold text-gray-800 dark:text-white">
@@ -184,9 +212,7 @@ export const OffboardingTable = () => {
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────
-          1. MODAL KELOLA CHECKLIST ASET
-      ───────────────────────────────────────────── */}
+      {/* MODAL KELOLA CHECKLIST ASET */}
       {showChecklistModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
@@ -267,9 +293,7 @@ export const OffboardingTable = () => {
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────
-          2. MODAL DOWNLOAD LAPORAN
-      ───────────────────────────────────────────── */}
+      {/* MODAL DOWNLOAD LAPORAN */}
       {showDownloadModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
@@ -283,7 +307,7 @@ export const OffboardingTable = () => {
             <form onSubmit={handleDownloadSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Format File</label>
-                <select className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none">
+                <select className="w-full h-10 px-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none">
                   <option value="PDF">Format PDF Rekapitulasi (.pdf)</option>
                   <option value="Excel">Format Microsoft Excel (.xlsx)</option>
                 </select>

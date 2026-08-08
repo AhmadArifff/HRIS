@@ -3,6 +3,7 @@ import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
+import { ToastContainer, ToastMessage } from "@/components/ui/toast/Toast";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -12,6 +13,18 @@ export default function SignInForm() {
   const router = useRouter();
   const [roleTab, setRoleTab] = useState<"admin" | "employee">("admin");
   
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   // Admin Login State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,21 +45,20 @@ export default function SignInForm() {
 
     // PRD §8.2: Guard Clauses Auth Login Admin
     if (!email.trim()) {
-      alert("⚠️ Guard Clause: Email Pekerjaan wajib diisi.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Email Pekerjaan wajib diisi.");
       return;
     }
     if (!email.includes("@")) {
-      alert("⚠️ Guard Clause: Format Email tidak valid (harus mengandung @).");
+      addToast("error", "Validasi Gagal", "Guard Clause: Format Email tidak valid (harus mengandung @).");
       return;
     }
     if (!password) {
-      alert("⚠️ Guard Clause: Kata Sandi wajib diisi.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Kata Sandi wajib diisi.");
       return;
     }
 
     setIsLoading(true);
 
-    // PRD §8.3: Masa Berlaku Sesi Token Admin Panel = 30 Menit (Inactivity Timeout)
     const adminSessionDurationMinutes = 30;
     const expiresAt = Date.now() + adminSessionDurationMinutes * 60 * 1000;
     
@@ -57,31 +69,25 @@ export default function SignInForm() {
       sessionStorage.setItem("hris_user_email", email);
     }
 
-    console.log("[AUDIT_LOG] ADMIN_SIGNIN_SUCCESS", {
-      email,
-      role: "admin",
-      session_duration: "30 Minutes",
-      expires_at: new Date(expiresAt).toISOString(),
-      timestamp: new Date().toISOString()
-    });
+    addToast(
+      "success",
+      "Autentikasi Admin Berhasil!",
+      `Selamat datang kembali, ${email}. Sesi aktif: 30 Menit.`
+    );
 
     setTimeout(() => {
       setIsLoading(false);
-      alert(`✅ Autentikasi Admin Berhasil!\nSelamat datang kembali, ${email} (HRISCorp.dev Management).\n🔒 Sesi Aktif: 30 Menit (Auto-Logout jika idle).`);
       router.push("/dashboard");
     }, 1200);
   };
 
   const handleEmployeeFaceLogin = () => {
     setIsScanningFace(true);
-    console.log("[AUDIT_LOG] EMPLOYEE_FACE_SCAN_START", { timestamp: new Date().toISOString() });
 
-    // Simulasi Pindai Wajah biometrik kamera
     setTimeout(() => {
       setIsScanningFace(false);
       setFaceVerified(true);
 
-      // PRD §8.3: Masa Berlaku Sesi Token Login Wajah Karyawan = 15 Menit (Inactivity Timeout)
       const employeeSessionDurationMinutes = 15;
       const expiresAt = Date.now() + employeeSessionDurationMinutes * 60 * 1000;
 
@@ -93,35 +99,37 @@ export default function SignInForm() {
         sessionStorage.setItem("hris_employee_name", "Budi Santoso");
       }
 
-      alert(`📸 Validasi Foto Wajah Berhasil!\n✓ Wajah Terverifikasi: Budi Santoso (NIP: EMP-001 - Software Engineer).\n⏱️ Token Sesi Bersegel: Berlaku 15 Menit (Inactivity Timeout).\nRedirecting ke Portal Karyawan...`);
+      addToast(
+        "success",
+        "Wajah Terverifikasi!",
+        "✓ Identitas: Budi Santoso (EMP-001). Sesi Token 15-Menit diterbitkan."
+      );
 
-      console.log("[AUDIT_LOG] EMPLOYEE_FACE_SCAN_SUCCESS", {
-        employee_id: "EMP-001",
-        employee_name: "Budi Santoso",
-        match_confidence: "99.8%",
-        session_duration: "15 Minutes",
-        expires_at: new Date(expiresAt).toISOString(),
-        timestamp: new Date().toISOString()
-      });
-
-      // Redirect ke Portal Karyawan (Port 3001)
-      window.location.href = "http://localhost:3001";
+      setTimeout(() => {
+        window.location.href = "http://localhost:3001";
+      }, 1200);
     }, 1800);
   };
 
   const handleForgotPasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail.trim() || !forgotEmail.includes("@")) {
-      alert("⚠️ Guard Clause: Masukkan email berformat valid untuk instruksi reset.");
+      addToast("error", "Validasi Gagal", "Masukkan email berformat valid untuk instruksi reset.");
       return;
     }
-    alert(`✅ Tautan pemulihan kata sandi telah dikirim ke email: ${forgotEmail}`);
     setShowForgotModal(false);
     setForgotEmail("");
+    addToast(
+      "success",
+      "Tautan Reset Terkirim",
+      `Instruksi pemulihan kata sandi telah dikirim ke email: ${forgotEmail}`
+    );
   };
 
   return (
-    <div className="flex flex-col flex-1 lg:w-1/2 w-full">
+    <div className="flex flex-col flex-1 lg:w-1/2 w-full relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
         <Link
           href="/"
@@ -174,7 +182,7 @@ export default function SignInForm() {
             </button>
           </div>
 
-          {/* TAB 1: ADMIN LOGIN (Username & Password) */}
+          {/* TAB 1: ADMIN LOGIN */}
           {roleTab === "admin" && (
             <div>
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 mb-6">
@@ -251,7 +259,7 @@ export default function SignInForm() {
             </div>
           )}
 
-          {/* TAB 2: EMPLOYEE FACE CHECK-IN LOGIN (Validasi Foto Wajah Biometrik) */}
+          {/* TAB 2: EMPLOYEE FACE CHECK-IN LOGIN */}
           {roleTab === "employee" && (
             <div className="space-y-6">
               <div className="p-4 rounded-xl bg-brand-50/60 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 text-center">

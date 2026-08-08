@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 interface PayrollComponent {
   id: string;
@@ -23,6 +24,18 @@ export const PayrollComponentsTable = () => {
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   // Modal State
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<PayrollComponent | null>(null);
@@ -37,7 +50,7 @@ export const PayrollComponentsTable = () => {
   const handleAddComponentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newAmount.trim()) {
-      alert("⚠️ Guard Clause: Nama dan Besaran Komponen Wajib Diisi.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Nama dan Besaran Komponen Wajib Diisi.");
       return;
     }
     const newId = `COMP-0${data.length + 1}`;
@@ -49,10 +62,15 @@ export const PayrollComponentsTable = () => {
       taxable: newTaxable,
     };
     setData((prev) => [...prev, newItem]);
-    console.log("[AUDIT_LOG] PAYROLL_COMPONENT_CREATED", newItem);
     setShowAddModal(false);
     setNewName("");
     setNewAmount("");
+
+    addToast(
+      "success",
+      "Komponen Gaji Ditambahkan!",
+      `Komponen "${newItem.name}" (${newItem.amount}) berhasil disimpan.`
+    );
   };
 
   // Handle Edit Component Submit
@@ -62,8 +80,14 @@ export const PayrollComponentsTable = () => {
     setData((prev) =>
       prev.map((item) => (item.id === editingItem.id ? editingItem : item))
     );
-    console.log("[AUDIT_LOG] PAYROLL_COMPONENT_UPDATED", editingItem);
+    const itemName = editingItem.name;
     setEditingItem(null);
+
+    addToast(
+      "success",
+      "Perubahan Komponen Disimpan!",
+      `Komponen gaji "${itemName}" berhasil diperbarui.`
+    );
   };
 
   const filteredData = data.filter(
@@ -77,7 +101,9 @@ export const PayrollComponentsTable = () => {
   const displayedData = filteredData.slice(startIndex, startIndex + entriesPerPage);
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 p-5 lg:p-6 dark:border-gray-800">
         <div>
           <h3 className="text-base font-semibold text-gray-800 dark:text-white">
@@ -184,9 +210,7 @@ export const PayrollComponentsTable = () => {
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────
-          1. MODAL TAMBAH KOMPONEN GAJI
-      ───────────────────────────────────────────── */}
+      {/* MODAL TAMBAH KOMPONEN GAJI */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
@@ -271,9 +295,7 @@ export const PayrollComponentsTable = () => {
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────
-          2. MODAL EDIT KOMPONEN GAJI
-      ───────────────────────────────────────────── */}
+      {/* MODAL EDIT KOMPONEN GAJI */}
       {editingItem && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
