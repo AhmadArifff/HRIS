@@ -184,7 +184,7 @@ export default function SignInForm() {
                     Masa Sesi: 30 Min
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">Khusus Administrator, HR Manager, & Executive. Token expired jika idle >30 menit.</p>
+                <p className="text-xs text-gray-500">Khusus Administrator, HR Manager, & Executive. Token expired jika idle &gt; 30 menit.</p>
               </div>
 
               <form onSubmit={handleAdminLoginSubmit}>

@@ -83,6 +83,15 @@ Untuk memastikan performa, stabilitas, dan keamanan sistem HRIS *live*, eksekusi
 *   **Backend API (Express):** Di-deploy ke VPS tangguh atau layanan *Cloud* (seperti AWS EC2 / DigitalOcean) menggunakan **Docker Container**. Pemisahan ini penting karena *backend* harus menangani beban komputasi besar saat kalkulasi *Payroll* dan absensi masal.
 *   **Database & Storage:** Dikelola menggunakan layanan *managed cloud* dari **Supabase**.
 
+### 1.7 Arsitektur PWA & Dukungan Cross-Platform (Progressive Web App)
+Sistem HRISCorp.dev dirancang berbasis **Progressive Web App (PWA)** agar dapat diinstal dan berjalan lintas platform secara native tanpa memerlukan instalasi aplikasi via PlayStore/AppStore:
+*   **Lintas OS (Cross-Platform Native Experience):** Berjalan optimal di Android, iOS, Windows, macOS, dan Linux.
+*   **Web App Manifest (`manifest.json`):** Mendukung prompt instalasi *"Add to Home Screen / Install App"* dengan ikon aplikasi HRISCorp.dev, warna tema kustom, dan tampilan *Standalone Window* (tanpa address bar browser).
+*   **Service Workers (`sw.js`):** Mengelola strategi penimbunan memori (*caching strategy*):
+    *   *Cache-First Strategy*: Memuat shell UI, font, dan ikon secara instan walau koneksi buruk.
+    *   *Network-First Strategy*: Menjamin data transaksi Payroll & Kehadiran selalu paling mutakhir dari server.
+*   **Akses Hardware Perangkat Native:** Integrasi API Browser Native untuk Kamera (Absen Foto Wajah), Geolocation GPS (Geofencing Absensi), dan Web Push Notifications.
+
 ---
 
 ## 2. Perancangan Database (ERD) - Dioptimalkan
@@ -964,3 +973,17 @@ Sistem menetapkan kebijakan batas waktu aktif token autentikasi (*Session Token 
 2. **Sesi Admin / Management (Login Email & Password)**:
    - Token berlaku selama **30 Menit** sejak autentikasi kredensial manajemen berhasil.
    - Apabila pengguna idle tanpa aktivitas selama 30 menit, sesi otomatis kadaluarsa demi keamanan data SDM perusahaan.
+
+---
+
+### 8.4 Spesifikasi PWA (Progressive Web App) & Modus Offline
+
+Sistem HRISCorp.dev mendukung pengalaman aplikasi *Native-Like* lintas perangkat:
+
+| Parameter PWA | Spesifikasi & Pengaturan | Keunggulan Enterprise |
+|---|---|---|
+| **PWA Installability** | Manifest V3 (`name`, `short_name: "HRISCorp"`, `icons: 192x192, 512x512`, `display: standalone`) | Karyawan dapat menginstal aplikasi di HP Android/iPhone atau Laptop tanpa PlayStore/AppStore. |
+| **Offline Attendance Sync** | Service Worker Background Sync (`IndexedDB`) | Jika koneksi internet terputus saat *Clock-In*, data foto & lokasi GPS disimpan lokal dan di-sync otomatis saat *Online*. |
+| **Push Notifications** | Web Push API + Service Worker Notifications | Notifikasi instan persetujuan cuti, pengingat jam shift, dan slip gaji langsung ke HP karyawan. |
+| **Hardware Biometrics** | MediaDevices Camera API + Geolocation API | Absen foto wajah dan validasi Geofencing GPS langsung dari browser/PWA native. |
+
