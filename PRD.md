@@ -942,9 +942,6 @@ Halaman ini adalah pintu gerbang awal aplikasi HRIS Enterprise sebelum pengguna 
 | **`Portal Lowongan Kerja Publik`** | `/landing#careers` | Publik / Pelamar | Menampilkan daftar lowongan aktif dari `JOB_POSTING`. | `GET /api/public/jobs` | Card Interaktif, Filter Departemen & Lokasi. |
 | **`Lamar Pekerjaan (Quick Apply)`**| Modal / Form Pelamar | Pelamar | Guard: Wajib isi Nama, Email, No HP & Unggah CV PDF (Maks 5MB). | `POST /api/public/apply` | Toast: "Lamaran berhasil dikirim! Tim HRD akan menghubungi Anda". |
 
-### 8.2 Halaman Autentikasi & Login (`/signin`)
-
-| Elemen Form / Tombol | Target Action | RBAC & Proteksi | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 ### 8.2 Autentikasi Login Admin vs Login Wajah Karyawan
 
 | Fitur / Parameter | Mode Admin / HRD Panel | Mode Karyawan (Portal ESS) |
