@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    path: "/",
+    path: "/dashboard",
   },
   {
     icon: <UserCircleIcon />,
@@ -266,31 +266,17 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link href="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
-          ) : (
-            <Image
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center font-bold text-white text-base shadow-md">
+            H
+          </div>
+          {(isExpanded || isHovered || isMobileOpen) && (
+            <div>
+              <span className="font-extrabold text-gray-900 dark:text-white text-lg tracking-tight block leading-none">
+                HRISCorp<span className="text-brand-500">.dev</span>
+              </span>
+              <span className="text-[10px] text-gray-400 font-mono block">Enterprise HR</span>
+            </div>
           )}
         </Link>
       </div>

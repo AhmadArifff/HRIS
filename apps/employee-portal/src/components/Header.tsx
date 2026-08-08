@@ -25,11 +25,11 @@ export const Header: React.FC = () => {
               H
             </div>
             <div>
-              <span className="font-bold text-gray-900 dark:text-white text-base block leading-tight">
-                HRIS Portal
+              <span className="font-extrabold text-gray-900 dark:text-white text-base block leading-tight">
+                HRISCorp<span className="text-brand-500">.dev</span>
               </span>
               <span className="text-[10px] text-gray-400 font-medium block">
-                Employee Self-Service
+                Employee Self-Service (ESS)
               </span>
             </div>
           </div>
