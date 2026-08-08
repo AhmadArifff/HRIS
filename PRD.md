@@ -156,6 +156,15 @@ erDiagram
     }
 
     %% 2. Time & Attendance
+    SHIFT_MASTER {
+        uuid id PK
+        string name "Shift Pagi, Shift Siang, Shift Malam"
+        time start_time
+        time end_time
+        decimal total_work_hours "Otomatis dihitung dari rentang start_time ke end_time"
+        int tolerance_minutes
+        boolean is_active
+    }
     ATTENDANCE {
         uuid id PK
         uuid employee_id FK
@@ -936,11 +945,25 @@ Halaman ini adalah pintu gerbang awal aplikasi HRIS Enterprise sebelum pengguna 
 ### 8.2 Halaman Autentikasi & Login (`/signin`)
 
 | Elemen Form / Tombol | Target Action | RBAC & Proteksi | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
-|---|---|---|---|---|---|
-| **`Tab Switcher (Role)`** | Switcher Form State | Public | Mengubah konteks peran (`employee` vs `admin`) untuk menyesuaikan pesan petunjuk. | Local State | Transition animasi smooth (Framer Motion). |
-| **`Tombol Masuk / Sign In`** | Submit Form Auth | Public | Guard: Email harus berformat valid (`@company.com`), Password minimal 6 karakter. | `POST /api/auth/login` <br/> JWT Issued & Cookie Saved | Button Loading Spinner. Redirect ke Dashboard Admin `/` atau ESS Portal `http://localhost:3001`. |
-| **`Show / Hide Password`** | Toggle Visibility | Public | Mengubah type input `password` ke `text`. | Local State | Ikon mata berubah (Eye / Eye-off). |
-| **`Lupa Password?`** | Open Modal Reset | Public | Guard: Input email terdaftar wajib diisi. | `POST /api/auth/forgot-password` | Toast Success: "Tautan reset kata sandi telah dikirim ke email Anda". |
-| **`Single Sign-On (SSO)`** | Google / Microsoft OAuth | All Users | Guard: Memastikan akun SSO terikat dengan email domain perusahaan yang aktif. | `GET /api/auth/sso/google` | Redirection ke Provider OAuth. |
+### 8.2 Autentikasi Login Admin vs Login Wajah Karyawan
 
+| Fitur / Parameter | Mode Admin / HRD Panel | Mode Karyawan (Portal ESS) |
+|---|---|---|
+| **Metode Autentikasi** | Username (Email Perusahaan) & Kata Sandi | **Verifikasi Foto Wajah Biometrik (Camera Face Check-in)** |
+| **Persyaratan Input** | Email valid (`@`) & Password terenkripsi | Pengenalan Wajah Kamera (Tanpa Username/Password) |
+| **Port Akses Default** | `http://localhost:3000` (`/signin` & `/dashboard`) | `http://localhost:3001` (Employee Self-Service) |
+| **Durasi Sesi Tokens** | **30 Menit** (Inactivity Idle Expiration) | **15 Menit** (Inactivity Idle Expiration) |
+| **Action & Redirection** | Redirect ke Admin Dashboard Overview (`/dashboard`) | Redirect ke Portal Karyawan (`:3001`) |
 
+---
+
+### 8.3 Kebijakan Token Autentikasi & Masa Berlaku Sesi (Session Idle Expiration)
+
+Sistem menetapkan kebijakan batas waktu aktif token autentikasi (*Session Token Lifetime & Idle Timeout*) untuk menjamin keamanan data riil perusahaan:
+
+1. **Sesi Karyawan (Login Biometrik Foto Wajah)**:
+   - Token berlaku selama **15 Menit** sejak verifikasi foto wajah berhasil dilakukan.
+   - Apabila tidak ada aktivitas (gerakan kursor, *touch event*, atau pengisian form) dalam kurun waktu 15 menit, sesi dianggap hangus (*expired*) dan pengguna otomatis diarahkan kembali ke layar Verifikasi Biometrik Foto Wajah.
+2. **Sesi Admin / Management (Login Email & Password)**:
+   - Token berlaku selama **30 Menit** sejak autentikasi kredensial manajemen berhasil.
+   - Apabila pengguna idle tanpa aktivitas selama 30 menit, sesi otomatis kadaluarsa demi keamanan data SDM perusahaan.

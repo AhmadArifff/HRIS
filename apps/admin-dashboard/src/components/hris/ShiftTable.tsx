@@ -7,6 +7,7 @@ export interface MasterShift {
   name: string;
   startTime: string;
   endTime: string;
+  totalWorkHours: number;
   toleranceMinutes: number;
   activeEmployees: number;
 }
@@ -20,10 +21,28 @@ export interface ShiftAssignment {
   date: string;
 }
 
+// Helper function to calculate total work hours from startTime and endTime
+export const calculateTotalWorkHours = (start: string, end: string): number => {
+  if (!start || !end) return 0;
+  const [startH, startM] = start.split(":").map(Number);
+  const [endH, endM] = end.split(":").map(Number);
+  
+  let startMinutes = startH * 60 + startM;
+  let endMinutes = endH * 60 + endM;
+
+  // Handles overnight shifts (e.g. 21:00 to 06:00)
+  if (endMinutes <= startMinutes) {
+    endMinutes += 24 * 60;
+  }
+
+  const diffMinutes = endMinutes - startMinutes;
+  return Number((diffMinutes / 60).toFixed(1));
+};
+
 const mockMasterShifts: MasterShift[] = [
-  { id: "SFT-01", name: "Shift Pagi (Normal)", startTime: "08:00", endTime: "17:00", toleranceMinutes: 15, activeEmployees: 32 },
-  { id: "SFT-02", name: "Shift Siang", startTime: "13:00", endTime: "21:00", toleranceMinutes: 10, activeEmployees: 12 },
-  { id: "SFT-03", name: "Shift Malam", startTime: "21:00", endTime: "06:00", toleranceMinutes: 15, activeEmployees: 8 },
+  { id: "SFT-01", name: "Shift Pagi (Normal)", startTime: "08:00", endTime: "17:00", totalWorkHours: 9.0, toleranceMinutes: 15, activeEmployees: 32 },
+  { id: "SFT-02", name: "Shift Siang", startTime: "13:00", endTime: "21:00", totalWorkHours: 8.0, toleranceMinutes: 10, activeEmployees: 12 },
+  { id: "SFT-03", name: "Shift Malam", startTime: "21:00", endTime: "06:00", totalWorkHours: 9.0, toleranceMinutes: 15, activeEmployees: 8 },
 ];
 
 const mockAssignments: ShiftAssignment[] = [
@@ -65,12 +84,14 @@ export const ShiftTable: React.FC = () => {
       alert("⚠️ Guard Clause: Nama Shift Wajib Diisi.");
       return;
     }
+    const calculatedHours = calculateTotalWorkHours(newStartTime, newEndTime);
     const newId = `SFT-0${shifts.length + 1}`;
     const newMaster: MasterShift = {
       id: newId,
       name: newShiftName,
       startTime: newStartTime,
       endTime: newEndTime,
+      totalWorkHours: calculatedHours,
       toleranceMinutes: Number(newTolerance),
       activeEmployees: 0,
     };
@@ -84,10 +105,13 @@ export const ShiftTable: React.FC = () => {
   const handleEditShiftSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingShift) return;
+    const calculatedHours = calculateTotalWorkHours(editingShift.startTime, editingShift.endTime);
+    const updatedShift = { ...editingShift, totalWorkHours: calculatedHours };
+
     setShifts((prev) =>
-      prev.map((item) => (item.id === editingShift.id ? editingShift : item))
+      prev.map((item) => (item.id === editingShift.id ? updatedShift : item))
     );
-    console.log("[AUDIT_LOG] SHIFT_MASTER_UPDATED", editingShift);
+    console.log("[AUDIT_LOG] SHIFT_MASTER_UPDATED", updatedShift);
     setEditingShift(null);
   };
 
@@ -129,7 +153,7 @@ export const ShiftTable: React.FC = () => {
               Manajemen Shift & Jam Kerja Karyawan
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Kelola master jadwal operasional dan plotting shift harian (PRD §3.3 & §7)
+              Kelola master jadwal operasional, kalkulasi durasi kerja, dan plotting shift harian (PRD §3.3 & §7)
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -186,8 +210,9 @@ export const ShiftTable: React.FC = () => {
                     <th className="px-6 py-4">Nama Shift</th>
                     <th className="px-6 py-4">Jam Masuk (Clock-In)</th>
                     <th className="px-6 py-4">Jam Pulang (Clock-Out)</th>
+                    <th className="px-6 py-4 text-center">Total Jam Kerja</th>
                     <th className="px-6 py-4">Toleransi Telat</th>
-                    <th className="px-6 py-4 text-center">Jumlah Karyawan</th>
+                    <th className="px-6 py-4 text-center">Karyawan Aktif</th>
                     <th className="px-6 py-4 text-right">Aksi</th>
                   </tr>
                 </thead>
@@ -198,6 +223,11 @@ export const ShiftTable: React.FC = () => {
                       <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">{s.name}</td>
                       <td className="px-6 py-4 font-mono font-semibold text-brand-500">{s.startTime}</td>
                       <td className="px-6 py-4 font-mono font-semibold text-gray-700 dark:text-gray-300">{s.endTime}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 font-mono">
+                          ⏱️ {s.totalWorkHours} Jam
+                        </span>
+                      </td>
                       <td className="px-6 py-4">
                         <Badge color="warning">{s.toleranceMinutes} Menit</Badge>
                       </td>
@@ -263,7 +293,7 @@ export const ShiftTable: React.FC = () => {
       </div>
 
       {/* ─────────────────────────────────────────────
-          1. MODAL TAMBAH MASTER SHIFT BARU (Full Viewport Backdrop Overlay z-[100000])
+          1. MODAL TAMBAH MASTER SHIFT BARU
       ───────────────────────────────────────────── */}
       {showAddShiftModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
@@ -272,7 +302,7 @@ export const ShiftTable: React.FC = () => {
               Tambah Master Shift Kerja Baru
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
-              Definisikan jam operasional masuk, jam pulang, dan toleransi telat (PRD §3.3).
+              Definisikan jam operasional masuk, jam pulang, dan batas toleransi (PRD §3.3).
             </p>
 
             <form onSubmit={handleAddShiftSubmit} className="space-y-4">
@@ -312,6 +342,16 @@ export const ShiftTable: React.FC = () => {
                     className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Total Jam Kerja Calculated Preview */}
+              <div className="p-3 bg-brand-50/60 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Estimasi Total Durasi Kerja:
+                </span>
+                <span className="text-xs font-bold font-mono text-brand-600 dark:text-brand-400">
+                  {calculateTotalWorkHours(newStartTime, newEndTime)} Jam Kerja
+                </span>
               </div>
 
               <div>
@@ -392,6 +432,16 @@ export const ShiftTable: React.FC = () => {
                 </div>
               </div>
 
+              {/* Total Jam Kerja Preview Edit */}
+              <div className="p-3 bg-brand-50/60 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Kalkulasi Durasi Kerja Baru:
+                </span>
+                <span className="text-xs font-bold font-mono text-brand-600 dark:text-brand-400">
+                  {calculateTotalWorkHours(editingShift.startTime, editingShift.endTime)} Jam Kerja
+                </span>
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Toleransi (Menit)</label>
                 <input
@@ -463,7 +513,7 @@ export const ShiftTable: React.FC = () => {
                 >
                   {shifts.map((s) => (
                     <option key={s.id} value={s.name}>
-                      {s.name} ({s.startTime} - {s.endTime})
+                      {s.name} ({s.startTime} - {s.endTime} | {s.totalWorkHours} Jam)
                     </option>
                   ))}
                 </select>
@@ -522,7 +572,7 @@ export const ShiftTable: React.FC = () => {
                 >
                   {shifts.map((s) => (
                     <option key={s.id} value={s.name}>
-                      {s.name} ({s.startTime} - {s.endTime})
+                      {s.name} ({s.startTime} - {s.endTime} | {s.totalWorkHours} Jam)
                     </option>
                   ))}
                 </select>

@@ -45,14 +45,29 @@ export default function SignInForm() {
     }
 
     setIsLoading(true);
-    console.log("[AUDIT_LOG] ADMIN_SIGNIN_ATTEMPT", {
+
+    // PRD §8.3: Masa Berlaku Sesi Token Admin Panel = 30 Menit (Inactivity Timeout)
+    const adminSessionDurationMinutes = 30;
+    const expiresAt = Date.now() + adminSessionDurationMinutes * 60 * 1000;
+    
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("hris_session_token", `ADMIN_TOKEN_${Date.now()}`);
+      sessionStorage.setItem("hris_role", "admin");
+      sessionStorage.setItem("hris_session_expires", String(expiresAt));
+      sessionStorage.setItem("hris_user_email", email);
+    }
+
+    console.log("[AUDIT_LOG] ADMIN_SIGNIN_SUCCESS", {
       email,
+      role: "admin",
+      session_duration: "30 Minutes",
+      expires_at: new Date(expiresAt).toISOString(),
       timestamp: new Date().toISOString()
     });
 
     setTimeout(() => {
       setIsLoading(false);
-      alert(`✅ Autentikasi Admin Berhasil!\nSelamat datang kembali, ${email} (HRISCorp.dev Management).`);
+      alert(`✅ Autentikasi Admin Berhasil!\nSelamat datang kembali, ${email} (HRISCorp.dev Management).\n🔒 Sesi Aktif: 30 Menit (Auto-Logout jika idle).`);
       router.push("/dashboard");
     }, 1200);
   };
@@ -65,12 +80,27 @@ export default function SignInForm() {
     setTimeout(() => {
       setIsScanningFace(false);
       setFaceVerified(true);
-      alert(`📸 Validasi Foto Wajah Berhasil!\n✓ Wajah Terverifikasi: Budi Santoso (NIP: EMP-001 - Software Engineer).\nRedirecting ke Portal Karyawan...`);
+
+      // PRD §8.3: Masa Berlaku Sesi Token Login Wajah Karyawan = 15 Menit (Inactivity Timeout)
+      const employeeSessionDurationMinutes = 15;
+      const expiresAt = Date.now() + employeeSessionDurationMinutes * 60 * 1000;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("hris_session_token", `EMP_FACE_TOKEN_${Date.now()}`);
+        sessionStorage.setItem("hris_role", "employee");
+        sessionStorage.setItem("hris_session_expires", String(expiresAt));
+        sessionStorage.setItem("hris_employee_id", "EMP-001");
+        sessionStorage.setItem("hris_employee_name", "Budi Santoso");
+      }
+
+      alert(`📸 Validasi Foto Wajah Berhasil!\n✓ Wajah Terverifikasi: Budi Santoso (NIP: EMP-001 - Software Engineer).\n⏱️ Token Sesi Bersegel: Berlaku 15 Menit (Inactivity Timeout).\nRedirecting ke Portal Karyawan...`);
 
       console.log("[AUDIT_LOG] EMPLOYEE_FACE_SCAN_SUCCESS", {
         employee_id: "EMP-001",
         employee_name: "Budi Santoso",
         match_confidence: "99.8%",
+        session_duration: "15 Minutes",
+        expires_at: new Date(expiresAt).toISOString(),
         timestamp: new Date().toISOString()
       });
 
@@ -129,7 +159,7 @@ export default function SignInForm() {
                   : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
               }`}
             >
-              🔒 Login Admin / HRD
+              🔒 Login Admin / HRD (Sesi 30 Menit)
             </button>
             <button
               type="button"
@@ -140,7 +170,7 @@ export default function SignInForm() {
                   : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
               }`}
             >
-              📷 Login Wajah (Karyawan)
+              📷 Login Wajah (Sesi 15 Menit)
             </button>
           </div>
 
@@ -148,8 +178,13 @@ export default function SignInForm() {
           {roleTab === "admin" && (
             <div>
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 mb-6">
-                <span className="text-xs font-semibold text-gray-800 dark:text-white block mb-1">Kredensial Akses Manajemen HRD</span>
-                <p className="text-xs text-gray-500">Khusus Administrator, HR Manager, & Executive untuk pengelolaan data SDM.</p>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-gray-800 dark:text-white">Kredensial Akses Manajemen HRD</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 font-bold">
+                    Masa Sesi: 30 Min
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">Khusus Administrator, HR Manager, & Executive. Token expired jika idle >30 menit.</p>
               </div>
 
               <form onSubmit={handleAdminLoginSubmit}>
@@ -220,11 +255,14 @@ export default function SignInForm() {
           {roleTab === "employee" && (
             <div className="space-y-6">
               <div className="p-4 rounded-xl bg-brand-50/60 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 text-center">
-                <span className="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider block mb-1">
-                  🔒 Login Portal Karyawan (Tanpa Password)
-                </span>
+                <div className="inline-flex items-center gap-1.5 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span className="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
+                    🔒 Login Biometrik Wajah Karyawan
+                  </span>
+                </div>
                 <p className="text-xs text-gray-600 dark:text-gray-300">
-                  Untuk keamanan dan validasi identitas riil, Karyawan masuk dengan **Verifikasi Biometrik Foto Wajah**.
+                  Untuk keamanan riil, Karyawan masuk dengan **Verifikasi Biometrik Foto Wajah**. Token sesi aktif **15 Menit** (auto logout jika idle).
                 </p>
               </div>
 
@@ -234,7 +272,7 @@ export default function SignInForm() {
                   <div className="flex flex-col items-center justify-center space-y-3 z-20">
                     <div className="w-16 h-16 rounded-full border-4 border-brand-500 border-t-transparent animate-spin"></div>
                     <span className="text-xs font-mono font-semibold text-brand-400 animate-pulse">
-                      Pindaian Wajah & Validasi Foto Berlangsung...
+                      Pindaian Biometrik Wajah & Penerbitan Token 15-Min Berlangsung...
                     </span>
                   </div>
                 ) : faceVerified ? (
@@ -244,6 +282,7 @@ export default function SignInForm() {
                     </div>
                     <span className="text-sm font-bold text-emerald-400">Identitas Wajah Terverifikasi!</span>
                     <span className="text-xs text-slate-300 font-mono">Budi Santoso (EMP-001)</span>
+                    <span className="text-[10px] text-emerald-300 font-mono">Token Sesi: 15-Minute Inactivity Expiration</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center space-y-3 z-10 text-center p-4">
@@ -269,7 +308,7 @@ export default function SignInForm() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                {isScanningFace ? "Memindai Wajah..." : "Verifikasi Foto Wajah & Masuk Portal"}
+                {isScanningFace ? "Memindai Wajah..." : "Verifikasi Foto Wajah & Masuk Portal (15 Min Token)"}
               </Button>
             </div>
           )}
@@ -284,9 +323,9 @@ export default function SignInForm() {
 
       {/* Forgot Password Modal */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Lupa Kata Sandi Admin HRISCorp.dev?
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
