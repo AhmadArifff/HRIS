@@ -7,5 +7,5 @@ build
 .env.*
 !.env.example
 .vercel
-graphify-out
 *.log
+graphify-out

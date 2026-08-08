@@ -917,3 +917,28 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 | **`Kirim Ajuan Klaim`** | `/reimbursement` | All Employees | Guard: Nominal > 0 & Wajib unggah foto/PDF bukti struk transaksi. | `POST /api/reimbursements` <br/> State: `STATUS_REIMBURSEMENT` &rarr; `PENDING` | Toast Success: "Klaim reimbursement terkirim ke Tim Keuangan". |
 | **`Kelola Checklist Offboarding`**| `/offboarding` | HR, IT | Guard: Hanya bisa diselesaikan jika seluruh checklist pengembalian aset tercentang. | `PUT /api/offboarding/:id/clearance` <br/> State: `asset_cleared` &rarr; `true`, `STATUS_EMPLOYEE` &rarr; `TERMINATED` | Progress Bar mencapai 100%, Sertifikat Pengalaman Kerja (Parkir) siap didownload. |
 
+---
+
+## 8. Spesifikasi Landing Page Publik & Halaman Autentikasi (Login)
+
+### 8.1 Landing Page Perusahaan & Portal Karir Publik (`/landing`)
+Halaman ini adalah pintu gerbang awal aplikasi HRIS Enterprise sebelum pengguna melakukan autentikasi (*Login*).
+
+| Elemen Komponen / Tombol | Target Route / Aksi | Target Pengguna | Frontend Guard Clause Logic | Backend API / Integrasi | UX Feedback & Visual |
+|---|---|---|---|---|---|
+| **`Login Portal Karyawan`** | `/signin?role=employee` | Karyawan | Redirect langsung ke form login khusus Karyawan (ESS). | Client-side Router | Navigasi mulus, Auto-highlight tab Karyawan. |
+| **`Login Admin / HRD`** | `/signin?role=admin` | HR, Admin, Executive | Redirect langsung ke form login Manajemen HRIS. | Client-side Router | Navigasi mulus, Auto-highlight tab Admin/HR. |
+| **`Portal Lowongan Kerja Publik`** | `/landing#careers` | Publik / Pelamar | Menampilkan daftar lowongan aktif dari `JOB_POSTING`. | `GET /api/public/jobs` | Card Interaktif, Filter Departemen & Lokasi. |
+| **`Lamar Pekerjaan (Quick Apply)`**| Modal / Form Pelamar | Pelamar | Guard: Wajib isi Nama, Email, No HP & Unggah CV PDF (Maks 5MB). | `POST /api/public/apply` | Toast: "Lamaran berhasil dikirim! Tim HRD akan menghubungi Anda". |
+
+### 8.2 Halaman Autentikasi & Login (`/signin`)
+
+| Elemen Form / Tombol | Target Action | RBAC & Proteksi | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Tab Switcher (Role)`** | Switcher Form State | Public | Mengubah konteks peran (`employee` vs `admin`) untuk menyesuaikan pesan petunjuk. | Local State | Transition animasi smooth (Framer Motion). |
+| **`Tombol Masuk / Sign In`** | Submit Form Auth | Public | Guard: Email harus berformat valid (`@company.com`), Password minimal 6 karakter. | `POST /api/auth/login` <br/> JWT Issued & Cookie Saved | Button Loading Spinner. Redirect ke Dashboard Admin `/` atau ESS Portal `http://localhost:3001`. |
+| **`Show / Hide Password`** | Toggle Visibility | Public | Mengubah type input `password` ke `text`. | Local State | Ikon mata berubah (Eye / Eye-off). |
+| **`Lupa Password?`** | Open Modal Reset | Public | Guard: Input email terdaftar wajib diisi. | `POST /api/auth/forgot-password` | Toast Success: "Tautan reset kata sandi telah dikirim ke email Anda". |
+| **`Single Sign-On (SSO)`** | Google / Microsoft OAuth | All Users | Guard: Memastikan akun SSO terikat dengan email domain perusahaan yang aktif. | `GET /api/auth/sso/google` | Redirection ke Provider OAuth. |
+
+
