@@ -1,282 +1,314 @@
 "use client";
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
-import Button from "../ui/button/Button";
 
 interface OffboardingRecord {
   id: string;
   name: string;
-  role: string;
-  date: string;
-  type: "Resign" | "Pensiun" | "PHK";
-  progress: number;
-  status: "Proses" | "Selesai";
-  checklist: { label: string; done: boolean }[];
+  department: string;
+  exitDate: string;
+  reason: string;
+  assetChecklist: {
+    laptop: boolean;
+    idCard: boolean;
+    accessKey: boolean;
+  };
+  assetCleared: boolean;
+  status: "In Progress" | "Completed";
 }
 
-const initialData: OffboardingRecord[] = [
+const initialRecords: OffboardingRecord[] = [
   {
-    id: "OB-001", name: "Rina Maharani", role: "Sales Executive", date: "31 Ags 2026",
-    type: "Resign", progress: 80, status: "Proses",
-    checklist: [
-      { label: "Pengembalian Laptop", done: true },
-      { label: "Pengembalian ID Card", done: true },
-      { label: "Serah terima pekerjaan", done: true },
-      { label: "Exit Interview", done: true },
-      { label: "Final Settlement / Clearance HR", done: false },
-    ],
+    id: "OFF-001",
+    name: "Rina Maharani",
+    department: "Marketing",
+    exitDate: "2026-08-15",
+    reason: "Resign (Karir Baru)",
+    assetChecklist: { laptop: true, idCard: true, accessKey: true },
+    assetCleared: true,
+    status: "Completed",
   },
   {
-    id: "OB-002", name: "Joko Anwar", role: "Security", date: "15 Ags 2026",
-    type: "Pensiun", progress: 100, status: "Selesai",
-    checklist: [
-      { label: "Pengembalian Laptop", done: true },
-      { label: "Pengembalian ID Card", done: true },
-      { label: "Serah terima pekerjaan", done: true },
-      { label: "Exit Interview", done: true },
-      { label: "Final Settlement / Clearance HR", done: true },
-    ],
+    id: "OFF-002",
+    name: "Hendra Wijaya",
+    department: "IT",
+    exitDate: "2026-08-20",
+    reason: "Resign (Pindah Domisili)",
+    assetChecklist: { laptop: true, idCard: false, accessKey: false },
+    assetCleared: false,
+    status: "In Progress",
+  },
+  {
+    id: "OFF-003",
+    name: "Maya Putri",
+    department: "Finance",
+    exitDate: "2026-08-30",
+    reason: "Habis Masa Kontrak",
+    assetChecklist: { laptop: false, idCard: false, accessKey: false },
+    assetCleared: false,
+    status: "In Progress",
   },
 ];
 
 export const OffboardingTable = () => {
-  const [data, setData] = useState<OffboardingRecord[]>(initialData);
-  const [activeChecklist, setActiveChecklist] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [data, setData] = useState<OffboardingRecord[]>(initialRecords);
+  const [showChecklistModal, setShowChecklistModal] = useState<OffboardingRecord | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // PRD §7.6: "Unduh Laporan" — Guard: harus ada data offboarding
-  const handleDownloadReport = () => {
-    if (data.length === 0) {
-      alert("⚠️ Guard Clause: Tidak ada data offboarding untuk diunduh.");
-      return;
-    }
-    alert("✅ Mengunduh Laporan Offboarding... (Simulasi download CSV)");
-    console.log("[AUDIT_LOG] DOWNLOAD_OFFBOARDING_REPORT", { timestamp: new Date().toISOString(), total_records: data.length });
-  };
-
-  // PRD §7.6: "Kelola Checklist" — Guard: hanya bisa diselesaikan jika seluruh checklist tercentang
-  const handleToggleChecklist = (recordId: string, index: number) => {
+  // Toggle Single Asset Checklist Item
+  const handleToggleAsset = (recordId: string, assetKey: keyof OffboardingRecord["assetChecklist"]) => {
     setData((prev) =>
-      prev.map((rec) => {
-        if (rec.id !== recordId) return rec;
-        const newChecklist = [...rec.checklist];
-        newChecklist[index] = { ...newChecklist[index], done: !newChecklist[index].done };
-        const completedCount = newChecklist.filter((c) => c.done).length;
-        const newProgress = Math.round((completedCount / newChecklist.length) * 100);
-        const allDone = completedCount === newChecklist.length;
-        return {
-          ...rec,
-          checklist: newChecklist,
-          progress: newProgress,
-          status: allDone ? "Selesai" : "Proses",
-        };
+      prev.map((item) => {
+        if (item.id === recordId) {
+          const updatedChecklist = {
+            ...item.assetChecklist,
+            [assetKey]: !item.assetChecklist[assetKey],
+          };
+          const allCleared = Object.values(updatedChecklist).every(Boolean);
+          return {
+            ...item,
+            assetChecklist: updatedChecklist,
+            assetCleared: allCleared,
+            status: allCleared ? "Completed" : "In Progress",
+          };
+        }
+        return item;
       })
     );
   };
 
-  // PRD §7.6: Guard — hanya bisa diselesaikan jika seluruh checklist tercentang
-  const handleCompleteClearance = (recordId: string) => {
-    const record = data.find((r) => r.id === recordId);
-    if (!record) return;
-
-    const allDone = record.checklist.every((c) => c.done);
-    if (!allDone) {
-      alert(`⚠️ Guard Clause: Checklist ${record.name} belum lengkap! Selesaikan semua item terlebih dahulu.`);
+  // Finalize Clearance Button
+  const handleFinalizeClearance = (record: OffboardingRecord) => {
+    // PRD §7.6: Guard Clause Offboarding Clearance
+    if (!record.assetCleared) {
+      alert("⚠️ Guard Clause: Seluruh checklist pengembalian aset (Laptop, ID Card, Akses) WAJIB tercentang hijau sebelum clearance diselesaikan.");
       return;
     }
 
-    alert(`✅ Clearance ${record.name} selesai!\n→ Status: TERMINATED\n→ Sertifikat Pengalaman Kerja siap didownload.`);
-    console.log("[AUDIT_LOG] COMPLETE_OFFBOARDING_CLEARANCE", {
-      employee: record.name,
-      asset_cleared: true,
-      state_transition: "STATUS_EMPLOYEE → TERMINATED",
-      timestamp: new Date().toISOString(),
-    });
-    setActiveChecklist(null);
+    setData((prev) =>
+      prev.map((item) => (item.id === record.id ? { ...item, status: "Completed" } : item))
+    );
+    alert(`✅ Clearance Offboarding untuk ${record.name} Selesai!\nStatus Karyawan diperbarui menjadi TERMINATED (Parkir). Sertifikat Pengalaman Kerja diterbitkan.`);
+    setShowChecklistModal(null);
   };
 
-  const filteredData = data.filter(
-    (rec) =>
-      rec.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rec.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredData.length / entriesPerPage) || 1;
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const displayedData = filteredData.slice(startIndex, startIndex + entriesPerPage);
+  const handleDownloadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsDownloading(true);
+    setTimeout(() => {
+      setIsDownloading(false);
+      setShowDownloadModal(false);
+      alert("🎉 Laporan Rekap Offboarding & Clearance Aset BERHASIL diunduh!");
+    }, 1200);
+  };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 p-5 lg:p-6 dark:border-gray-800">
         <div>
           <h3 className="text-base font-semibold text-gray-800 dark:text-white">
-            Proses Offboarding Karyawan
+            Kelola Resign & Offboarding Karyawan
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Kelola checklist pengembalian aset & exit interview karyawan keluar
+            Checklist pengembalian aset perusahaan dan surat keterangan kerja (PRD §3.7 & §7.6)
           </p>
         </div>
         <button
-          onClick={handleDownloadReport}
+          onClick={() => setShowDownloadModal(true)}
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          Unduh Laporan
+          Unduh Laporan Offboarding
         </button>
       </div>
 
       <div className="p-5 lg:p-6">
-        {/* Controls Bar */}
-        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>Tampilkan</span>
-            <select
-              value={entriesPerPage}
-              onChange={(e) => { setEntriesPerPage(Number(e.target.value)); setCurrentPage(1); }}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-theme-xs focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-            </select>
-            <span>entri</span>
-          </div>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Cari karyawan..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm text-gray-800 shadow-theme-xs focus:border-brand-500 focus:outline-none sm:w-64 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            />
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-gray-400" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M8 4C5.79086 4 4 5.79086 4 8C4 10.2091 5.79086 12 8 12C10.2091 12 12 10.2091 12 8C12 5.79086 10.2091 4 8 4ZM2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8C14 9.29583 13.5873 10.495 12.8856 11.4714L17.7071 16.2929C18.0976 16.6834 18.0976 17.3166 17.7071 17.7071C17.3166 18.0976 16.6834 18.0976 16.2929 17.7071L11.4714 12.8856C10.495 13.5873 9.29583 14 8 14C4.68629 14 2 11.3137 2 8Z" /></svg>
-          </div>
-        </div>
-
-        {/* Table */}
         <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
           <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
             <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
               <tr>
                 <th className="px-6 py-4">ID</th>
                 <th className="px-6 py-4">Karyawan</th>
-                <th className="px-6 py-4">Tgl Keluar</th>
+                <th className="px-6 py-4">Tanggal Keluar</th>
                 <th className="px-6 py-4">Alasan</th>
-                <th className="px-6 py-4">Clearance Progress</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Checklist Pengembalian Aset</th>
+                <th className="px-6 py-4">Status Clearance</th>
                 <th className="px-6 py-4 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {displayedData.map((record) => (
-                <React.Fragment key={record.id}>
-                  <tr className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
-                    <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                      <div>
-                        <span>{record.name}</span>
-                        <span className="block text-xs font-normal text-gray-400">{record.role}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">{record.date}</td>
-                    <td className="px-6 py-4">
-                      <Badge color={record.type === "Resign" ? "warning" : record.type === "Pensiun" ? "info" : "error"}>
-                        {record.type}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-full max-w-[120px] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                          <div
-                            className={`h-2.5 rounded-full transition-all ${record.progress === 100 ? "bg-success-500" : "bg-brand-500"}`}
-                            style={{ width: `${record.progress}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">{record.progress}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge color={record.status === "Selesai" ? "success" : "warning"}>
-                        {record.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setActiveChecklist(activeChecklist === record.id ? null : record.id)}
-                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition ${
-                          activeChecklist === record.id
-                            ? "bg-brand-500 text-white border-brand-500"
-                            : "border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {activeChecklist === record.id ? "Tutup" : "Kelola Checklist"}
-                      </button>
-                    </td>
-                  </tr>
-
-                  {/* Expandable Checklist Panel */}
-                  {activeChecklist === record.id && (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-4 bg-gray-50/80 dark:bg-gray-800/30">
-                        <div className="max-w-lg space-y-3">
-                          <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
-                            Checklist Clearance — {record.name}
-                          </h4>
-                          {record.checklist.map((item, idx) => (
-                            <label
-                              key={idx}
-                              className="flex items-center gap-3 cursor-pointer group"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={item.done}
-                                onChange={() => handleToggleChecklist(record.id, idx)}
-                                className="w-4 h-4 text-brand-500 border-gray-300 rounded focus:ring-brand-500"
-                              />
-                              <span className={`text-sm ${item.done ? "line-through text-gray-400" : "text-gray-700 dark:text-gray-300"}`}>
-                                {item.label}
-                              </span>
-                            </label>
-                          ))}
-
-                          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <button
-                              onClick={() => handleCompleteClearance(record.id)}
-                              className="inline-flex items-center gap-2 rounded-xl bg-success-500 px-4 py-2 text-sm font-medium text-white hover:bg-success-600 transition disabled:opacity-40"
-                              disabled={!record.checklist.every((c) => c.done)}
-                            >
-                              ✓ Selesaikan Clearance & Terbitkan Surat Keterangan
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+              {data.map((record) => (
+                <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
+                  <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                    <div>
+                      <span>{record.name}</span>
+                      <span className="block text-xs font-normal text-gray-400">{record.department}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 font-mono">{record.exitDate}</td>
+                  <td className="px-6 py-4">{record.reason}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded font-mono ${record.assetChecklist.laptop ? "bg-success-500/10 text-success-500" : "bg-gray-100 text-gray-400"}`}>
+                        💻 Laptop
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded font-mono ${record.assetChecklist.idCard ? "bg-success-500/10 text-success-500" : "bg-gray-100 text-gray-400"}`}>
+                        🪪 ID Card
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded font-mono ${record.assetChecklist.accessKey ? "bg-success-500/10 text-success-500" : "bg-gray-100 text-gray-400"}`}>
+                        🔑 Kunci
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge color={record.status === "Completed" ? "success" : "warning"}>
+                      {record.status === "Completed" ? "Clearance Selesai" : "Dalam Proses"}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => setShowChecklistModal(record)}
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                      Kelola Checklist
+                    </button>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Pagination */}
-        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500 dark:text-gray-400">
-          <div>
-            Menampilkan {filteredData.length === 0 ? 0 : startIndex + 1} sampai{" "}
-            {Math.min(startIndex + entriesPerPage, filteredData.length)} dari{" "}
-            {filteredData.length} entri
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 transition">Sebelumnya</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button key={p} onClick={() => setCurrentPage(p)} className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition ${currentPage === p ? "bg-brand-500 text-white" : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"}`}>{p}</button>
-            ))}
-            <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 transition">Selanjutnya</button>
+      {/* ─────────────────────────────────────────────
+          1. MODAL KELOLA CHECKLIST ASET
+      ───────────────────────────────────────────── */}
+      {showChecklistModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+              Checklist Clearance — {showChecklistModal.name}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              Centang pengembalian aset perusahaan (IT & HR) sebelum memfinalisasi clearance.
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <label className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <span className="text-xs font-medium text-gray-800 dark:text-white">💻 Laptop Perusahaan & Aksesori</span>
+                <input
+                  type="checkbox"
+                  checked={showChecklistModal.assetChecklist.laptop}
+                  onChange={() => {
+                    handleToggleAsset(showChecklistModal.id, "laptop");
+                    setShowChecklistModal({
+                      ...showChecklistModal,
+                      assetChecklist: { ...showChecklistModal.assetChecklist, laptop: !showChecklistModal.assetChecklist.laptop }
+                    });
+                  }}
+                  className="w-4 h-4 text-brand-500 rounded focus:ring-brand-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <span className="text-xs font-medium text-gray-800 dark:text-white">🪪 ID Card & Badge Akses Kantor</span>
+                <input
+                  type="checkbox"
+                  checked={showChecklistModal.assetChecklist.idCard}
+                  onChange={() => {
+                    handleToggleAsset(showChecklistModal.id, "idCard");
+                    setShowChecklistModal({
+                      ...showChecklistModal,
+                      assetChecklist: { ...showChecklistModal.assetChecklist, idCard: !showChecklistModal.assetChecklist.idCard }
+                    });
+                  }}
+                  className="w-4 h-4 text-brand-500 rounded focus:ring-brand-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <span className="text-xs font-medium text-gray-800 dark:text-white">🔑 Kunci Ruangan / Fasilitas Kantor</span>
+                <input
+                  type="checkbox"
+                  checked={showChecklistModal.assetChecklist.accessKey}
+                  onChange={() => {
+                    handleToggleAsset(showChecklistModal.id, "accessKey");
+                    setShowChecklistModal({
+                      ...showChecklistModal,
+                      assetChecklist: { ...showChecklistModal.assetChecklist, accessKey: !showChecklistModal.assetChecklist.accessKey }
+                    });
+                  }}
+                  className="w-4 h-4 text-brand-500 rounded focus:ring-brand-500"
+                />
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setShowChecklistModal(null)}
+                className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFinalizeClearance(showChecklistModal)}
+                className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+              >
+                Selesaikan Clearance
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ─────────────────────────────────────────────
+          2. MODAL DOWNLOAD LAPORAN
+      ───────────────────────────────────────────── */}
+      {showDownloadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+              Unduh Laporan Offboarding & Clearance
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              Ekspor rekapitulasi status pengembalian aset dan surat keterangan kerja karyawan resign.
+            </p>
+
+            <form onSubmit={handleDownloadSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Format File</label>
+                <select className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none">
+                  <option value="PDF">Format PDF Rekapitulasi (.pdf)</option>
+                  <option value="Excel">Format Microsoft Excel (.xlsx)</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setShowDownloadModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDownloading}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition disabled:opacity-50"
+                >
+                  {isDownloading ? "Mengunduh..." : "Unduh Berkas PDF"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

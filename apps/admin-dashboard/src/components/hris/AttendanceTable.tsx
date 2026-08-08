@@ -35,6 +35,30 @@ export const AttendanceTable: React.FC = () => {
   const [sortField, setSortField] = useState<keyof AttendanceRecord>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [startDate, setStartDate] = useState("2026-08-01");
+  const [endDate, setEndDate] = useState("2026-08-08");
+  const [exportFormat, setExportFormat] = useState("CSV");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsExporting(true);
+    console.log("[AUDIT_LOG] ATTENDANCE_RECAP_EXPORTED", {
+      start_date: startDate,
+      end_date: endDate,
+      format: exportFormat,
+      timestamp: new Date().toISOString()
+    });
+
+    setTimeout(() => {
+      setIsExporting(false);
+      setShowExportModal(false);
+      alert(`🎉 Laporan Rekap Absensi (${startDate} s/d ${endDate}) BERHASIL diekspor dalam format ${exportFormat}!`);
+    }, 1200);
+  };
+
   const filteredRecords = mockAttendanceData.filter(
     (rec) =>
       rec.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -80,7 +104,7 @@ export const AttendanceTable: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => alert("Mengunduh Laporan Rekap Absensi & Keterlambatan...")}
+          onClick={() => setShowExportModal(true)}
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,7 +148,6 @@ export const AttendanceTable: React.FC = () => {
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-gray-400"
               viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
                 fillRule="evenodd"
@@ -269,6 +292,75 @@ export const AttendanceTable: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────
+          MODAL EXPORT REKAP ABSENSI
+      ───────────────────────────────────────────── */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+              Export Rekap Laporan Absensi
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              Pilih rentang tanggal dan format file untuk mengekspor data absensi & potongan telat.
+            </p>
+
+            <form onSubmit={handleExportSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Mulai</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Akhir</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Format File Export</label>
+                <select
+                  value={exportFormat}
+                  onChange={(e) => setExportFormat(e.target.value)}
+                  className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                >
+                  <option value="CSV">Format CSV (.csv)</option>
+                  <option value="Excel">Format Microsoft Excel (.xlsx)</option>
+                  <option value="PDF">Format PDF Summary (.pdf)</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setShowExportModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isExporting}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition disabled:opacity-50"
+                >
+                  {isExporting ? "Mengunduh..." : "Unduh Laporan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

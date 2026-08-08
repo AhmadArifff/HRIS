@@ -859,11 +859,14 @@ Bagian ini mendefinisikan pembagian tugas (*task list*) yang jelas antara tiap d
 
 Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, aturan akses (RBAC), logika validasi (*Guard Clauses*), perubahan status (*State Transitions*), serta *UX Feedback* di seluruh modul aplikasi.
 
-### 7.1 Modul Core HR & Karyawan (Admin Panel)
+### 7.1 Modul Core HR & Karyawan (Admin Panel)### 7.3 Modul Kehadiran & Master Shift
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`+ Tambah Karyawan`** | Modal / Form `/employee/add` | Admin, HR | Menolak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Success: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
+| **`+ Master Shift Baru`** | Modal Form `AddShiftModal` | Admin, HR | Guard: Wajib melengkapi Nama Shift, Jam Masuk, Jam Pulang, dan Toleransi Menit. | `POST /api/shifts` | Modal Dialog Form Interaktif. Data bertambah di tabel master shift secara *real-time*. |
+| **`+ Plotting Shift Karyawan`** | Modal Form `AssignShiftModal` | Admin, HR | Guard: Wajib memilih Karyawan, Master Shift, dan Tanggal Penugasan. | `POST /api/shift-assignments` | Modal Dialog Form Interaktif. Plotting jadwal karyawan diperbarui di tabel. |
+| **`Clock-In / Out`** | Mobile PWA & Camera Web | Karyawan | Guard: Memverifikasi radius Geofencing GPS (100m) dan deteksi keterlambatan *Shift Master*. | `POST /api/attendance/clock-in` <br/> State: `STATUS_ATTENDANCE` &rarr; `PRESENT / LATE` | Visual Kamera Scanner, Toast: "Clock-in Berhasil", Log `is_late` & `late_duration_minutes`. |
+| **`Export Rekap Absensi`** | Modal Form `ExportAttendanceModal` | Admin, HR | Guard: Wajib memilih rentang tanggal valid (Start Date & End Date). | `GET /api/attendance/export` | Modal Dialog Form Interaktif. File CSV/Excel terunduh otomatis. |olak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Success: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
 | **`Edit Data` (Ikon Pensil)** | Inline / Page `/employee/edit/[id]` | Admin, HR | Cek ID Karyawan valid. | `PUT /api/employees/:id` | Toast Success: "Data karyawan diperbarui", Audit Log `UPDATE_EMPLOYEE`. |
 | **`Detail Karyawan` (Ikon Mata)** | Drawer / Page 360-View | Admin, HR, Manager | Cek token & hak akses departemen. | `GET /api/employees/:id/profile` | Menampilkan Profil 360 lengkap (Kontrak, Riwayat Absensi, Gaji). |
 | **`Tampilkan [5/10/20] Entri`** | Table Control | All Roles | Re-render halaman data berdasarkan entri terpilih. | Client-side Pagination Query `?limit=10&page=1` | Tabel diperbarui secara instan. |
@@ -895,7 +898,7 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`+ Tambah Komponen Gaji`** | `/payroll/components` | HR, Finance | Guard: Menolak jika Nama Komponen atau Tipe (Tunjangan/Potongan) kosong. | `POST /api/payroll-components` | Toast Success: "Komponen Gaji ditambahkan". |
+| **`+ Tambah Komponen Gaji`** | Modal Form `AddPayrollComponentModal` | HR, Finance | Guard: Menolak jika Nama Komponen atau Tipe (Tunjangan/Potongan) atau Besaran/Rumus kosong. | `POST /api/payroll-components` | Modal Dialog Form Interaktif. Komponen baru langsung aktif di tabel master penggajian. |
 | **`Generate Payroll`** | `/payroll/generate` | HR, Finance | Guard: Menolak jika periode bulan berjalan sudah pernah di-generate (*Prevent Duplicate Batch*). | `POST /api/payroll/generate-batch` <br/> State: `STATUS_PAYROLL` &rarr; `PROCESSED` | Modal Loader Progress Bar 0-100%, Toast: "Payroll X Karyawan Selesai Di-generate". |
 | **`Publish & Distribusi Slip`**| `/payroll/generate` | HR, Finance | Guard: Hanya aktif jika status Payroll = `PROCESSED`. | `POST /api/payroll/publish` <br/> State: `STATUS_PAYROLL` &rarr; `PUBLISHED` | Email otomatis berisi lampiran PDF Slip Gaji terenkripsi ke seluruh Karyawan. |
 
@@ -916,7 +919,8 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 |---|---|---|---|---|---|
 | **`Kirim Evaluasi KPI`** | `/performance` | All Employees | Guard: Wajib mengisi seluruh kuesioner evaluasi 360 (Skala 1-5). | `POST /api/performance-reviews` <br/> State: `STATUS_REVIEW` &rarr; `SUBMITTED` | Toast Success: "Evaluasi Kinerja 360 Terkirim", Status berubah Completed. |
 | **`Kirim Ajuan Klaim`** | `/reimbursement` | All Employees | Guard: Nominal > 0 & Wajib unggah foto/PDF bukti struk transaksi. | `POST /api/reimbursements` <br/> State: `STATUS_REIMBURSEMENT` &rarr; `PENDING` | Toast Success: "Klaim reimbursement terkirim ke Tim Keuangan". |
-| **`Kelola Checklist Offboarding`**| `/offboarding` | HR, IT | Guard: Hanya bisa diselesaikan jika seluruh checklist pengembalian aset tercentang. | `PUT /api/offboarding/:id/clearance` <br/> State: `asset_cleared` &rarr; `true`, `STATUS_EMPLOYEE` &rarr; `TERMINATED` | Progress Bar mencapai 100%, Sertifikat Pengalaman Kerja (Parkir) siap didownload. |
+| **`Kelola Checklist Offboarding`**| Modal Form `ChecklistClearanceModal` | HR, IT | Guard: Hanya bisa diselesaikan jika seluruh checklist pengembalian aset tercentang. | `PUT /api/offboarding/:id/clearance` <br/> State: `asset_cleared` &rarr; `true`, `STATUS_EMPLOYEE` &rarr; `TERMINATED` | Modal Dialog Form Interaktif. Progress Bar mencapai 100%, Sertifikat Pengalaman Kerja diterbitkan. |
+| **`Unduh Laporan Offboarding`**| Modal Form `DownloadOffboardingModal` | HR | Guard: Mengunduh rekapitutasi clearance offboarding. | `GET /api/offboarding/export` | Modal Dialog Form Interaktif. File laporan terunduh. |
 
 ---
 

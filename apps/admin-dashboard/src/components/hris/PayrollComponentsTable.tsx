@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
-import Button from "../ui/button/Button";
 
 interface PayrollComponent {
   id: string;
@@ -24,16 +23,47 @@ export const PayrollComponentsTable = () => {
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // PRD §7.4: "Tambah Komponen Gaji"
-  const handleAddComponent = () => {
-    alert("✅ Membuka Modal Form Tambah Komponen Gaji Baru...");
-    console.log("[AUDIT_LOG] OPEN_ADD_PAYROLL_COMP_MODAL", { timestamp: new Date().toISOString() });
+  // Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<PayrollComponent | null>(null);
+
+  // Form State
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState<"Allowance" | "Deduction">("Allowance");
+  const [newAmount, setNewAmount] = useState("");
+  const [newTaxable, setNewTaxable] = useState(true);
+
+  // Handle Add Component Submit
+  const handleAddComponentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim() || !newAmount.trim()) {
+      alert("⚠️ Guard Clause: Nama dan Besaran Komponen Wajib Diisi.");
+      return;
+    }
+    const newId = `COMP-0${data.length + 1}`;
+    const newItem: PayrollComponent = {
+      id: newId,
+      name: newName,
+      type: newType,
+      amount: newAmount,
+      taxable: newTaxable,
+    };
+    setData((prev) => [...prev, newItem]);
+    console.log("[AUDIT_LOG] PAYROLL_COMPONENT_CREATED", newItem);
+    setShowAddModal(false);
+    setNewName("");
+    setNewAmount("");
   };
 
-  // PRD §7.4: "Edit Komponen Gaji"
-  const handleEditComponent = (id: string, name: string) => {
-    alert(`✅ Membuka Form Edit untuk komponen: ${name} (${id})`);
-    console.log("[AUDIT_LOG] OPEN_EDIT_PAYROLL_COMP", { component_id: id, timestamp: new Date().toISOString() });
+  // Handle Edit Component Submit
+  const handleEditComponentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    setData((prev) =>
+      prev.map((item) => (item.id === editingItem.id ? editingItem : item))
+    );
+    console.log("[AUDIT_LOG] PAYROLL_COMPONENT_UPDATED", editingItem);
+    setEditingItem(null);
   };
 
   const filteredData = data.filter(
@@ -54,12 +84,12 @@ export const PayrollComponentsTable = () => {
             Master Komponen Gaji
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Kelola template penambahan (Allowance) dan potongan (Deduction)
+            Kelola template penambahan (Allowance) dan potongan (Deduction) (PRD §7.4)
           </p>
         </div>
         <button
-          onClick={handleAddComponent}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition"
+          onClick={() => setShowAddModal(true)}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition shadow-sm"
         >
           + Tambah Komponen
         </button>
@@ -88,7 +118,7 @@ export const PayrollComponentsTable = () => {
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm text-gray-800 shadow-theme-xs focus:border-brand-500 focus:outline-none sm:w-64 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-gray-400" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M8 4C5.79086 4 4 5.79086 4 8C4 10.2091 5.79086 12 8 12C10.2091 12 12 10.2091 12 8C12 5.79086 10.2091 4 8 4ZM2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8C14 9.29583 13.5873 10.495 12.8856 11.4714L17.7071 16.2929C18.0976 16.6834 18.0976 17.3166 17.7071 17.7071C17.3166 18.0976 16.6834 18.0976 16.2929 17.7071L11.4714 12.8856C10.495 13.5873 9.29583 14 8 14C4.68629 14 2 11.3137 2 8Z" /></svg>
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-gray-400" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M8 4C5.79086 4 4 5.79086 4 8C4 10.2091 5.79086 12 8 12C10.2091 12 12 10.2091 12 8C12 5.79086 10.2091 4 8 4ZM2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8C14 9.29583 13.5873 10.495 12.8856 11.4714L17.7071 16.2929C18.0976 16.6834 18.0976 17.3166 17.7071 16.2929C17.3166 18.0976 16.6834 18.0976 16.2929 17.7071L11.4714 12.8856C10.495 13.5873 9.29583 14 8 14C4.68629 14 2 11.3137 2 8Z" /></svg>
           </div>
         </div>
 
@@ -117,7 +147,7 @@ export const PayrollComponentsTable = () => {
                       {record.type === "Allowance" ? "Tunjangan" : "Potongan"}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4">{record.amount}</td>
+                  <td className="px-6 py-4 font-mono">{record.amount}</td>
                   <td className="px-6 py-4 text-center">
                     <Badge color={record.taxable ? "warning" : "light"}>
                       {record.taxable ? "Ya" : "Tidak"}
@@ -125,10 +155,10 @@ export const PayrollComponentsTable = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button
-                      onClick={() => handleEditComponent(record.id, record.name)}
+                      onClick={() => setEditingItem(record)}
                       className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
-                      Edit
+                      Edit Komponen
                     </button>
                   </td>
                 </tr>
@@ -153,6 +183,160 @@ export const PayrollComponentsTable = () => {
           </div>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────
+          1. MODAL TAMBAH KOMPONEN GAJI
+      ───────────────────────────────────────────── */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+              Tambah Komponen Gaji Baru
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              Atur komponen tunjangan (Allowance) atau potongan (Deduction).
+            </p>
+
+            <form onSubmit={handleAddComponentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nama Komponen <span className="text-error-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Tunjangan Jabatan / Potongan Telat"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Tipe Komponen <span className="text-error-500">*</span>
+                </label>
+                <select
+                  value={newType}
+                  onChange={(e) => setNewType(e.target.value as "Allowance" | "Deduction")}
+                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                >
+                  <option value="Allowance">Tunjangan (Allowance)</option>
+                  <option value="Deduction">Potongan (Deduction)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Besaran / Rumus <span className="text-error-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Rp 2.000.000 / - Rp 50.000 / hari"
+                  value={newAmount}
+                  onChange={(e) => setNewAmount(e.target.value)}
+                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="taxableCheck"
+                  checked={newTaxable}
+                  onChange={(e) => setNewTaxable(e.target.checked)}
+                  className="w-4 h-4 text-brand-500 border-gray-300 rounded focus:ring-brand-500"
+                />
+                <label htmlFor="taxableCheck" className="text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Kena Pajak PPh 21 (Taxable)
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+                >
+                  Simpan Komponen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────
+          2. MODAL EDIT KOMPONEN GAJI
+      ───────────────────────────────────────────── */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+              Edit Komponen Gaji — {editingItem.id}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              Ubah besaran atau status pemotongan pajak PPh 21.
+            </p>
+
+            <form onSubmit={handleEditComponentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Komponen</label>
+                <input
+                  type="text"
+                  value={editingItem.name}
+                  onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Besaran / Rumus</label>
+                <input
+                  type="text"
+                  value={editingItem.amount}
+                  onChange={(e) => setEditingItem({ ...editingItem, amount: e.target.value })}
+                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="editTaxableCheck"
+                  checked={editingItem.taxable}
+                  onChange={(e) => setEditingItem({ ...editingItem, taxable: e.target.checked })}
+                  className="w-4 h-4 text-brand-500 border-gray-300 rounded focus:ring-brand-500"
+                />
+                <label htmlFor="editTaxableCheck" className="text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Kena Pajak PPh 21 (Taxable)
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+                >
+                  Perbarui Komponen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
