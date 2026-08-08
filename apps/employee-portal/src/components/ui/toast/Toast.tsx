@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export interface ToastMessage {
   id: string;
@@ -25,6 +25,43 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose 
             width: 0%;
           }
         }
+
+        @keyframes bookOpenIn {
+          0% {
+            opacity: 0;
+            transform: perspective(1200px) rotateY(-65deg) scale(0.85);
+            transform-origin: left center;
+          }
+          65% {
+            transform: perspective(1200px) rotateY(8deg) scale(1.02);
+          }
+          100% {
+            opacity: 1;
+            transform: perspective(1200px) rotateY(0deg) scale(1);
+            transform-origin: left center;
+          }
+        }
+
+        @keyframes bookCloseOut {
+          0% {
+            opacity: 1;
+            transform: perspective(1200px) rotateY(0deg) scale(1);
+            transform-origin: left center;
+          }
+          100% {
+            opacity: 0;
+            transform: perspective(1200px) rotateY(-65deg) scale(0.85);
+            transform-origin: left center;
+          }
+        }
+
+        .animate-book-open {
+          animation: bookOpenIn 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-book-close {
+          animation: bookCloseOut 350ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+        }
       `}</style>
       <div className="fixed top-5 right-5 z-[200000] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
         {toasts.map((toast) => (
@@ -40,13 +77,22 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
   onClose,
 }) => {
   const DURATION_MS = 4000;
+  const [isClosing, setIsClosing] = useState(false);
+
+  const triggerClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose(toast.id);
+    }, 350);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      onClose(toast.id);
+      triggerClose();
     }, DURATION_MS);
     return () => clearTimeout(timer);
-  }, [toast.id, onClose]);
+  }, [toast.id]);
 
   const typeStyles = {
     success: "bg-white dark:bg-slate-900 border-emerald-500/40 text-emerald-900 dark:text-emerald-300 shadow-emerald-500/10",
@@ -87,7 +133,9 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
 
   return (
     <div
-      className={`pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 pb-5 rounded-2xl border shadow-xl transition-all duration-300 ${typeStyles[toast.type]}`}
+      className={`pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 pb-5 rounded-2xl border shadow-xl transition-all duration-300 ${
+        isClosing ? "animate-book-close" : "animate-book-open"
+      } ${typeStyles[toast.type]}`}
     >
       {iconMap[toast.type]}
       <div className="flex-1 min-w-0">
@@ -95,7 +143,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
         <p className="text-[11px] opacity-90 leading-tight mt-0.5">{toast.message}</p>
       </div>
       <button
-        onClick={() => onClose(toast.id)}
+        onClick={triggerClose}
         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs font-bold p-1 rounded-md transition"
       >
         ✕

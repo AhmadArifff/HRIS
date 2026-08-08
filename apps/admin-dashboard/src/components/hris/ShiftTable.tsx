@@ -332,7 +332,7 @@ export const ShiftTable: React.FC = () => {
       ───────────────────────────────────────────── */}
       {showAddShiftModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative animate-modal-book-open">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Tambah Master Shift Kerja Baru
             </h3>
@@ -427,7 +427,7 @@ export const ShiftTable: React.FC = () => {
       ───────────────────────────────────────────── */}
       {editingShift && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative animate-modal-book-open">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Edit Master Shift — {editingShift.id}
             </h3>
@@ -511,7 +511,7 @@ export const ShiftTable: React.FC = () => {
       ───────────────────────────────────────────── */}
       {showAssignShiftModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+          <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative animate-modal-book-open">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Plotting Penugasan Shift Karyawan
             </h3>

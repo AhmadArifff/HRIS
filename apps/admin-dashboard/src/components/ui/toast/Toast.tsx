@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export interface ToastMessage {
   id: string;
@@ -16,7 +16,7 @@ interface ToastProps {
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onClose }) => {
   return (
     <>
-      {/* Keyframe animation for progress strip */}
+      {/* 3D Book-Open & Book-Close Keyframe Animations */}
       <style jsx global>{`
         @keyframes toastProgressStrip {
           from {
@@ -25,6 +25,43 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onClose }) => {
           to {
             width: 0%;
           }
+        }
+
+        @keyframes bookOpenIn {
+          0% {
+            opacity: 0;
+            transform: perspective(1200px) rotateY(-65deg) scale(0.85);
+            transform-origin: left center;
+          }
+          65% {
+            transform: perspective(1200px) rotateY(8deg) scale(1.02);
+          }
+          100% {
+            opacity: 1;
+            transform: perspective(1200px) rotateY(0deg) scale(1);
+            transform-origin: left center;
+          }
+        }
+
+        @keyframes bookCloseOut {
+          0% {
+            opacity: 1;
+            transform: perspective(1200px) rotateY(0deg) scale(1);
+            transform-origin: left center;
+          }
+          100% {
+            opacity: 0;
+            transform: perspective(1200px) rotateY(-65deg) scale(0.85);
+            transform-origin: left center;
+          }
+        }
+
+        .animate-book-open {
+          animation: bookOpenIn 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-book-close {
+          animation: bookCloseOut 350ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
         }
       `}</style>
       <div className="fixed top-5 right-5 z-[200000] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
@@ -41,13 +78,22 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
   onClose,
 }) => {
   const DURATION_MS = 4000;
+  const [isClosing, setIsClosing] = useState(false);
+
+  const triggerClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose(toast.id);
+    }, 350);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      onClose(toast.id);
+      triggerClose();
     }, DURATION_MS);
     return () => clearTimeout(timer);
-  }, [toast.id, onClose]);
+  }, [toast.id]);
 
   const isSuccess = toast.type === "success";
   const isError = toast.type === "error";
@@ -63,7 +109,9 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
 
   return (
     <div
-      className={`pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 pb-5 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-x-0 ${
+      className={`pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 pb-5 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 ${
+        isClosing ? "animate-book-close" : "animate-book-open"
+      } ${
         isSuccess
           ? "bg-white/95 dark:bg-gray-900/95 border-emerald-500/30 text-gray-900 dark:text-white shadow-emerald-500/10"
           : isError
@@ -105,7 +153,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
 
       {/* Close button */}
       <button
-        onClick={() => onClose(toast.id)}
+        onClick={triggerClose}
         className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs p-1"
       >
         ✕

@@ -306,8 +306,8 @@ export const LeaveTable: React.FC = () => {
           MODAL INTERAKTIF PENOLAKAN CUTI (RejectLeaveModal)
       ───────────────────────────────────────────── */}
       {rejectingRecord && (
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
-          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md transition-all duration-300">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative animate-modal-book-open">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Alasan Penolakan Cuti
             </h3>
