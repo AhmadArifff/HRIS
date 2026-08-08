@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
 import Button from "../ui/button/Button";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 export interface LeaveRecord {
   id: string;
@@ -29,21 +30,64 @@ export const LeaveTable: React.FC = () => {
   const [sortField, setSortField] = useState<keyof LeaveRecord>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  // PRD §7.5: Approval Cuti - Setuju
-  const handleApprove = (id: string, name: string) => {
-    setData((prev) => prev.map((item) => item.id === id ? { ...item, status: "Approved" } : item));
-    alert(`✅ Cuti untuk ${name} telah DISETUJUI.`);
-    console.log("[AUDIT_LOG] LEAVE_APPROVED", { leave_id: id, approver: "Admin", timestamp: new Date().toISOString() });
+  // Toast State
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
   };
 
-  // PRD §7.5: Approval Cuti - Tolak
-  const handleReject = (id: string, name: string) => {
-    const reason = prompt(`Masukkan alasan penolakan cuti untuk ${name}:`);
-    if (reason === null) return; // Batal
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Reject Modal State (Membuka Form Modal Interaktif alih-alih prompt browser)
+  const [rejectingRecord, setRejectingRecord] = useState<LeaveRecord | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  // PRD §7.3: Approval Cuti - Setuju
+  const handleApprove = (id: string, name: string) => {
+    setData((prev) => prev.map((item) => item.id === id ? { ...item, status: "Approved" } : item));
+    console.log("[AUDIT_LOG] LEAVE_APPROVED", { leave_id: id, approver: "Admin", timestamp: new Date().toISOString() });
     
-    setData((prev) => prev.map((item) => item.id === id ? { ...item, status: "Rejected" } : item));
-    alert(`❌ Cuti untuk ${name} telah DITOLAK.\nAlasan: ${reason || "Tidak ada alasan"}`);
-    console.log("[AUDIT_LOG] LEAVE_REJECTED", { leave_id: id, reason, approver: "Admin", timestamp: new Date().toISOString() });
+    addToast(
+      "success",
+      "Pengajuan Cuti Disetujui!",
+      `Pengajuan cuti untuk ${name} telah berhasil disetujui.`
+    );
+  };
+
+  // PRD §7.3: Approval Cuti - Open Modal Form Tolak Cuti
+  const openRejectModal = (record: LeaveRecord) => {
+    setRejectingRecord(record);
+    setRejectReason("");
+  };
+
+  const handleConfirmReject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectingRecord) return;
+
+    if (!rejectReason.trim()) {
+      addToast("error", "Validasi Gagal", "Guard Clause: Wajib mengisi alasan penolakan cuti.");
+      return;
+    }
+
+    const recId = rejectingRecord.id;
+    const empName = rejectingRecord.name;
+    const reasonText = rejectReason;
+
+    setData((prev) => prev.map((item) => item.id === recId ? { ...item, status: "Rejected" } : item));
+    console.log("[AUDIT_LOG] LEAVE_REJECTED", { leave_id: recId, reason: reasonText, approver: "Admin", timestamp: new Date().toISOString() });
+
+    setRejectingRecord(null);
+    setRejectReason("");
+
+    addToast(
+      "error",
+      "Pengajuan Cuti Ditolak!",
+      `Cuti untuk ${empName} telah ditolak. Alasan: ${reasonText}`
+    );
   };
 
   const filteredRecords = data.filter(
@@ -79,14 +123,16 @@ export const LeaveTable: React.FC = () => {
   );
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 p-5 lg:p-6 dark:border-gray-800">
         <div>
           <h3 className="text-base font-semibold text-gray-800 dark:text-white">
-            Daftar Persetujuan Cuti Karyawan
+            Persetujuan & Monitoring Cuti Karyawan
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Kelola & tinjau seluruh permintan cuti dari karyawan
+            Kelola ajuan cuti tahunan, sakit, dan izin penting karyawan (PRD §7.3)
           </p>
         </div>
       </div>
@@ -125,7 +171,6 @@ export const LeaveTable: React.FC = () => {
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-gray-400"
               viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
                 fillRule="evenodd"
@@ -156,7 +201,7 @@ export const LeaveTable: React.FC = () => {
                 <th onClick={() => handleSort("status")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
                   Status {sortField === "status" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
                 </th>
-                <th className="px-6 py-4 text-right">Aksi</th>
+                <th className="px-6 py-4 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -170,10 +215,12 @@ export const LeaveTable: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span>{record.type}</span>
-                    <span className="block text-xs text-gray-400">Durasi: {record.duration}</span>
+                    <div>
+                      <span className="font-medium text-gray-800 dark:text-white">{record.type}</span>
+                      <span className="block text-xs text-gray-400">Durasi: {record.duration}</span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4">{record.date}</td>
+                  <td className="px-6 py-4 font-mono text-xs">{record.date}</td>
                   <td className="px-6 py-4">
                     <Badge
                       color={
@@ -187,30 +234,25 @@ export const LeaveTable: React.FC = () => {
                       {record.status}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {record.status === "Pending" ? (
-                        <>
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleApprove(record.id, record.name)}
-                            className="bg-success-500 text-white hover:bg-success-600 border-none text-xs px-3 py-1"
-                          >
-                            Setujui
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleReject(record.id, record.name)}
-                            className="border-error-500 text-error-500 hover:bg-error-50 text-xs px-3 py-1 dark:hover:bg-error-500/10"
-                          >
-                            Tolak
-                          </Button>
-                        </>
-                      ) : (
-                        <span className="text-xs text-gray-400">Telah Diproses</span>
-                      )}
-                    </div>
+                  <td className="px-6 py-4 text-center">
+                    {record.status === "Pending" ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleApprove(record.id, record.name)}
+                          className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-sm"
+                        >
+                          Setujui
+                        </button>
+                        <button
+                          onClick={() => openRejectModal(record)}
+                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+                        >
+                          Tolak
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">Telah Diproses</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -259,6 +301,53 @@ export const LeaveTable: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ─────────────────────────────────────────────
+          MODAL INTERAKTIF PENOLAKAN CUTI (RejectLeaveModal)
+      ───────────────────────────────────────────── */}
+      {rejectingRecord && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+              Alasan Penolakan Cuti
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+              Silakan tuliskan alasan penolakan pengajuan cuti untuk <strong>{rejectingRecord.name}</strong> ({rejectingRecord.type} - {rejectingRecord.duration}).
+            </p>
+
+            <form onSubmit={handleConfirmReject} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Catatan Alasan Penolakan <span className="text-error-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Contoh: Beban kerja tim tinggi pada tanggal tersebut..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  className="w-full p-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none resize-none"
+                ></textarea>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setRejectingRecord(null)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-sm"
+                >
+                  Konfirmasi Tolak Cuti
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

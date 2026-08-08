@@ -63,6 +63,7 @@ Untuk menjaga agar *codebase* tetap bersih, *maintainable*, dan bebas *bug*, pen
 *   **Component Architecture (Smart vs Dumb):** Pemisahan *stateful components* (*Smart*, yang menyentuh data dan *Zustand*) dengan *stateless components* (*Dumb*, komponen UI mandiri dari *Shadcn* yang hanya merender *props*).
 *   **Client-Side Result Pattern & Error Boundaries:** Mengonsumsi *Result Pattern* dari *backend* secara terstruktur. Selain itu, setiap halaman *module* utama dibungkus dalam **Error Boundaries** React untuk mencegah keseluruhan web *crash* akibat eror di satu komponen.
 *   **Guard Clauses (Client-side):** Pengecekan *state* atau *permissions* dilakukan di awal *event handlers* (misalnya menolak klik tombol "Kirim Cuti" jika *state* data belum lengkap) dengan konsep *early return*.
+*   **Prohibition of Native Browser Dialogs (Standard UI Policy):** Dilarang keras menggunakan dialog browser bawaan seperti `alert()`, `prompt()`, atau `confirm()` (seperti dialog `localhost:3000 says`). Seluruh umpan balik aksi pengguna wajib menggunakan **Top-Right Floating Toast Notifications** (`ToastContainer`), dan penginputan data penolakan/alasan wajib menggunakan **Komponen Modal Form Interaktif** (`RejectLeaveModal`).
 
 ### 1.4 Strategi Penyimpanan File (Storage Strategy)
 Semua aset digital HRIS akan dikelola secara terpusat melalui **Supabase Storage Buckets** (mengacu pada `.env` untuk kredensial URL dan API Key). Kebijakan penyimpanan akan dipisahkan menjadi beberapa *bucket* spesifik berdasarkan tingkat privasi dan jenis file dari berbagai modul:
@@ -903,9 +904,9 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`Kirim Ajuan Cuti`** | `/leave` (Employee) | All Employees | Guard: Menolak jika `Sisa Cuti <= 0` atau `Tanggal Mulai > Tanggal Selesai`. Wajib unggah surat dokter jika `Tipe = Cuti Sakit`. | `POST /api/leave/request` <br/> State: `STATUS_LEAVE` &rarr; `PENDING` | Toast Success: "Pengajuan cuti berhasil dikirim ke Atasan", Email Notifikasi ke Manager. |
-| **`Setujui Cuti` (Approve)** | `/leave` (Admin) | Manager, HR | Guard: Menolak jika status cuti bukan `PENDING`. | `PUT /api/leave/:id/approve` <br/> State: `STATUS_LEAVE` &rarr; `APPROVED`, Otomatis potong `sisa_cuti` karyawan. | Badge berubah Hijau ("Approved"), Notifikasi Push ke Karyawan, Audit Log `APPROVE_LEAVE`. |
-| **`Tolak Cuti` (Reject)** | `/leave` (Admin) | Manager, HR | Guard: Wajib mengisi Modal Alasan Penolakan (*Reason*). | `PUT /api/leave/:id/reject` <br/> State: `STATUS_LEAVE` &rarr; `REJECTED` | Badge berubah Merah ("Rejected"), Notifikasi Email ke Karyawan. |
+| **`Kirim Ajuan Cuti`** | `/leave` (Employee) | All Employees | Guard: Menolak jika `Sisa Cuti <= 0` atau `Tanggal Mulai > Tanggal Selesai`. Wajib unggah surat dokter jika `Tipe = Cuti Sakit`. | `POST /api/leave/request` <br/> State: `STATUS_LEAVE` &rarr; `PENDING` | **Toast Notification Top-Right: "Pengajuan Cuti Terkirim"**, Email Notifikasi ke Manager. |
+| **`Setujui Cuti` (Approve)** | `/leave` (Admin) | Manager, HR | Guard: Menolak jika status cuti bukan `PENDING`. | `PUT /api/leave/:id/approve` <br/> State: `STATUS_LEAVE` &rarr; `APPROVED`, Otomatis potong `sisa_cuti` karyawan. | **Toast Notification Top-Right: "Cuti Disetujui"**, Badge berubah Hijau ("Approved"), Audit Log `APPROVE_LEAVE`. |
+| **`Tolak Cuti` (Reject)** | Modal Form `RejectLeaveModal` | Manager, HR | Guard: Wajib menginput alasan penolakan pada Form Modal Interaktif (`RejectLeaveModal`). Dilarang menggunakan `prompt()` browser. | `PUT /api/leave/:id/reject` <br/> State: `STATUS_LEAVE` &rarr; `REJECTED` | **Toast Notification Top-Right: "Cuti Ditolak"**, Badge berubah Merah ("Rejected"), Audit Log `REJECT_LEAVE`. |
 
 ---
 
