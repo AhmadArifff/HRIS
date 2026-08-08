@@ -297,9 +297,9 @@ export const AttendanceTable: React.FC = () => {
           MODAL EXPORT REKAP ABSENSI
       ───────────────────────────────────────────── */}
       {showExportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Export Rekap Laporan Absensi
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -314,7 +314,7 @@ export const AttendanceTable: React.FC = () => {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                    className="w-full h-10 px-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -323,7 +323,7 @@ export const AttendanceTable: React.FC = () => {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                    className="w-full h-10 px-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -333,7 +333,7 @@ export const AttendanceTable: React.FC = () => {
                 <select
                   value={exportFormat}
                   onChange={(e) => setExportFormat(e.target.value)}
-                  className="w-full h-10 px-3 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-10 px-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 >
                   <option value="CSV">Format CSV (.csv)</option>
                   <option value="Excel">Format Microsoft Excel (.xlsx)</option>

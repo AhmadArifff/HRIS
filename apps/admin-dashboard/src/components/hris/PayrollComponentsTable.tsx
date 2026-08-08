@@ -188,9 +188,9 @@ export const PayrollComponentsTable = () => {
           1. MODAL TAMBAH KOMPONEN GAJI
       ───────────────────────────────────────────── */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Tambah Komponen Gaji Baru
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -207,7 +207,7 @@ export const PayrollComponentsTable = () => {
                   placeholder="Contoh: Tunjangan Jabatan / Potongan Telat"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -218,7 +218,7 @@ export const PayrollComponentsTable = () => {
                 <select
                   value={newType}
                   onChange={(e) => setNewType(e.target.value as "Allowance" | "Deduction")}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 >
                   <option value="Allowance">Tunjangan (Allowance)</option>
                   <option value="Deduction">Potongan (Deduction)</option>
@@ -234,7 +234,7 @@ export const PayrollComponentsTable = () => {
                   placeholder="Contoh: Rp 2.000.000 / - Rp 50.000 / hari"
                   value={newAmount}
                   onChange={(e) => setNewAmount(e.target.value)}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -275,9 +275,9 @@ export const PayrollComponentsTable = () => {
           2. MODAL EDIT KOMPONEN GAJI
       ───────────────────────────────────────────── */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Edit Komponen Gaji — {editingItem.id}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -291,7 +291,7 @@ export const PayrollComponentsTable = () => {
                   type="text"
                   value={editingItem.name}
                   onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -301,7 +301,7 @@ export const PayrollComponentsTable = () => {
                   type="text"
                   value={editingItem.amount}
                   onChange={(e) => setEditingItem({ ...editingItem, amount: e.target.value })}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 

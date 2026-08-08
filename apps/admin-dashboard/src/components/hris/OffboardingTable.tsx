@@ -188,9 +188,9 @@ export const OffboardingTable = () => {
           1. MODAL KELOLA CHECKLIST ASET
       ───────────────────────────────────────────── */}
       {showChecklistModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Checklist Clearance — {showChecklistModal.name}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -271,9 +271,9 @@ export const OffboardingTable = () => {
           2. MODAL DOWNLOAD LAPORAN
       ───────────────────────────────────────────── */}
       {showDownloadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Unduh Laporan Offboarding & Clearance
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">

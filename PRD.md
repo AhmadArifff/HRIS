@@ -859,14 +859,11 @@ Bagian ini mendefinisikan pembagian tugas (*task list*) yang jelas antara tiap d
 
 Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, aturan akses (RBAC), logika validasi (*Guard Clauses*), perubahan status (*State Transitions*), serta *UX Feedback* di seluruh modul aplikasi.
 
-### 7.1 Modul Core HR & Karyawan (Admin Panel)### 7.3 Modul Kehadiran & Master Shift
+### 7.1 Modul Core HR & Karyawan (Admin Panel)
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`+ Master Shift Baru`** | Modal Form `AddShiftModal` | Admin, HR | Guard: Wajib melengkapi Nama Shift, Jam Masuk, Jam Pulang, dan Toleransi Menit. | `POST /api/shifts` | Modal Dialog Form Interaktif. Data bertambah di tabel master shift secara *real-time*. |
-| **`+ Plotting Shift Karyawan`** | Modal Form `AssignShiftModal` | Admin, HR | Guard: Wajib memilih Karyawan, Master Shift, dan Tanggal Penugasan. | `POST /api/shift-assignments` | Modal Dialog Form Interaktif. Plotting jadwal karyawan diperbarui di tabel. |
-| **`Clock-In / Out`** | Mobile PWA & Camera Web | Karyawan | Guard: Memverifikasi radius Geofencing GPS (100m) dan deteksi keterlambatan *Shift Master*. | `POST /api/attendance/clock-in` <br/> State: `STATUS_ATTENDANCE` &rarr; `PRESENT / LATE` | Visual Kamera Scanner, Toast: "Clock-in Berhasil", Log `is_late` & `late_duration_minutes`. |
-| **`Export Rekap Absensi`** | Modal Form `ExportAttendanceModal` | Admin, HR | Guard: Wajib memilih rentang tanggal valid (Start Date & End Date). | `GET /api/attendance/export` | Modal Dialog Form Interaktif. File CSV/Excel terunduh otomatis. |olak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Success: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
+| **`+ Tambah Karyawan`** | Modal / Form `/employee/add` | Admin, HR | Menolak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Success: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
 | **`Edit Data` (Ikon Pensil)** | Inline / Page `/employee/edit/[id]` | Admin, HR | Cek ID Karyawan valid. | `PUT /api/employees/:id` | Toast Success: "Data karyawan diperbarui", Audit Log `UPDATE_EMPLOYEE`. |
 | **`Detail Karyawan` (Ikon Mata)** | Drawer / Page 360-View | Admin, HR, Manager | Cek token & hak akses departemen. | `GET /api/employees/:id/profile` | Menampilkan Profil 360 lengkap (Kontrak, Riwayat Absensi, Gaji). |
 | **`Tampilkan [5/10/20] Entri`** | Table Control | All Roles | Re-render halaman data berdasarkan entri terpilih. | Client-side Pagination Query `?limit=10&page=1` | Tabel diperbarui secara instan. |

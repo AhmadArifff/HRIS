@@ -263,12 +263,12 @@ export const ShiftTable: React.FC = () => {
       </div>
 
       {/* ─────────────────────────────────────────────
-          1. MODAL TAMBAH MASTER SHIFT BARU
+          1. MODAL TAMBAH MASTER SHIFT BARU (Full Viewport Backdrop Overlay z-[100000])
       ───────────────────────────────────────────── */}
       {showAddShiftModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Tambah Master Shift Kerja Baru
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -285,7 +285,7 @@ export const ShiftTable: React.FC = () => {
                   placeholder="Contoh: Shift Lembur Khusus"
                   value={newShiftName}
                   onChange={(e) => setNewShiftName(e.target.value)}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -298,7 +298,7 @@ export const ShiftTable: React.FC = () => {
                     type="time"
                     value={newStartTime}
                     onChange={(e) => setNewStartTime(e.target.value)}
-                    className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                    className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -309,7 +309,7 @@ export const ShiftTable: React.FC = () => {
                     type="time"
                     value={newEndTime}
                     onChange={(e) => setNewEndTime(e.target.value)}
-                    className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                    className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -323,7 +323,7 @@ export const ShiftTable: React.FC = () => {
                   placeholder="15"
                   value={newTolerance}
                   onChange={(e) => setNewTolerance(Number(e.target.value))}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -331,13 +331,13 @@ export const ShiftTable: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddShiftModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                  className="px-4 py-2.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+                  className="px-5 py-2.5 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition shadow-sm"
                 >
                   Simpan Master Shift
                 </button>
@@ -351,9 +351,9 @@ export const ShiftTable: React.FC = () => {
           2. MODAL EDIT MASTER SHIFT
       ───────────────────────────────────────────── */}
       {editingShift && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Edit Master Shift — {editingShift.id}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -367,7 +367,7 @@ export const ShiftTable: React.FC = () => {
                   type="text"
                   value={editingShift.name}
                   onChange={(e) => setEditingShift({ ...editingShift, name: e.target.value })}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -378,7 +378,7 @@ export const ShiftTable: React.FC = () => {
                     type="time"
                     value={editingShift.startTime}
                     onChange={(e) => setEditingShift({ ...editingShift, startTime: e.target.value })}
-                    className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                    className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -387,7 +387,7 @@ export const ShiftTable: React.FC = () => {
                     type="time"
                     value={editingShift.endTime}
                     onChange={(e) => setEditingShift({ ...editingShift, endTime: e.target.value })}
-                    className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                    className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -398,7 +398,7 @@ export const ShiftTable: React.FC = () => {
                   type="number"
                   value={editingShift.toleranceMinutes}
                   onChange={(e) => setEditingShift({ ...editingShift, toleranceMinutes: Number(e.target.value) })}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -406,13 +406,13 @@ export const ShiftTable: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEditingShift(null)}
-                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                  className="px-4 py-2.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+                  className="px-5 py-2.5 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition shadow-sm"
                 >
                   Perbarui Shift
                 </button>
@@ -426,9 +426,9 @@ export const ShiftTable: React.FC = () => {
           3. MODAL PLOTTING SHIFT KARYAWAN
       ───────────────────────────────────────────── */}
       {showAssignShiftModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Plotting Penugasan Shift Karyawan
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -446,7 +446,7 @@ export const ShiftTable: React.FC = () => {
                     else if (e.target.value === "Siti Aminah") { setAssignEmpCode("EMP-002"); setAssignDepartment("HR"); }
                     else { setAssignEmpCode("EMP-003"); setAssignDepartment("Marketing"); }
                   }}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 >
                   <option value="Budi Santoso">Budi Santoso (EMP-001 - IT)</option>
                   <option value="Siti Aminah">Siti Aminah (EMP-002 - HR)</option>
@@ -459,7 +459,7 @@ export const ShiftTable: React.FC = () => {
                 <select
                   value={assignShiftName}
                   onChange={(e) => setAssignShiftName(e.target.value)}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 >
                   {shifts.map((s) => (
                     <option key={s.id} value={s.name}>
@@ -475,7 +475,7 @@ export const ShiftTable: React.FC = () => {
                   type="date"
                   value={assignDate}
                   onChange={(e) => setAssignDate(e.target.value)}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -483,13 +483,13 @@ export const ShiftTable: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAssignShiftModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                  className="px-4 py-2.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+                  className="px-5 py-2.5 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition shadow-sm"
                 >
                   Simpan Plotting Shift
                 </button>
@@ -503,9 +503,9 @@ export const ShiftTable: React.FC = () => {
           4. MODAL EDIT PLOTTING SHIFT
       ───────────────────────────────────────────── */}
       {editingAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Ubah Plotting Shift — {editingAssignment.employeeName}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
@@ -518,7 +518,7 @@ export const ShiftTable: React.FC = () => {
                 <select
                   value={editingAssignment.shiftName}
                   onChange={(e) => setEditingAssignment({ ...editingAssignment, shiftName: e.target.value })}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 >
                   {shifts.map((s) => (
                     <option key={s.id} value={s.name}>
@@ -534,7 +534,7 @@ export const ShiftTable: React.FC = () => {
                   type="date"
                   value={editingAssignment.date}
                   onChange={(e) => setEditingAssignment({ ...editingAssignment, date: e.target.value })}
-                  className="w-full h-11 px-4 text-sm bg-transparent border border-gray-300 dark:border-gray-700 rounded-xl text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
+                  className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -542,13 +542,13 @@ export const ShiftTable: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEditingAssignment(null)}
-                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                  className="px-4 py-2.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+                  className="px-5 py-2.5 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition shadow-sm"
                 >
                   Perbarui Plotting
                 </button>
