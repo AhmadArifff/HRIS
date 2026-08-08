@@ -158,9 +158,14 @@ erDiagram
     ATTENDANCE {
         uuid id PK
         uuid employee_id FK
+        uuid shift_id FK "Refers to SHIFT_MASTER"
         date record_date
         datetime clock_in
         datetime clock_out
+        boolean is_late
+        int late_duration_minutes
+        int early_leave_minutes
+        int overtime_minutes
         uuid status_id FK "Refers to MASTER_STATUS"
         string location_in_latlng
         string location_out_latlng
@@ -406,6 +411,13 @@ erDiagram
         uuid status_id FK "Refers to MASTER_STATUS"
         uuid approver_id FK
     }
+    SHIFT_MASTER {
+        uuid id PK
+        string name "Morning, Evening, Night, Reguler"
+        time start_time
+        time end_time
+        int tolerance_minutes
+    }
     SHIFT_SCHEDULE {
         uuid id PK
         uuid department_id FK
@@ -418,7 +430,7 @@ erDiagram
         uuid id PK
         uuid schedule_id FK
         uuid employee_id FK
-        string shift_type "Morning, Evening, Night"
+        uuid shift_id FK "Refers to SHIFT_MASTER"
         date assign_date
     }
 
@@ -559,6 +571,8 @@ erDiagram
     DEPARTMENT ||--o{ SHIFT_SCHEDULE : "has"
     SHIFT_SCHEDULE ||--o{ SHIFT_ASSIGNMENT : "contains"
     EMPLOYEE ||--o{ SHIFT_ASSIGNMENT : "assigned to"
+    SHIFT_MASTER ||--o{ SHIFT_ASSIGNMENT : "defines"
+    SHIFT_MASTER ||--o{ ATTENDANCE : "used in"
     
     COMPANY ||--o{ DEPARTMENT : "has"
     COMPANY ||--o{ PAYROLL_BATCH : "processes"
@@ -590,6 +604,7 @@ erDiagram
 ### 3.2 Payroll & Kompensasi (Wajib)
 **Target Pengguna:** Tim HR & Keuangan
 *   **Dynamic Salary Calculation:** Kalkulator gaji otomatis terintegrasi dengan data *Time & Attendance* (potongan telat, tambahan lembur).
+*   **Automated Deductions:** Pemotongan gaji otomatis yang menarik data keterlambatan harian (`late_duration_minutes`) dan pulang awal (`early_leave_minutes`) dari modul absensi tanpa perlu hitung selisih manual.
 *   **Tax & BPJS Engine:** Kalkulasi otomatis PPh 21, BPJS Kesehatan, dan BPJS Ketenagakerjaan berdasarkan persentase peraturan pemerintah terbaru.
 *   **Payslip Generation:** Ekspor dan distribusi slip gaji digital (PDF) via email otomatis atau download dari dashboard karyawan.
 *   **Payroll Disbursement:** Format ekspor bank standard untuk bulk transfer gaji.
@@ -597,9 +612,10 @@ erDiagram
 ### 3.3 Time & Attendance (Wajib)
 **Target Pengguna:** Seluruh Karyawan
 *   **Digital Clock-In/Out:** Absensi real-time berbasis Web/Mobile PWA dengan deteksi koordinat GPS dan unggah foto (Anti-Spoofing).
-*   **Shift Management:** Penjadwalan jam kerja fleksibel / shift (pagi, siang, malam) dinamis.
+*   **Shift & Schedule Sync:** Absensi secara *real-time* tersinkronisasi dengan jadwal master (*Shift Master*). Sistem mendeteksi otomatis jika jam *clock-in* melebihi batas waktu shift + toleransi (Late) atau jam *clock-out* di bawah jam pulang shift (Early Leave).
+*   **Shift Management:** Penjadwalan jam kerja fleksibel / shift dinamis yang ditarik dari *SHIFT_MASTER*.
 *   **Leave Management:** Pengajuan cuti digital (tahunan, sakit, izin) dengan alur approval bertingkat (Atasan langsung -> HR) via Notifikasi.
-*   **Overtime Tracking:** Pengajuan dan persetujuan klaim jam lembur karyawan.
+*   **Overtime Tracking:** Pengajuan dan persetujuan klaim jam lembur karyawan yang dicocokkan dengan *clock-out* aktual.
 
 ### 3.4 Rekrutmen & Onboarding (Penting)
 **Target Pengguna:** Tim HR & Kandidat
@@ -835,3 +851,69 @@ Bagian ini mendefinisikan pembagian tugas (*task list*) yang jelas antara tiap d
 *   [ ] Manajemen *Backlog* Jira/Trello berdasarkan temuan QA.
 *   [ ] Pemantauan *KPI / Success Metrics* setelah sistem *live* (Misal: memantau *Dashboard Adoption Rate*).
 *   [ ] Koordinasi penyelesaian blokade pengembangan (*blockers*) antar tim FE, BE, dan QA.
+
+---
+
+## 7. Spesifikasi Element Button, Action & Business Logic UI
+
+Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, aturan akses (RBAC), logika validasi (*Guard Clauses*), perubahan status (*State Transitions*), serta *UX Feedback* di seluruh modul aplikasi.
+
+### 7.1 Modul Core HR & Karyawan (Admin Panel)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`+ Tambah Karyawan`** | Modal / Form `/employee/add` | Admin, HR | Menolak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Success: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
+| **`Edit Data` (Ikon Pensil)** | Inline / Page `/employee/edit/[id]` | Admin, HR | Cek ID Karyawan valid. | `PUT /api/employees/:id` | Toast Success: "Data karyawan diperbarui", Audit Log `UPDATE_EMPLOYEE`. |
+| **`Detail Karyawan` (Ikon Mata)** | Drawer / Page 360-View | Admin, HR, Manager | Cek token & hak akses departemen. | `GET /api/employees/:id/profile` | Menampilkan Profil 360 lengkap (Kontrak, Riwayat Absensi, Gaji). |
+| **`Tampilkan [5/10/20] Entri`** | Table Control | All Roles | Re-render halaman data berdasarkan entri terpilih. | Client-side Pagination Query `?limit=10&page=1` | Tabel diperbarui secara instan. |
+| **`Pencarian Karyawan`** | Table Search Bar | All Roles | Debounce input 300ms untuk meminimalisir re-render / API call. | `GET /api/employees?search=query` | Filter baris tabel secara dinamis. |
+
+---
+
+### 7.2 Modul Kehadiran & Absensi (Employee Portal & Admin)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Clock-In` (Absen Masuk)** | `/attendance` (Employee) | All Employees | Guard: Wajib mengambil foto selfie & lokasi GPS terdeteksi dalam geofence kantor. Menolak jika sudah clock-in hari ini. | `POST /api/attendance/clock-in` <br/> State: Jika jam &le; 08:00 &rarr; `HADIR`, jika > 08:00 &rarr; `TERLAMBAT` | Toast + Sound Beep Success, Tampilan status berubah hijau, Audit Log `CLOCK_IN`. |
+| **`Clock-Out` (Absen Keluar)** | `/attendance` (Employee) | All Employees | Guard: Menolak jika belum Clock-In atau sudah Clock-Out hari ini. | `POST /api/attendance/clock-out` <br/> State: Updating timestamp `clock_out` | Toast Success: "Terima kasih atas kerja keras hari ini!". |
+| **`Export Rekap CSV`** | `/attendance` (Admin) | HR, Manager | Guard: Wajib memilih rentang tanggal awal dan akhir. | `GET /api/attendance/export?start_date=X&end_date=Y` | Trigger download file CSV/Excel `Recap_Absensi.csv`. |
+
+---
+
+### 7.3 Modul Pengajuan & Persetujuan Cuti (Employee & Admin)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Kirim Ajuan Cuti`** | `/leave` (Employee) | All Employees | Guard: Menolak jika `Sisa Cuti <= 0` atau `Tanggal Mulai > Tanggal Selesai`. Wajib unggah surat dokter jika `Tipe = Cuti Sakit`. | `POST /api/leave/request` <br/> State: `STATUS_LEAVE` &rarr; `PENDING` | Toast Success: "Pengajuan cuti berhasil dikirim ke Atasan", Email Notifikasi ke Manager. |
+| **`Setujui Cuti` (Approve)** | `/leave` (Admin) | Manager, HR | Guard: Menolak jika status cuti bukan `PENDING`. | `PUT /api/leave/:id/approve` <br/> State: `STATUS_LEAVE` &rarr; `APPROVED`, Otomatis potong `sisa_cuti` karyawan. | Badge berubah Hijau ("Approved"), Notifikasi Push ke Karyawan, Audit Log `APPROVE_LEAVE`. |
+| **`Tolak Cuti` (Reject)** | `/leave` (Admin) | Manager, HR | Guard: Wajib mengisi Modal Alasan Penolakan (*Reason*). | `PUT /api/leave/:id/reject` <br/> State: `STATUS_LEAVE` &rarr; `REJECTED` | Badge berubah Merah ("Rejected"), Notifikasi Email ke Karyawan. |
+
+---
+
+### 7.4 Modul Payroll & Penggajian (Admin Panel)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`+ Tambah Komponen Gaji`** | `/payroll/components` | HR, Finance | Guard: Menolak jika Nama Komponen atau Tipe (Tunjangan/Potongan) kosong. | `POST /api/payroll-components` | Toast Success: "Komponen Gaji ditambahkan". |
+| **`Generate Payroll`** | `/payroll/generate` | HR, Finance | Guard: Menolak jika periode bulan berjalan sudah pernah di-generate (*Prevent Duplicate Batch*). | `POST /api/payroll/generate-batch` <br/> State: `STATUS_PAYROLL` &rarr; `PROCESSED` | Modal Loader Progress Bar 0-100%, Toast: "Payroll X Karyawan Selesai Di-generate". |
+| **`Publish & Distribusi Slip`**| `/payroll/generate` | HR, Finance | Guard: Hanya aktif jika status Payroll = `PROCESSED`. | `POST /api/payroll/publish` <br/> State: `STATUS_PAYROLL` &rarr; `PUBLISHED` | Email otomatis berisi lampiran PDF Slip Gaji terenkripsi ke seluruh Karyawan. |
+
+---
+
+### 7.5 Modul Rekrutmen / ATS (Admin Panel)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Drag & Drop Kanban Card`** | `/recruitment/kanban` | HR, Recruiter | Guard: Mencegah perpindahan kartu dari `Applied` langsung ke `Hired` tanpa tahap `Interview`. | `PATCH /api/applications/:id/status` <br/> State: `APPLICATION_STATUS` &rarr; `SCREENING / INTERVIEW / OFFERED / HIRED` | Animasi pergerakan kartu halus (Framer Motion), Notifikasi status kandidat diperbarui. |
+| **`Simpan Penilaian Wawancara`**| `/recruitment/candidate/[id]` | HR, Interviewer | Guard: Menolak jika skor penilaian 1-5 atau catatan wawancara belum terisi. | `POST /api/applications/:id/interview-score` | Toast Success: "Hasil wawancara berhasil disimpan". |
+
+---
+
+### 7.6 Modul Performance KPI, Reimbursement & Offboarding
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Kirim Evaluasi KPI`** | `/performance` | All Employees | Guard: Wajib mengisi seluruh kuesioner evaluasi 360 (Skala 1-5). | `POST /api/performance-reviews` <br/> State: `STATUS_REVIEW` &rarr; `SUBMITTED` | Toast Success: "Evaluasi Kinerja 360 Terkirim", Status berubah Completed. |
+| **`Kirim Ajuan Klaim`** | `/reimbursement` | All Employees | Guard: Nominal > 0 & Wajib unggah foto/PDF bukti struk transaksi. | `POST /api/reimbursements` <br/> State: `STATUS_REIMBURSEMENT` &rarr; `PENDING` | Toast Success: "Klaim reimbursement terkirim ke Tim Keuangan". |
+| **`Kelola Checklist Offboarding`**| `/offboarding` | HR, IT | Guard: Hanya bisa diselesaikan jika seluruh checklist pengembalian aset tercentang. | `PUT /api/offboarding/:id/clearance` <br/> State: `asset_cleared` &rarr; `true`, `STATUS_EMPLOYEE` &rarr; `TERMINATED` | Progress Bar mencapai 100%, Sertifikat Pengalaman Kerja (Parkir) siap didownload. |
+
