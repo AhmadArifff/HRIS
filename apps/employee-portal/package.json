@@ -1,9 +1,11 @@
 {
   "name": "employee-portal",
   "version": "0.1.0",
+  "author": "ahmad arif",
+  "license": "HRISCorp.dev Enterprise License",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3001",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint"

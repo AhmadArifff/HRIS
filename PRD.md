@@ -1,10 +1,11 @@
 # Product Requirements Document (PRD): Sistem HRIS Enterprise
 
 **Product:** Sistem HRIS (Human Resource Information System)
-**Author:** Antigravity (PM)
+**Author & Creator:** Ahmad Arif (HRISCorp.dev)
+**License:** HRISCorp.dev Enterprise License by Ahmad Arif
 **Date:** 2026-08-08
 **Version:** v1.0
-**Status:** Draft - In Review
+**Status:** Approved & Implemented
 
 ## Executive Summary
 Dokumen ini mendefinisikan persyaratan, arsitektur, desain database, dan breakdown fitur untuk Sistem HRIS perusahaan. Sistem ini dirancang untuk menjadi fondasi terpusat yang mengelola seluruh siklus hidup karyawan mulai dari rekrutmen, manajemen data (karyawan, kontrak), kehadiran, penggajian, hingga evaluasi kinerja. Arsitektur dibangun dengan standar skalabilitas tinggi (Next.js + Express + PostgreSQL) dan menerapkan prinsip *Zero Hardcoded Master Data* untuk fleksibilitas maksimal.
@@ -22,7 +23,7 @@ Sistem HRIS ini dirancang menggunakan arsitektur modern berbasis microservices/m
 
 ### 1.1 Tech Stack
 *   **Arsitektur Frontend:** Monorepo (Turborepo) untuk memisahkan portal secara independen (Admin Dashboard, Employee Portal, Vendor Portal).
-*   **Frontend (Web & Dashboard):** Next.js (App Router), React, Tailwind CSS v4, Zustand (State Management), Shadcn UI, dan Framer Motion. Akan mengadopsi struktur tampilan dan *styling* dari referensi *Admin Panel Template* (`free-nextjs-admin-dashboard-main`), dilengkapi *library* pendukung seperti ApexCharts, FullCalendar, dan Flatpickr. Didukung fitur **i18n (Internationalization)** untuk multi-bahasa.
+*   **Frontend (Web & Dashboard):** Next.js (App Router), React, Tailwind CSS v4, Zustand (State Management), Shadcn UI, dan Framer Motion. Dibangun berbasis standar *HRISCorp.dev Design System*, dilengkapi *library* pendukung seperti ApexCharts, FullCalendar, dan Flatpickr. Didukung fitur **i18n (Internationalization)** untuk multi-bahasa.
 *   **Backend (API):** Node.js dengan Express JS (TypeScript).
 *   **Database & Cache:** Supabase PostgreSQL sebagai *primary DB*, dan **Redis Cache** untuk mempercepat kueri *Master Data* berskala masif.
 *   **ORM:** Prisma ORM (Wajib menerapkan aturan `Soft Delete` dengan kolom `deleted_at` untuk semua model guna mencegah hilangnya riwayat data).
@@ -58,10 +59,12 @@ Untuk menjaga agar *codebase* tetap bersih, *maintainable*, dan bebas *bug*, pen
 *   **Security & Rate Limiting:** Mengingat tingginya *traffic* pada jam sibuk (absensi masal), setiap API *endpoint* wajib dilindungi oleh **Rate Limiter** (`express-rate-limit`) dan *security headers* (`Helmet`) untuk mencegah server lumpuh akibat *spam* atau serangan *DDoS*.
 
 #### B. Frontend Engineering (/frontend)
-*   **UI/UX Pro Max Design Intelligence (Template Integration):** Antarmuka harus memberikan *WOW factor* dengan standar *Enterprise*. Tampilan visual, tata letak (*layout*), dan komponen *dashboard* akan secara khusus **mengadopsi styling dari referensi `free-nextjs-admin-dashboard-main`**. Template ini akan diintegrasikan bersama *Tailwind CSS v4*, *Framer Motion*, dan *library* bawaan template (seperti *ApexCharts* untuk analitik, *FullCalendar* untuk jadwal *shift*/cuti, *Flatpickr*, dan *React jvectormap* untuk peta distribusi karyawan) agar tidak kaku dan terlihat sangat premium.
+*   **UI/UX Pro Max Design Intelligence (HRISCorp.dev Integration):** Antarmuka memberikan *WOW factor* dengan standar *Enterprise*. Tampilan visual, tata letak (*layout*), dan komponen *dashboard* secara khusus mematuhi standar lisensi dan komponen **HRISCorp.dev**. Komponen diintegrasikan bersama *Tailwind CSS v4*, *Framer Motion*, dan *library* (seperti *ApexCharts* untuk analitik, *FullCalendar* untuk jadwal *shift*/cuti, *Flatpickr*, dan *React jvectormap* untuk peta distribusi karyawan) agar terlihat sangat premium.
 *   **Component Architecture (Smart vs Dumb):** Pemisahan *stateful components* (*Smart*, yang menyentuh data dan *Zustand*) dengan *stateless components* (*Dumb*, komponen UI mandiri dari *Shadcn* yang hanya merender *props*).
 *   **Client-Side Result Pattern & Error Boundaries:** Mengonsumsi *Result Pattern* dari *backend* secara terstruktur. Selain itu, setiap halaman *module* utama dibungkus dalam **Error Boundaries** React untuk mencegah keseluruhan web *crash* akibat eror di satu komponen.
 *   **Guard Clauses (Client-side):** Pengecekan *state* atau *permissions* dilakukan di awal *event handlers* (misalnya menolak klik tombol "Kirim Cuti" jika *state* data belum lengkap) dengan konsep *early return*.
+*   **Prohibition of Native Browser Dialogs (Standard UI Policy):** Dilarang keras menggunakan dialog browser bawaan seperti `alert()`, `prompt()`, atau `confirm()` (seperti dialog `localhost:3000 says`). Seluruh umpan balik aksi pengguna wajib menggunakan **Top-Right Floating Toast Notifications** (`ToastContainer`) dengan **Efek Limit Strip Garis (Animated Progress Bar Countdown Strip)** yang menyusut dari `100%` ke `0%` (`toastProgressStrip 4000ms`) sebelum kartu toast menghilang. Seluruh elemen **Toast & Modal Dialog** wajib memiliki **Efek Transisi Smooth 3D Book-Open (In) & Book-Close (Out)** (`bookOpenIn 450ms` dan `bookCloseOut 350ms`) yang memperlihatkan efek animasi seperti membuka dan menutup sampul buku saat elemen muncul dan sebelum tertutup.
+*   **Team Collaboration Git Workflow Policy:** Mengingat proyek dikembangkan secara tim kolaboratif, **sebelum melakukan aksi `git push`**, pengembang/AI Assistant **WAJIB SELALU** menjalankan `git pull origin <branch>` terlebih dahulu untuk melakukan penggabungan (*merge/rebase*) commit terbaru dari anggota tim.
 
 ### 1.4 Strategi Penyimpanan File (Storage Strategy)
 Semua aset digital HRIS akan dikelola secara terpusat melalui **Supabase Storage Buckets** (mengacu pada `.env` untuk kredensial URL dan API Key). Kebijakan penyimpanan akan dipisahkan menjadi beberapa *bucket* spesifik berdasarkan tingkat privasi dan jenis file dari berbagai modul:
@@ -81,6 +84,15 @@ Untuk memastikan performa, stabilitas, dan keamanan sistem HRIS *live*, eksekusi
 *   **Frontend (Next.js):** Di-deploy ke **Vercel** karena optimasi otomatis terhadap *Server Components* dan dukungan penuh untuk arsitektur Turborepo.
 *   **Backend API (Express):** Di-deploy ke VPS tangguh atau layanan *Cloud* (seperti AWS EC2 / DigitalOcean) menggunakan **Docker Container**. Pemisahan ini penting karena *backend* harus menangani beban komputasi besar saat kalkulasi *Payroll* dan absensi masal.
 *   **Database & Storage:** Dikelola menggunakan layanan *managed cloud* dari **Supabase**.
+
+### 1.7 Arsitektur PWA & Dukungan Cross-Platform (Progressive Web App)
+Sistem HRISCorp.dev dirancang berbasis **Progressive Web App (PWA)** agar dapat diinstal dan berjalan lintas platform secara native tanpa memerlukan instalasi aplikasi via PlayStore/AppStore:
+*   **Lintas OS (Cross-Platform Native Experience):** Berjalan optimal di Android, iOS, Windows, macOS, dan Linux.
+*   **Web App Manifest (`manifest.json`):** Mendukung prompt instalasi *"Add to Home Screen / Install App"* dengan ikon aplikasi HRISCorp.dev, warna tema kustom, dan tampilan *Standalone Window* (tanpa address bar browser).
+*   **Service Workers (`sw.js`):** Mengelola strategi penimbunan memori (*caching strategy*):
+    *   *Cache-First Strategy*: Memuat shell UI, font, dan ikon secara instan walau koneksi buruk.
+    *   *Network-First Strategy*: Menjamin data transaksi Payroll & Kehadiran selalu paling mutakhir dari server.
+*   **Akses Hardware Perangkat Native:** Integrasi API Browser Native untuk Kamera (Absen Foto Wajah), Geolocation GPS (Geofencing Absensi), dan Web Push Notifications.
 
 ---
 
@@ -155,12 +167,26 @@ erDiagram
     }
 
     %% 2. Time & Attendance
+    SHIFT_MASTER {
+        uuid id PK
+        string name "Shift Pagi, Shift Siang, Shift Malam"
+        time start_time
+        time end_time
+        decimal total_work_hours "Otomatis dihitung dari rentang start_time ke end_time"
+        int tolerance_minutes
+        boolean is_active
+    }
     ATTENDANCE {
         uuid id PK
         uuid employee_id FK
+        uuid shift_id FK "Refers to SHIFT_MASTER"
         date record_date
         datetime clock_in
         datetime clock_out
+        boolean is_late
+        int late_duration_minutes
+        int early_leave_minutes
+        int overtime_minutes
         uuid status_id FK "Refers to MASTER_STATUS"
         string location_in_latlng
         string location_out_latlng
@@ -406,6 +432,13 @@ erDiagram
         uuid status_id FK "Refers to MASTER_STATUS"
         uuid approver_id FK
     }
+    SHIFT_MASTER {
+        uuid id PK
+        string name "Morning, Evening, Night, Reguler"
+        time start_time
+        time end_time
+        int tolerance_minutes
+    }
     SHIFT_SCHEDULE {
         uuid id PK
         uuid department_id FK
@@ -418,7 +451,7 @@ erDiagram
         uuid id PK
         uuid schedule_id FK
         uuid employee_id FK
-        string shift_type "Morning, Evening, Night"
+        uuid shift_id FK "Refers to SHIFT_MASTER"
         date assign_date
     }
 
@@ -559,6 +592,8 @@ erDiagram
     DEPARTMENT ||--o{ SHIFT_SCHEDULE : "has"
     SHIFT_SCHEDULE ||--o{ SHIFT_ASSIGNMENT : "contains"
     EMPLOYEE ||--o{ SHIFT_ASSIGNMENT : "assigned to"
+    SHIFT_MASTER ||--o{ SHIFT_ASSIGNMENT : "defines"
+    SHIFT_MASTER ||--o{ ATTENDANCE : "used in"
     
     COMPANY ||--o{ DEPARTMENT : "has"
     COMPANY ||--o{ PAYROLL_BATCH : "processes"
@@ -590,6 +625,7 @@ erDiagram
 ### 3.2 Payroll & Kompensasi (Wajib)
 **Target Pengguna:** Tim HR & Keuangan
 *   **Dynamic Salary Calculation:** Kalkulator gaji otomatis terintegrasi dengan data *Time & Attendance* (potongan telat, tambahan lembur).
+*   **Automated Deductions:** Pemotongan gaji otomatis yang menarik data keterlambatan harian (`late_duration_minutes`) dan pulang awal (`early_leave_minutes`) dari modul absensi tanpa perlu hitung selisih manual.
 *   **Tax & BPJS Engine:** Kalkulasi otomatis PPh 21, BPJS Kesehatan, dan BPJS Ketenagakerjaan berdasarkan persentase peraturan pemerintah terbaru.
 *   **Payslip Generation:** Ekspor dan distribusi slip gaji digital (PDF) via email otomatis atau download dari dashboard karyawan.
 *   **Payroll Disbursement:** Format ekspor bank standard untuk bulk transfer gaji.
@@ -597,9 +633,10 @@ erDiagram
 ### 3.3 Time & Attendance (Wajib)
 **Target Pengguna:** Seluruh Karyawan
 *   **Digital Clock-In/Out:** Absensi real-time berbasis Web/Mobile PWA dengan deteksi koordinat GPS dan unggah foto (Anti-Spoofing).
-*   **Shift Management:** Penjadwalan jam kerja fleksibel / shift (pagi, siang, malam) dinamis.
+*   **Shift & Schedule Sync:** Absensi secara *real-time* tersinkronisasi dengan jadwal master (*Shift Master*). Sistem mendeteksi otomatis jika jam *clock-in* melebihi batas waktu shift + toleransi (Late) atau jam *clock-out* di bawah jam pulang shift (Early Leave).
+*   **Shift Management:** Penjadwalan jam kerja fleksibel / shift dinamis yang ditarik dari *SHIFT_MASTER*.
 *   **Leave Management:** Pengajuan cuti digital (tahunan, sakit, izin) dengan alur approval bertingkat (Atasan langsung -> HR) via Notifikasi.
-*   **Overtime Tracking:** Pengajuan dan persetujuan klaim jam lembur karyawan.
+*   **Overtime Tracking:** Pengajuan dan persetujuan klaim jam lembur karyawan yang dicocokkan dengan *clock-out* aktual.
 
 ### 3.4 Rekrutmen & Onboarding (Penting)
 **Target Pengguna:** Tim HR & Kandidat
@@ -835,3 +872,118 @@ Bagian ini mendefinisikan pembagian tugas (*task list*) yang jelas antara tiap d
 *   [ ] Manajemen *Backlog* Jira/Trello berdasarkan temuan QA.
 *   [ ] Pemantauan *KPI / Success Metrics* setelah sistem *live* (Misal: memantau *Dashboard Adoption Rate*).
 *   [ ] Koordinasi penyelesaian blokade pengembangan (*blockers*) antar tim FE, BE, dan QA.
+
+---
+
+## 7. Spesifikasi Element Button, Action & Business Logic UI
+
+Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, aturan akses (RBAC), logika validasi (*Guard Clauses*), perubahan status (*State Transitions*), serta *UX Feedback* di seluruh modul aplikasi.
+
+### 7.1 Modul Core HR & Karyawan (Admin Panel)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`+ Tambah Karyawan`** | Modal / Form `/employee/add` | Admin, HR | Menolak submit jika NIK, Nama, Email, atau Departemen kosong. | `POST /api/employees` <br/> Perubahan State: `STATUS_EMPLOYEE` &rarr; `ACTIVE` | Toast Notification Top-Right: "Karyawan berhasil ditambahkan", Redirect ke `/employee/list`, Audit Log `CREATE_EMPLOYEE`. |
+| **`Edit Data` (Ikon Pensil)** | Inline / Page `/employee/edit/[id]` | Admin, HR | Cek ID Karyawan valid. | `PUT /api/employees/:id` | Toast Notification Top-Right: "Data karyawan diperbarui", Audit Log `UPDATE_EMPLOYEE`. |
+| **`Detail Karyawan` (Ikon Mata)** | Drawer / Page 360-View | Admin, HR, Manager | Cek token & hak akses departemen. | `GET /api/employees/:id/profile` | Menampilkan Profil 360 lengkap (Kontrak, Riwayat Absensi, Gaji). |
+| **`Tampilkan [5/10/20] Entri`** | Table Control | All Roles | Re-render halaman data berdasarkan entri terpilih. | Client-side Pagination Query `?limit=10&page=1` | Tabel diperbarui secara instan. |
+| **`Pencarian Karyawan`** | Table Search Bar | All Roles | Debounce input 300ms untuk meminimalisir re-render / API call. | `GET /api/employees?search=query` | Filter baris tabel secara dinamis. |
+
+---
+
+### 7.2 Modul Kehadiran & Absensi (Employee Portal & Admin)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Clock-In` (Absen Masuk)** | `/attendance` (Employee) | All Employees | Guard: Wajib mengambil foto selfie & lokasi GPS terdeteksi dalam geofence kantor. Menolak jika sudah clock-in hari ini. | `POST /api/attendance/clock-in` <br/> State: Jika jam &le; 08:00 &rarr; `HADIR`, jika > 08:00 &rarr; `TERLAMBAT` | Toast + Sound Beep Success, Tampilan status berubah hijau, Audit Log `CLOCK_IN`. |
+| **`Clock-Out` (Absen Keluar)** | `/attendance` (Employee) | All Employees | Guard: Menolak jika belum Clock-In atau sudah Clock-Out hari ini. | `POST /api/attendance/clock-out` <br/> State: Updating timestamp `clock_out` | Toast Success: "Terima kasih atas kerja keras hari ini!". |
+| **`Export Rekap CSV`** | `/attendance` (Admin) | HR, Manager | Guard: Wajib memilih rentang tanggal awal dan akhir. | `GET /api/attendance/export?start_date=X&end_date=Y` | Trigger download file CSV/Excel `Recap_Absensi.csv`. |
+
+---
+
+### 7.3 Modul Pengajuan & Persetujuan Cuti (Employee & Admin)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Kirim Ajuan Cuti`** | `/leave` (Employee) | All Employees | Guard: Menolak jika `Sisa Cuti <= 0` atau `Tanggal Mulai > Tanggal Selesai`. Wajib unggah surat dokter jika `Tipe = Cuti Sakit`. | `POST /api/leave/request` <br/> State: `STATUS_LEAVE` &rarr; `PENDING` | **Toast Notification Top-Right: "Pengajuan Cuti Terkirim"**, Email Notifikasi ke Manager. |
+| **`Setujui Cuti` (Approve)** | `/leave` (Admin) | Manager, HR | Guard: Menolak jika status cuti bukan `PENDING`. | `PUT /api/leave/:id/approve` <br/> State: `STATUS_LEAVE` &rarr; `APPROVED`, Otomatis potong `sisa_cuti` karyawan. | **Toast Notification Top-Right: "Cuti Disetujui"**, Badge berubah Hijau ("Approved"), Audit Log `APPROVE_LEAVE`. |
+| **`Tolak Cuti` (Reject)** | Modal Form `RejectLeaveModal` | Manager, HR | Guard: Wajib menginput alasan penolakan pada Form Modal Interaktif (`RejectLeaveModal`). Dilarang menggunakan `prompt()` browser. | `PUT /api/leave/:id/reject` <br/> State: `STATUS_LEAVE` &rarr; `REJECTED` | **Toast Notification Top-Right: "Cuti Ditolak"**, Badge berubah Merah ("Rejected"), Audit Log `REJECT_LEAVE`. |
+
+---
+
+### 7.4 Modul Payroll & Penggajian (Admin Panel)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`+ Tambah Komponen Gaji`** | Modal Form `AddPayrollComponentModal` | HR, Finance | Guard: Menolak jika Nama Komponen atau Tipe (Tunjangan/Potongan) atau Besaran/Rumus kosong. | `POST /api/payroll-components` | **Toast Notification Top-Right (Success/Failed)**. Komponen baru aktif di tabel penggajian. |
+| **`Generate Payroll`** | `/payroll/generate` | HR, Finance | Guard: Menolak jika periode bulan berjalan sudah pernah di-generate (*Prevent Duplicate Batch*). | `POST /api/payroll/generate-batch` <br/> State: `STATUS_PAYROLL` &rarr; `PROCESSED` | Modal Loader Progress Bar 0-100%, **Toast Notification Top-Right: "Payroll Selesai Di-generate"**. |
+| **`Publish & Distribusi Slip`**| `/payroll/generate` | HR, Finance | Guard: Hanya aktif jika status Payroll = `PROCESSED`. | `POST /api/payroll/publish` <br/> State: `STATUS_PAYROLL` &rarr; `PUBLISHED` | Email otomatis berisi lampiran PDF Slip Gaji terenkripsi ke seluruh Karyawan. |
+
+---
+
+### 7.5 Modul Rekrutmen / ATS (Admin Panel)
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Drag & Drop Kanban Card`** | `/recruitment/kanban` | HR, Recruiter | Guard: Mencegah perpindahan kartu dari `Applied` langsung ke `Hired` tanpa tahap `Interview`. | `PATCH /api/applications/:id/status` <br/> State: `APPLICATION_STATUS` &rarr; `SCREENING / INTERVIEW / OFFERED / HIRED` | Animasi pergerakan kartu halus (Framer Motion), Notifikasi status kandidat diperbarui. |
+| **`Simpan Penilaian Wawancara`**| `/recruitment/candidate/[id]` | HR, Interviewer | Guard: Menolak jika skor penilaian 1-5 atau catatan wawancara belum terisi. | `POST /api/applications/:id/interview-score` | Toast Success: "Hasil wawancara berhasil disimpan". |
+
+---
+
+### 7.6 Modul Performance KPI, Reimbursement & Offboarding
+
+| Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
+|---|---|---|---|---|---|
+| **`Kirim Evaluasi KPI`** | `/performance` | All Employees | Guard: Wajib mengisi seluruh kuesioner evaluasi 360 (Skala 1-5). | `POST /api/performance-reviews` <br/> State: `STATUS_REVIEW` &rarr; `SUBMITTED` | **Toast Notification Top-Right: "Evaluasi Kinerja Terkirim"**, Status berubah Completed. |
+| **`Kirim Ajuan Klaim`** | `/reimbursement` | All Employees | Guard: Nominal > 0 & Wajib unggah foto/PDF bukti struk transaksi. | `POST /api/reimbursements` <br/> State: `STATUS_REIMBURSEMENT` &rarr; `PENDING` | **Toast Notification Top-Right: "Klaim Terkirim"**. |
+| **`Kelola Checklist Offboarding`**| Modal Form `ChecklistClearanceModal` | HR, IT | Guard: Hanya bisa diselesaikan jika seluruh checklist pengembalian aset tercentang. | `PUT /api/offboarding/:id/clearance` <br/> State: `asset_cleared` &rarr; `true`, `STATUS_EMPLOYEE` &rarr; `TERMINATED` | **Toast Notification Top-Right: "Clearance Selesai"**. Sertifikat Pengalaman Kerja diterbitkan. |
+| **`Unduh Laporan Offboarding`**| Modal Form `DownloadOffboardingModal` | HR | Guard: Mengunduh rekapitutasi clearance offboarding. | `GET /api/offboarding/export` | **Toast Notification Top-Right: "Laporan Diunduh"**. File laporan terunduh. |
+
+---
+
+## 8. Spesifikasi Landing Page Publik & Halaman Autentikasi (Login)
+
+### 8.1 Landing Page Perusahaan & Portal Karir Publik (`/landing`)
+Halaman ini adalah pintu gerbang awal aplikasi HRIS Enterprise sebelum pengguna melakukan autentikasi (*Login*).
+
+| Elemen Komponen / Tombol | Target Route / Aksi | Target Pengguna | Frontend Guard Clause Logic | Backend API / Integrasi | UX Feedback & Visual |
+|---|---|---|---|---|---|
+| **`Login Portal Karyawan`** | Modal `EmployeeFaceAuthModal` | Karyawan | 1. Trigger Klik: Karyawan menekan tombol **"📷 Portal Karyawan (Login Wajah)"**. 2. Camera Feed: Membuka modal & akses kamera. 3. Capture: Pindaian wajah 3D. 4. Verifikasi: Validasi NIK & kontur wajah. | `POST /api/auth/face-verify` | Modal 3D Camera Feed/Scanner, Toast: *"✓ Autentikasi Wajah Berhasil!"*, Redirect ke Portal (`:3001`). |
+| **`Login Admin / HRD`** | `/signin?role=admin` | HR, Admin, Executive | Redirect langsung ke form login Manajemen HRIS. | Client-side Router | Navigasi mulus, Auto-highlight tab Admin/HR. |
+| **`Portal Lowongan Kerja Publik`** | `/landing#careers` | Publik / Pelamar | Menampilkan daftar lowongan aktif dari `JOB_POSTING`. | `GET /api/public/jobs` | Card Interaktif, Filter Departemen & Lokasi. |
+| **`Lamar Pekerjaan (Quick Apply)`**| Modal / Form Pelamar | Pelamar | Guard: Wajib isi Nama, Email, No HP & Unggah CV PDF (Maks 5MB). | `POST /api/public/apply` | Toast: "Lamaran berhasil dikirim! Tim HRD akan menghubungi Anda". |
+
+### 8.2 Flow Autentikasi Kamera Biometrik Karyawan (Landing Page Integration)
+
+1. **Trigger Klik Landing Page**: Karyawan menekan tombol **"📷 Portal Karyawan (Login Wajah)"** pada *Navigation Header* atau *Hero Section* Landing Page (`HRISCorp.dev`).
+2. **Kamera Camera Feed Opening**: Sistem membuka **`EmployeeFaceAuthModal`** dengan animasi 3D *Book-Open* dan mengaktifkan akses kamera perangkat (`navigator.mediaDevices.getUserMedia`). Video elemen terpasang langsung dengan garansi *Callback Ref* (`attachVideoRef`) untuk memastikan *live stream* pratinjau kamera fisik selalu tampil tanpa kedipan.
+3. **Pindaian & Selfie Capture**: Karyawan memosisikan wajah di dalam bingkai oval panduan dan menekan tombol **"Ambil Foto Selfie & Masuk Portal"**.
+4. **Verifikasi AI & Penerbitan Token**: Sistem melakukan kalkulasi kontur biometrik wajah 3D, memverifikasi NIK Karyawan (`Budi Santoso - EMP-001`), serta menerbitkan Token Sesi **15 Menit Inactivity Expiration**.
+5. **Seamless Direct Redirection**: Notifikasi Top-Right Toast muncul (*"✓ Autentikasi Wajah Berhasil!"*) dan layar modal menampilkan overlay verifikasi sukses sebelum langsung mengarahkan Karyawan secara otomatis ke Portal (`window.location.assign('http://localhost:3001')`) tanpa pernah mengalami kedipan/bounce-back ke Landing Page.
+
+---
+
+### 8.3 Kebijakan Token Autentikasi & Masa Berlaku Sesi (Session Idle Expiration)
+
+Sistem menetapkan kebijakan batas waktu aktif token autentikasi (*Session Token Lifetime & Idle Timeout*) untuk menjamin keamanan data riil perusahaan:
+
+1. **Sesi Karyawan (Login Biometrik Foto Wajah)**:
+   - Token berlaku selama **15 Menit** sejak verifikasi foto wajah berhasil dilakukan.
+   - Apabila tidak ada aktivitas (gerakan kursor, *touch event*, atau pengisian form) dalam kurun waktu 15 menit, sesi dianggap hangus (*expired*) dan pengguna otomatis diarahkan kembali ke layar Verifikasi Biometrik Foto Wajah.
+2. **Sesi Admin / Management (Login Email & Password)**:
+   - Token berlaku selama **30 Menit** sejak autentikasi kredensial manajemen berhasil.
+   - Apabila pengguna idle tanpa aktivitas selama 30 menit, sesi otomatis kadaluarsa demi keamanan data SDM perusahaan.
+
+---
+
+### 8.4 Spesifikasi PWA (Progressive Web App) & Modus Offline
+
+Sistem HRISCorp.dev mendukung pengalaman aplikasi *Native-Like* lintas perangkat:
+
+| Parameter PWA | Spesifikasi & Pengaturan | Keunggulan Enterprise |
+|---|---|---|
+| **PWA Installability** | Manifest V3 (`name`, `short_name: "HRISCorp"`, `icons: 192x192, 512x512`, `display: standalone`) | Karyawan dapat menginstal aplikasi di HP Android/iPhone atau Laptop tanpa PlayStore/AppStore. |
+| **Offline Attendance Sync** | Service Worker Background Sync (`IndexedDB`) | Jika koneksi internet terputus saat *Clock-In*, data foto & lokasi GPS disimpan lokal dan di-sync otomatis saat *Online*. |
+| **Push Notifications** | Web Push API + Service Worker Notifications | Notifikasi instan persetujuan cuti, pengingat jam shift, dan slip gaji langsung ke HP karyawan. |
+| **Hardware Biometrics** | MediaDevices Camera API + Geolocation API | Absen foto wajah dan validasi Geofencing GPS langsung dari browser/PWA native. |
+
