@@ -1,6 +1,8 @@
 {
   "name": "hris-monorepo",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "author": "ahmad arif",
+  "license": "HRISCorp.dev Enterprise License",
   "private": true,
   "workspaces": [
     "apps/*",

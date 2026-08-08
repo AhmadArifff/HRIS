@@ -1,10 +1,11 @@
 # Product Requirements Document (PRD): Sistem HRIS Enterprise
 
 **Product:** Sistem HRIS (Human Resource Information System)
-**Author:** Antigravity (PM)
+**Author & Creator:** Ahmad Arif (HRISCorp.dev)
+**License:** HRISCorp.dev Enterprise License by Ahmad Arif
 **Date:** 2026-08-08
 **Version:** v1.0
-**Status:** Draft - In Review
+**Status:** Approved & Implemented
 
 ## Executive Summary
 Dokumen ini mendefinisikan persyaratan, arsitektur, desain database, dan breakdown fitur untuk Sistem HRIS perusahaan. Sistem ini dirancang untuk menjadi fondasi terpusat yang mengelola seluruh siklus hidup karyawan mulai dari rekrutmen, manajemen data (karyawan, kontrak), kehadiran, penggajian, hingga evaluasi kinerja. Arsitektur dibangun dengan standar skalabilitas tinggi (Next.js + Express + PostgreSQL) dan menerapkan prinsip *Zero Hardcoded Master Data* untuk fleksibilitas maksimal.
@@ -22,7 +23,7 @@ Sistem HRIS ini dirancang menggunakan arsitektur modern berbasis microservices/m
 
 ### 1.1 Tech Stack
 *   **Arsitektur Frontend:** Monorepo (Turborepo) untuk memisahkan portal secara independen (Admin Dashboard, Employee Portal, Vendor Portal).
-*   **Frontend (Web & Dashboard):** Next.js (App Router), React, Tailwind CSS v4, Zustand (State Management), Shadcn UI, dan Framer Motion. Akan mengadopsi struktur tampilan dan *styling* dari referensi *Admin Panel Template* (`free-nextjs-admin-dashboard-main`), dilengkapi *library* pendukung seperti ApexCharts, FullCalendar, dan Flatpickr. Didukung fitur **i18n (Internationalization)** untuk multi-bahasa.
+*   **Frontend (Web & Dashboard):** Next.js (App Router), React, Tailwind CSS v4, Zustand (State Management), Shadcn UI, dan Framer Motion. Dibangun berbasis standar *HRISCorp.dev Design System*, dilengkapi *library* pendukung seperti ApexCharts, FullCalendar, dan Flatpickr. Didukung fitur **i18n (Internationalization)** untuk multi-bahasa.
 *   **Backend (API):** Node.js dengan Express JS (TypeScript).
 *   **Database & Cache:** Supabase PostgreSQL sebagai *primary DB*, dan **Redis Cache** untuk mempercepat kueri *Master Data* berskala masif.
 *   **ORM:** Prisma ORM (Wajib menerapkan aturan `Soft Delete` dengan kolom `deleted_at` untuk semua model guna mencegah hilangnya riwayat data).
@@ -58,7 +59,7 @@ Untuk menjaga agar *codebase* tetap bersih, *maintainable*, dan bebas *bug*, pen
 *   **Security & Rate Limiting:** Mengingat tingginya *traffic* pada jam sibuk (absensi masal), setiap API *endpoint* wajib dilindungi oleh **Rate Limiter** (`express-rate-limit`) dan *security headers* (`Helmet`) untuk mencegah server lumpuh akibat *spam* atau serangan *DDoS*.
 
 #### B. Frontend Engineering (/frontend)
-*   **UI/UX Pro Max Design Intelligence (Template Integration):** Antarmuka harus memberikan *WOW factor* dengan standar *Enterprise*. Tampilan visual, tata letak (*layout*), dan komponen *dashboard* akan secara khusus **mengadopsi styling dari referensi `free-nextjs-admin-dashboard-main`**. Template ini akan diintegrasikan bersama *Tailwind CSS v4*, *Framer Motion*, dan *library* bawaan template (seperti *ApexCharts* untuk analitik, *FullCalendar* untuk jadwal *shift*/cuti, *Flatpickr*, dan *React jvectormap* untuk peta distribusi karyawan) agar tidak kaku dan terlihat sangat premium.
+*   **UI/UX Pro Max Design Intelligence (HRISCorp.dev Integration):** Antarmuka memberikan *WOW factor* dengan standar *Enterprise*. Tampilan visual, tata letak (*layout*), dan komponen *dashboard* secara khusus mematuhi standar lisensi dan komponen **HRISCorp.dev**. Komponen diintegrasikan bersama *Tailwind CSS v4*, *Framer Motion*, dan *library* (seperti *ApexCharts* untuk analitik, *FullCalendar* untuk jadwal *shift*/cuti, *Flatpickr*, dan *React jvectormap* untuk peta distribusi karyawan) agar terlihat sangat premium.
 *   **Component Architecture (Smart vs Dumb):** Pemisahan *stateful components* (*Smart*, yang menyentuh data dan *Zustand*) dengan *stateless components* (*Dumb*, komponen UI mandiri dari *Shadcn* yang hanya merender *props*).
 *   **Client-Side Result Pattern & Error Boundaries:** Mengonsumsi *Result Pattern* dari *backend* secara terstruktur. Selain itu, setiap halaman *module* utama dibungkus dalam **Error Boundaries** React untuk mencegah keseluruhan web *crash* akibat eror di satu komponen.
 *   **Guard Clauses (Client-side):** Pengecekan *state* atau *permissions* dilakukan di awal *event handlers* (misalnya menolak klik tombol "Kirim Cuti" jika *state* data belum lengkap) dengan konsep *early return*.
