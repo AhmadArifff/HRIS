@@ -15,11 +15,24 @@ interface ToastProps {
 
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onClose }) => {
   return (
-    <div className="fixed top-5 right-5 z-[200000] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onClose={onClose} />
-      ))}
-    </div>
+    <>
+      {/* Keyframe animation for progress strip */}
+      <style jsx global>{`
+        @keyframes toastProgressStrip {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
+        }
+      `}</style>
+      <div className="fixed top-5 right-5 z-[200000] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onClose={onClose} />
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -27,10 +40,12 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
   toast,
   onClose,
 }) => {
+  const DURATION_MS = 4000;
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(toast.id);
-    }, 4000);
+    }, DURATION_MS);
     return () => clearTimeout(timer);
   }, [toast.id, onClose]);
 
@@ -38,9 +53,17 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
   const isError = toast.type === "error";
   const isWarning = toast.type === "warning";
 
+  const stripBgColor = isSuccess
+    ? "bg-emerald-500"
+    : isError
+    ? "bg-rose-500"
+    : isWarning
+    ? "bg-amber-500"
+    : "bg-brand-500";
+
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-x-0 ${
+      className={`pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 pb-5 rounded-2xl border shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-x-0 ${
         isSuccess
           ? "bg-white/95 dark:bg-gray-900/95 border-emerald-500/30 text-gray-900 dark:text-white shadow-emerald-500/10"
           : isError
@@ -87,6 +110,14 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
       >
         ✕
       </button>
+
+      {/* Limit Progress Strip Bar Line (Countdown Animation 100% -> 0%) */}
+      <div
+        className={`absolute bottom-0 left-0 h-1.5 ${stripBgColor} rounded-b-2xl`}
+        style={{
+          animation: `toastProgressStrip ${DURATION_MS}ms linear forwards`,
+        }}
+      />
     </div>
   );
 };

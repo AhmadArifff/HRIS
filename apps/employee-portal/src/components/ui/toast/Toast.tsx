@@ -15,11 +15,23 @@ interface ToastContainerProps {
 
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
   return (
-    <div className="fixed top-5 right-5 z-[200000] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onClose={onClose} />
-      ))}
-    </div>
+    <>
+      <style jsx global>{`
+        @keyframes toastProgressStrip {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
+        }
+      `}</style>
+      <div className="fixed top-5 right-5 z-[200000] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onClose={onClose} />
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -27,10 +39,12 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
   toast,
   onClose,
 }) => {
+  const DURATION_MS = 4000;
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(toast.id);
-    }, 4500);
+    }, DURATION_MS);
     return () => clearTimeout(timer);
   }, [toast.id, onClose]);
 
@@ -40,6 +54,13 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
     warning: "bg-white dark:bg-slate-900 border-amber-500/40 text-amber-900 dark:text-amber-300 shadow-amber-500/10",
     info: "bg-white dark:bg-slate-900 border-brand-500/40 text-brand-900 dark:text-brand-300 shadow-brand-500/10",
   };
+
+  const stripBgColor = {
+    success: "bg-emerald-500",
+    error: "bg-rose-500",
+    warning: "bg-amber-500",
+    info: "bg-brand-500",
+  }[toast.type];
 
   const iconMap = {
     success: (
@@ -66,7 +87,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
 
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl border shadow-xl transition-all duration-300 animate-slide-in ${typeStyles[toast.type]}`}
+      className={`pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 pb-5 rounded-2xl border shadow-xl transition-all duration-300 ${typeStyles[toast.type]}`}
     >
       {iconMap[toast.type]}
       <div className="flex-1 min-w-0">
@@ -79,6 +100,14 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
       >
         ✕
       </button>
+
+      {/* Limit Progress Strip Bar Line */}
+      <div
+        className={`absolute bottom-0 left-0 h-1.5 ${stripBgColor} rounded-b-2xl`}
+        style={{
+          animation: `toastProgressStrip ${DURATION_MS}ms linear forwards`,
+        }}
+      />
     </div>
   );
 };
