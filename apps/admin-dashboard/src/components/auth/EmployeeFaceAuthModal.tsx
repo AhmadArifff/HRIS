@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ToastContainer, ToastMessage } from "@/components/ui/toast/Toast";
 
 interface EmployeeFaceAuthModalProps {
@@ -14,7 +14,7 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
   const [faceVerified, setFaceVerified] = useState(false);
   const [verifiedEmployee, setVerifiedEmployee] = useState<{ id: string; name: string; position: string } | null>(null);
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Toast state
@@ -28,6 +28,15 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  // Callback Ref to attach stream immediately as soon as video element is mounted in DOM
+  const attachVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    videoElementRef.current = node;
+    if (node && streamRef.current) {
+      node.srcObject = streamRef.current;
+      node.play().catch((err) => console.warn("Video stream playback autoplay blocked:", err));
+    }
+  }, []);
 
   // Start Camera Stream
   useEffect(() => {
@@ -49,14 +58,20 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
   const startCamera = async () => {
     try {
       setCameraError(false);
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } 
+      });
+      
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      
+      if (videoElementRef.current) {
+        videoElementRef.current.srcObject = stream;
+        videoElementRef.current.play().catch((err) => console.warn("Video play catch:", err));
       }
+      
       setCameraActive(true);
     } catch (err) {
-      console.warn("Real camera access not available, activating high-fidelity camera simulator stream:", err);
+      console.warn("Kamera fisik tidak terdeteksi / di-block, mengaktifkan simulasi kamera biometrik:", err);
       setCameraError(true);
       setCameraActive(false);
     }
@@ -96,18 +111,18 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
         `✓ Identitas: ${empData.name} (${empData.id}). Sesi Token 15-Menit aktif.`
       );
 
+      // Mencegah kedipan / bounce back ke landing page dengan langsung mengalihkan tanpa menutup modal lebih awal
       setTimeout(() => {
         stopCamera();
-        onClose();
-        window.location.href = "http://localhost:3001";
-      }, 1500);
-    }, 2000);
+        window.location.assign("http://localhost:3001");
+      }, 1200);
+    }, 1800);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md transition-all duration-300">
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md transition-all duration-300">
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
       <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative animate-modal-book-open text-white">
@@ -133,16 +148,17 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
 
         {/* Camera Feed Viewer */}
         <div className="w-full h-72 bg-slate-950 rounded-2xl border-2 border-slate-800 relative overflow-hidden flex items-center justify-center mb-6 shadow-inner">
-          {cameraActive && !cameraError ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover scale-x-[-1]"
-            />
-          ) : (
-            /* Simulator Stream Overlay */
+          {/* Always mount video element when camera is active or requesting, to guarantee stream attachment */}
+          <video
+            ref={attachVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover scale-x-[-1] ${cameraActive && !cameraError ? "block" : "hidden"}`}
+          />
+
+          {/* Simulator Stream Overlay Fallback if physical camera not active */}
+          {(!cameraActive || cameraError) && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 p-4 text-center">
               <div className="w-32 h-44 border-2 border-dashed border-brand-400/70 rounded-full flex flex-col items-center justify-center relative mb-2">
                 <div className="w-full h-0.5 bg-brand-400/90 absolute animate-pulse shadow-[0_0_10px_#7592ff]"></div>
@@ -166,18 +182,19 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
             </div>
           )}
 
-          {/* Verification Success Badge */}
+          {/* Verification Success Overlay & Direct Transition */}
           {faceVerified && verifiedEmployee && (
-            <div className="absolute inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-modal-book-open">
-              <div className="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center text-2xl font-bold mb-3 shadow-lg shadow-emerald-500/30">
+            <div className="absolute inset-0 z-40 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-modal-book-open">
+              <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center text-3xl font-bold mb-3 shadow-lg shadow-emerald-500/30">
                 ✓
               </div>
-              <h4 className="text-base font-extrabold text-emerald-400 mb-1">Identitas Wajah Terverifikasi!</h4>
-              <p className="text-xs text-white font-semibold mb-0.5">{verifiedEmployee.name} ({verifiedEmployee.id})</p>
-              <p className="text-[11px] text-slate-400 mb-3">{verifiedEmployee.position}</p>
-              <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                Token 15-Min Inactivity Diterbitkan &rarr; Mengalihkan...
-              </span>
+              <h4 className="text-lg font-extrabold text-emerald-400 mb-1">Identitas Wajah Terverifikasi!</h4>
+              <p className="text-sm text-white font-semibold mb-0.5">{verifiedEmployee.name} ({verifiedEmployee.id})</p>
+              <p className="text-xs text-slate-400 mb-4">{verifiedEmployee.position}</p>
+              <div className="inline-flex items-center gap-2 text-xs font-mono px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                Sesi 15-Min Aktif &rarr; Mengalihkan ke Portal...
+              </div>
             </div>
           )}
 
@@ -198,8 +215,8 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
           <button
             type="button"
             onClick={() => { stopCamera(); onClose(); }}
-            disabled={isScanning}
-            className="px-4 py-2 text-xs font-medium text-slate-300 bg-slate-800 rounded-xl hover:bg-slate-700 transition"
+            disabled={isScanning || faceVerified}
+            className="px-4 py-2 text-xs font-medium text-slate-300 bg-slate-800 rounded-xl hover:bg-slate-700 transition disabled:opacity-50"
           >
             Batal
           </button>

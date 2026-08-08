@@ -952,13 +952,13 @@ Halaman ini adalah pintu gerbang awal aplikasi HRIS Enterprise sebelum pengguna 
 | **`Portal Lowongan Kerja Publik`** | `/landing#careers` | Publik / Pelamar | Menampilkan daftar lowongan aktif dari `JOB_POSTING`. | `GET /api/public/jobs` | Card Interaktif, Filter Departemen & Lokasi. |
 | **`Lamar Pekerjaan (Quick Apply)`**| Modal / Form Pelamar | Pelamar | Guard: Wajib isi Nama, Email, No HP & Unggah CV PDF (Maks 5MB). | `POST /api/public/apply` | Toast: "Lamaran berhasil dikirim! Tim HRD akan menghubungi Anda". |
 
-### 8.2 Flow Autentikasi Dual-Role & Sesi Akses
+### 8.2 Flow Autentikasi Kamera Biometrik Karyawan (Landing Page Integration)
 
-| Role Pengguna | Metode Utama Autentikasi | Trigger dari Landing Page | Masa Berlaku Token Sesi | UX & State Transition |
-|---|---|---|---|---|
-| **Admin / HR / Manager** | Email & Password Kredensial | Form Login Admin (`/signin?role=admin`) | **30 Menit** (Inactivity Expiration) | Toast Success Top-Right, Sesi Token `ADMIN_TOKEN`, Access ke Admin Dashboard `/dashboard`. |
-| **Karyawan (Employee)** | **Biometric Camera Face Recognition (Foto Selfie)** | Modal Verifikasi Kamera (`EmployeeFaceAuthModal`) via Tombol **"Portal Karyawan (Login Wajah)"** di Landing Page | **15 Menit** (Inactivity Expiration) | Modal 3D Camera Feed/Scanner, Toast Success Top-Right: *"✓ Identitas Terverifikasi: Budi Santoso (EMP-001)"*, Access Token `EMP_FACE_TOKEN`, Auto-Redirect ke Employee Portal (`http://localhost:3001`). |
-| **Action & Redirection** | Redirect ke Admin Dashboard Overview (`/dashboard`) | Redirect ke Portal Karyawan (`:3001`) | | |
+1. **Trigger Klik Landing Page**: Karyawan menekan tombol **"📷 Portal Karyawan (Login Wajah)"** pada *Navigation Header* atau *Hero Section* Landing Page (`HRISCorp.dev`).
+2. **Kamera Camera Feed Opening**: Sistem membuka **`EmployeeFaceAuthModal`** dengan animasi 3D *Book-Open* dan mengaktifkan akses kamera perangkat (`navigator.mediaDevices.getUserMedia`). Video elemen terpasang langsung dengan garansi *Callback Ref* (`attachVideoRef`) untuk memastikan *live stream* pratinjau kamera fisik selalu tampil tanpa kedipan.
+3. **Pindaian & Selfie Capture**: Karyawan memosisikan wajah di dalam bingkai oval panduan dan menekan tombol **"Ambil Foto Selfie & Masuk Portal"**.
+4. **Verifikasi AI & Penerbitan Token**: Sistem melakukan kalkulasi kontur biometrik wajah 3D, memverifikasi NIK Karyawan (`Budi Santoso - EMP-001`), serta menerbitkan Token Sesi **15 Menit Inactivity Expiration**.
+5. **Seamless Direct Redirection**: Notifikasi Top-Right Toast muncul (*"✓ Autentikasi Wajah Berhasil!"*) dan layar modal menampilkan overlay verifikasi sukses sebelum langsung mengarahkan Karyawan secara otomatis ke Portal (`window.location.assign('http://localhost:3001')`) tanpa pernah mengalami kedipan/bounce-back ke Landing Page.
 
 ---
 
