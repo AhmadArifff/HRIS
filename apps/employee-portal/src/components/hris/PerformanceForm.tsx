@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Button from "../ui/button/Button";
 import Label from "../form/Label";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 export const PerformanceForm = () => {
   const [target, setTarget] = useState("self");
@@ -9,8 +10,20 @@ export const PerformanceForm = () => {
   const [q2, setQ2] = useState("");
   const [feedback, setFeedback] = useState("");
 
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   const handleSaveDraft = () => {
-    alert("✅ Form evaluasi telah disimpan sebagai DRAFT.");
+    addToast("info", "Draft Disimpan", "Form evaluasi kinerja telah disimpan sebagai DRAFT.");
     console.log("[AUDIT_LOG] KPI_REVIEW_DRAFT_SAVED", { target, timestamp: new Date().toISOString() });
   };
 
@@ -19,11 +32,15 @@ export const PerformanceForm = () => {
 
     // Guard Clause: Pastikan semua radio button terpilih
     if (!q1 || !q2) {
-      alert("⚠️ Guard Clause: Mohon isi semua pertanyaan pilihan ganda sebelum mengirim evaluasi.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Mohon isi semua pertanyaan pilihan ganda sebelum mengirim evaluasi.");
       return;
     }
 
-    alert(`✅ Evaluasi KPI untuk target "${target}" berhasil dikirim!`);
+    addToast(
+      "success",
+      "Evaluasi Terkirim!",
+      `Evaluasi KPI untuk target "${target === "self" ? "Self-Review" : target}" berhasil dikirim!`
+    );
     console.log("[AUDIT_LOG] KPI_REVIEW_SUBMITTED", { 
       target, 
       scores: { q1, q2 }, 
@@ -39,7 +56,9 @@ export const PerformanceForm = () => {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 max-w-3xl mx-auto">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 max-w-3xl mx-auto relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-white/90">
         Review Kinerja 360 (KPI)
       </h3>
@@ -59,66 +78,62 @@ export const PerformanceForm = () => {
           </select>
         </div>
 
-        <div className="space-y-6">
-          <div className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-            <Label className="mb-3 block text-base font-medium">1. Kualitas Pekerjaan & Tanggung Jawab</Label>
-            <div className="flex justify-between items-center max-w-md mt-2">
-              {[1, 2, 3, 4, 5].map((score) => (
-                <label key={score} className="flex flex-col items-center gap-2 cursor-pointer">
+        <div className="flex flex-col gap-6 border-t border-b border-gray-100 dark:border-gray-800 py-6">
+          <div>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90 mb-3">
+              1. Kemampuan menyelesaikan tugas tepat waktu dan sesuai target kualitas (PRD §3.6) <span className="text-error-500">*</span>
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {["1 - Sangat Kurang", "2 - Kurang", "3 - Cukup", "4 - Baik", "5 - Sangat Baik"].map((label, idx) => (
+                <label key={idx} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                   <input 
                     type="radio" 
                     name="q1" 
-                    value={score}
-                    checked={q1 === String(score)}
+                    value={idx + 1}
+                    checked={q1 === String(idx + 1)}
                     onChange={(e) => setQ1(e.target.value)}
-                    className="w-5 h-5 text-brand-500 focus:ring-brand-500" 
+                    className="text-brand-500 focus:ring-brand-400"
                   />
-                  <span className="text-xs text-gray-500">{score}</span>
+                  {label}
                 </label>
               ))}
-            </div>
-            <div className="flex justify-between max-w-md mt-1 text-xs text-gray-400">
-              <span>Sangat Buruk</span>
-              <span>Sangat Baik</span>
             </div>
           </div>
 
-          <div className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-            <Label className="mb-3 block text-base font-medium">2. Inisiatif & Penyelesaian Masalah</Label>
-            <div className="flex justify-between items-center max-w-md mt-2">
-              {[1, 2, 3, 4, 5].map((score) => (
-                <label key={score} className="flex flex-col items-center gap-2 cursor-pointer">
+          <div>
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90 mb-3">
+              2. Kolaborasi tim, komunikasi, dan inisiatif pemecahan masalah (PRD §3.6) <span className="text-error-500">*</span>
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {["1 - Sangat Kurang", "2 - Kurang", "3 - Cukup", "4 - Baik", "5 - Sangat Baik"].map((label, idx) => (
+                <label key={idx} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                   <input 
                     type="radio" 
                     name="q2" 
-                    value={score} 
-                    checked={q2 === String(score)}
+                    value={idx + 1}
+                    checked={q2 === String(idx + 1)}
                     onChange={(e) => setQ2(e.target.value)}
-                    className="w-5 h-5 text-brand-500 focus:ring-brand-500" 
+                    className="text-brand-500 focus:ring-brand-400"
                   />
-                  <span className="text-xs text-gray-500">{score}</span>
+                  {label}
                 </label>
               ))}
-            </div>
-            <div className="flex justify-between max-w-md mt-1 text-xs text-gray-400">
-              <span>Sangat Buruk</span>
-              <span>Sangat Baik</span>
             </div>
           </div>
         </div>
 
         <div>
-          <Label>Catatan / Feedback Tambahan</Label>
+          <Label>Umpan Balik Kualitatif / Catatan Tambahan</Label>
           <textarea
+            rows={4}
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            className="w-full p-4 text-sm text-gray-800 border border-gray-300 rounded-xl bg-transparent focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-400"
-            rows={4}
-            placeholder="Tulis kelebihan, pencapaian, atau area yang perlu ditingkatkan..."
+            placeholder="Tuliskan apresiasi, saran perbaikan, atau pencapaian spesifik selama periode ini..."
+            className="w-full p-3 text-sm text-gray-800 border border-gray-300 rounded-lg bg-transparent focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-400"
           ></textarea>
         </div>
 
-        <div className="flex items-center justify-end gap-3 mt-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={handleSaveDraft}
@@ -126,12 +141,9 @@ export const PerformanceForm = () => {
           >
             Simpan Draft
           </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
-          >
-            Kirim Evaluasi
-          </button>
+          <Button size="sm" className="bg-brand-500 hover:bg-brand-600 font-semibold rounded-xl">
+            Kirim Review Evaluasi 360
+          </Button>
         </div>
       </form>
     </div>

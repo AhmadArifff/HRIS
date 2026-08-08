@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { ToastContainer, ToastMessage } from "@/components/ui/toast/Toast";
 
 interface JobOpening {
   id: string;
@@ -25,23 +26,35 @@ export default function RootLandingPage() {
   const [applicantFile, setApplicantFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   const handleApplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!applicantName.trim()) {
-      alert("⚠️ Guard Clause: Nama Lengkap wajib diisi.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Nama Lengkap wajib diisi.");
       return;
     }
     if (!applicantEmail.trim() || !applicantEmail.includes("@")) {
-      alert("⚠️ Guard Clause: Alamat Email tidak valid.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Alamat Email tidak valid.");
       return;
     }
     if (!applicantPhone.trim()) {
-      alert("⚠️ Guard Clause: Nomor WhatsApp / HP wajib diisi.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Nomor WhatsApp / HP wajib diisi.");
       return;
     }
     if (!applicantFile) {
-      alert("⚠️ Guard Clause: Berkas Resume / CV (PDF) wajib diunggah.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Berkas Resume / CV (PDF) wajib diunggah.");
       return;
     }
 
@@ -56,17 +69,24 @@ export default function RootLandingPage() {
 
     setTimeout(() => {
       setIsSubmitting(false);
-      alert(`🎉 Lamaran untuk posisi "${selectedJob?.title}" BERHASIL dikirim!\nTim HRD HRISCorp.dev akan meninjau CV Anda.`);
+      const jobTitle = selectedJob?.title;
       setSelectedJob(null);
       setApplicantName("");
       setApplicantEmail("");
       setApplicantPhone("");
       setApplicantFile(null);
+
+      addToast(
+        "success",
+        "Lamaran Terkirim!",
+        `Lamaran posisi "${jobTitle}" berhasil dikirim! Tim HRD HRISCorp.dev akan meninjau CV Anda.`
+      );
     }, 1200);
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-brand-500 selection:text-white">
+    <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-brand-500 selection:text-white relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
       {/* ─────────────────────────────────────────────
           1. NAVIGATION BAR (HRISCorp.dev Branding)
       ───────────────────────────────────────────── */}

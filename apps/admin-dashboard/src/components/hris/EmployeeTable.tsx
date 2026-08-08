@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Badge from "../ui/badge/Badge";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 export interface EmployeeData {
   id: number;
@@ -31,14 +32,51 @@ const mockEmployeeData: EmployeeData[] = [
 ];
 
 export const EmployeeTable: React.FC = () => {
+  const [data, setData] = useState<EmployeeData[]>(mockEmployeeData);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof EmployeeData>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
+  // Toast State
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Modal State
+  const [detailEmp, setDetailEmp] = useState<EmployeeData | null>(null);
+  const [editEmp, setEditEmp] = useState<EmployeeData | null>(null);
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEmp) return;
+
+    if (!editEmp.name.trim() || !editEmp.email.trim()) {
+      addToast("error", "Validasi Gagal", "Guard Clause: Nama dan Email wajib diisi.");
+      return;
+    }
+
+    setData((prev) => prev.map((item) => item.id === editEmp.id ? editEmp : item));
+    const empName = editEmp.name;
+    setEditEmp(null);
+
+    addToast(
+      "success",
+      "Data Karyawan Diperbarui!",
+      `Informasi profil ${empName} berhasil disimpan.`
+    );
+  };
+
   // Filtering
-  const filteredEmployees = mockEmployeeData.filter(
+  const filteredEmployees = data.filter(
     (emp) =>
       emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.emp_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,6 +88,7 @@ export const EmployeeTable: React.FC = () => {
   const sortedEmployees = [...filteredEmployees].sort((a, b) => {
     const valA = String(a[sortField]).toLowerCase();
     const valB = String(b[sortField]).toLowerCase();
+
     if (valA < valB) return sortOrder === "asc" ? -1 : 1;
     if (valA > valB) return sortOrder === "asc" ? 1 : -1;
     return 0;
@@ -73,30 +112,11 @@ export const EmployeeTable: React.FC = () => {
   );
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-      {/* Header Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 p-5 lg:p-6 dark:border-gray-800">
-        <div>
-          <h3 className="text-base font-semibold text-gray-800 dark:text-white">
-            Data Karyawan
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Daftar seluruh karyawan aktif & non-aktif perusahaan
-          </p>
-        </div>
-        <a
-          href="/employee/add"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Tambah Karyawan
-        </a>
-      </div>
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
 
       <div className="p-5 lg:p-6">
-        {/* Controls Bar (Design Data Table 2) */}
+        {/* Controls Bar */}
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>Tampilkan</span>
@@ -118,7 +138,7 @@ export const EmployeeTable: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Cari nama, ID, jabatan..."
+              placeholder="Cari nama, NIK, jabatan..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -129,7 +149,6 @@ export const EmployeeTable: React.FC = () => {
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-gray-400"
               viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
                 fillRule="evenodd"
@@ -140,40 +159,57 @@ export const EmployeeTable: React.FC = () => {
           </div>
         </div>
 
-        {/* Table (Design Data Table 2) */}
+        {/* Table */}
         <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
           <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
             <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
               <tr>
                 <th
-                  onClick={() => handleSort("name")}
-                  className="px-6 py-4 cursor-pointer hover:text-brand-500 transition"
+                  onClick={() => handleSort("emp_id")}
+                  className="px-6 py-4 cursor-pointer hover:text-brand-500"
                 >
-                  Karyawan {sortField === "name" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  ID Karyawan{" "}
+                  {sortField === "emp_id" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
                 </th>
                 <th
-                  onClick={() => handleSort("emp_id")}
-                  className="px-6 py-4 cursor-pointer hover:text-brand-500 transition"
+                  onClick={() => handleSort("name")}
+                  className="px-6 py-4 cursor-pointer hover:text-brand-500"
                 >
-                  ID Karyawan {sortField === "emp_id" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  Nama Karyawan{" "}
+                  {sortField === "name" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
                 </th>
                 <th
                   onClick={() => handleSort("position")}
-                  className="px-6 py-4 cursor-pointer hover:text-brand-500 transition"
+                  className="px-6 py-4 cursor-pointer hover:text-brand-500"
                 >
-                  Jabatan {sortField === "position" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  Jabatan & Dept{" "}
+                  {sortField === "position"
+                    ? sortOrder === "asc"
+                      ? "↑"
+                      : "↓"
+                    : "↕"}
                 </th>
                 <th
-                  onClick={() => handleSort("department")}
-                  className="px-6 py-4 cursor-pointer hover:text-brand-500 transition"
+                  onClick={() => handleSort("joinDate")}
+                  className="px-6 py-4 cursor-pointer hover:text-brand-500"
                 >
-                  Departemen {sortField === "department" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  Tanggal Bergabung{" "}
+                  {sortField === "joinDate"
+                    ? sortOrder === "asc"
+                      ? "↑"
+                      : "↓"
+                    : "↕"}
                 </th>
                 <th
                   onClick={() => handleSort("status")}
-                  className="px-6 py-4 cursor-pointer hover:text-brand-500 transition"
+                  className="px-6 py-4 cursor-pointer hover:text-brand-500"
                 >
-                  Status {sortField === "status" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  Status{" "}
+                  {sortField === "status"
+                    ? sortOrder === "asc"
+                      ? "↑"
+                      : "↓"
+                    : "↕"}
                 </th>
                 <th className="px-6 py-4 text-right">Aksi</th>
               </tr>
@@ -182,11 +218,14 @@ export const EmployeeTable: React.FC = () => {
               {displayedEmployees.map((emp) => (
                 <tr
                   key={emp.id}
-                  className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
                 >
-                  <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                  <td className="px-6 py-4 font-mono text-xs text-gray-500">
+                    {emp.emp_id}
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 relative overflow-hidden rounded-full border border-gray-200 dark:border-gray-700">
+                      <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0 border border-gray-200 dark:border-gray-700">
                         <Image
                           src={emp.avatar}
                           alt={emp.name}
@@ -195,16 +234,26 @@ export const EmployeeTable: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <span className="block font-medium text-gray-900 dark:text-white">
+                        <span className="font-medium text-gray-800 dark:text-white block">
                           {emp.name}
                         </span>
-                        <span className="text-xs text-gray-400">{emp.email}</span>
+                        <span className="text-xs text-gray-400 font-mono">
+                          {emp.email}
+                        </span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-mono text-xs">{emp.emp_id}</td>
-                  <td className="px-6 py-4">{emp.position}</td>
-                  <td className="px-6 py-4">{emp.department}</td>
+                  <td className="px-6 py-4">
+                    <span className="font-medium text-gray-800 dark:text-white block">
+                      {emp.position}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {emp.department}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-xs">
+                    {emp.joinDate}
+                  </td>
                   <td className="px-6 py-4">
                     <Badge
                       color={
@@ -222,7 +271,7 @@ export const EmployeeTable: React.FC = () => {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => alert(`Detail ${emp.name}`)}
+                        onClick={() => setDetailEmp(emp)}
                         className="text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                         title="Lihat Detail"
                       >
@@ -248,7 +297,7 @@ export const EmployeeTable: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => alert(`Edit ${emp.name}`)}
+                        onClick={() => setEditEmp(emp)}
                         className="text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                         title="Edit Data"
                       >
@@ -270,18 +319,11 @@ export const EmployeeTable: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {displayedEmployees.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
-                    Tidak ada data karyawan yang ditemukan.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
 
-        {/* Footer Pagination (Design Data Table 2) */}
+        {/* Footer Pagination */}
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500 dark:text-gray-400">
           <div>
             Menampilkan {sortedEmployees.length === 0 ? 0 : startIndex + 1} sampai{" "}
@@ -293,7 +335,7 @@ export const EmployeeTable: React.FC = () => {
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 transition"
             >
               Sebelumnya
             </button>
@@ -304,7 +346,7 @@ export const EmployeeTable: React.FC = () => {
                 onClick={() => setCurrentPage(pageNum)}
                 className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium transition ${
                   currentPage === pageNum
-                    ? "bg-brand-500 text-white shadow-theme-xs"
+                    ? "bg-brand-500 text-white"
                     : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                 }`}
               >
@@ -315,13 +357,109 @@ export const EmployeeTable: React.FC = () => {
             <button
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 transition"
             >
               Selanjutnya
             </button>
           </div>
         </div>
       </div>
+
+      {/* MODAL DETAIL KARYAWAN 360 */}
+      {detailEmp && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+              Profil 360° — {detailEmp.name}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              Informasi detail karyawan ({detailEmp.emp_id}) (PRD §3.1 & §7.1).
+            </p>
+
+            <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300 mb-6">
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl space-y-1.5">
+                <p><strong>Jabatan:</strong> {detailEmp.position}</p>
+                <p><strong>Departemen:</strong> {detailEmp.department}</p>
+                <p><strong>Email Pekerjaan:</strong> {detailEmp.email}</p>
+                <p><strong>Tanggal Masuk:</strong> {detailEmp.joinDate}</p>
+                <p><strong>Status:</strong> {detailEmp.status}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setDetailEmp(null)}
+                className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT KARYAWAN */}
+      {editEmp && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+              Edit Data Karyawan — {editEmp.emp_id}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              Ubah informasi profil dan posisi jabatan karyawan.
+            </p>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Lengkap</label>
+                <input
+                  type="text"
+                  value={editEmp.name}
+                  onChange={(e) => setEditEmp({ ...editEmp, name: e.target.value })}
+                  className="w-full h-10 px-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Jabatan</label>
+                <input
+                  type="text"
+                  value={editEmp.position}
+                  onChange={(e) => setEditEmp({ ...editEmp, position: e.target.value })}
+                  className="w-full h-10 px-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Email Pekerjaan</label>
+                <input
+                  type="email"
+                  value={editEmp.email}
+                  onChange={(e) => setEditEmp({ ...editEmp, email: e.target.value })}
+                  className="w-full h-10 px-3 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setEditEmp(null)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-xl hover:bg-brand-600 transition"
+                >
+                  Perbarui Data
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

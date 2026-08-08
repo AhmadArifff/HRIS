@@ -3,18 +3,31 @@ import React, { useState } from "react";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
+import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
 export const PayrollGenerateForm = () => {
   const [periodMonth, setPeriodMonth] = useState("Agustus");
   const [periodYear, setPeriodYear] = useState("2026");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: "success" | "error" | "warning" | "info", title: string, message: string) => {
+    const newToast: ToastMessage = { id: String(Date.now()), type, title, message };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   // PRD §7.4: Hitung Payroll - Guard: pastikan bulan dan tahun dipilih
   const handleGeneratePayroll = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!periodMonth || !periodYear) {
-      alert("⚠️ Guard Clause: Pilih bulan dan tahun penggajian terlebih dahulu.");
+      addToast("error", "Validasi Gagal", "Guard Clause: Pilih bulan dan tahun penggajian terlebih dahulu.");
       return;
     }
 
@@ -24,19 +37,25 @@ export const PayrollGenerateForm = () => {
     // Simulasi loading
     setTimeout(() => {
       setIsGenerating(false);
-      alert(`✅ Berhasil Generate Payroll untuk periode ${periodMonth} ${periodYear}!\nSlip gaji (draft) telah dibuat untuk 45 Karyawan Aktif.`);
+      addToast(
+        "success",
+        "Generate Payroll Berhasil!",
+        `Berhasil Generate Payroll untuk periode ${periodMonth} ${periodYear}! Slip gaji (draft) telah dibuat untuk 45 Karyawan Aktif.`
+      );
       console.log("[AUDIT_LOG] PAYROLL_GENERATION_SUCCESS", { total_slips: 45, timestamp: new Date().toISOString() });
     }, 1500);
   };
 
   const handleCancel = () => {
-    alert("✅ Batal Generate Payroll. Form akan direset.");
+    addToast("info", "Form Direset", "Batal Generate Payroll. Form kembali ke pengaturan awal.");
     setPeriodMonth("Agustus");
     setPeriodYear("2026");
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 max-w-2xl mx-auto">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 max-w-2xl mx-auto relative">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
         Generate Payroll Bulanan
       </h3>
@@ -98,16 +117,10 @@ export const PayrollGenerateForm = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Menghitung...
+                Memproses Calculation Payroll...
               </>
             ) : (
-              <>
-                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Hitung (Generate) Payroll
-              </>
+              "Hitung Payroll (Batch)"
             )}
           </button>
         </div>
