@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ToastContainer, ToastMessage } from "@/components/ui/toast/Toast";
+import { EmployeeFaceAuthModal } from "@/components/auth/EmployeeFaceAuthModal";
 
 interface JobOpening {
   id: string;
@@ -19,6 +20,7 @@ const mockJobs: JobOpening[] = [
 ];
 
 export default function RootLandingPage() {
+  const [showFaceAuthModal, setShowFaceAuthModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobOpening | null>(null);
   const [applicantName, setApplicantName] = useState("");
   const [applicantEmail, setApplicantEmail] = useState("");
@@ -87,6 +89,7 @@ export default function RootLandingPage() {
   return (
     <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-brand-500 selection:text-white relative">
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      <EmployeeFaceAuthModal isOpen={showFaceAuthModal} onClose={() => setShowFaceAuthModal(false)} />
       {/* ─────────────────────────────────────────────
           1. NAVIGATION BAR (HRISCorp.dev Branding)
       ───────────────────────────────────────────── */}
@@ -113,13 +116,12 @@ export default function RootLandingPage() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="http://localhost:3001"
-              target="_blank"
-              className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-200 hover:text-white border border-slate-700/80 rounded-xl hover:bg-slate-800 transition flex items-center gap-2"
+            <button
+              onClick={() => setShowFaceAuthModal(true)}
+              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer"
             >
-              <span>📷 Login Wajah (Karyawan)</span>
-            </Link>
+              📷 Portal Karyawan (Login Wajah)
+            </button>
             <Link
               href="/signin?role=admin"
               className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-xl shadow-lg shadow-brand-500/25 transition"

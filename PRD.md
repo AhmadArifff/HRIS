@@ -947,20 +947,18 @@ Halaman ini adalah pintu gerbang awal aplikasi HRIS Enterprise sebelum pengguna 
 
 | Elemen Komponen / Tombol | Target Route / Aksi | Target Pengguna | Frontend Guard Clause Logic | Backend API / Integrasi | UX Feedback & Visual |
 |---|---|---|---|---|---|
-| **`Login Portal Karyawan`** | `/signin?role=employee` | Karyawan | Redirect langsung ke form login khusus Karyawan (ESS). | Client-side Router | Navigasi mulus, Auto-highlight tab Karyawan. |
+| **`Login Portal Karyawan`** | Modal `EmployeeFaceAuthModal` | Karyawan | 1. Trigger Klik: Karyawan menekan tombol **"📷 Portal Karyawan (Login Wajah)"**. 2. Camera Feed: Membuka modal & akses kamera. 3. Capture: Pindaian wajah 3D. 4. Verifikasi: Validasi NIK & kontur wajah. | `POST /api/auth/face-verify` | Modal 3D Camera Feed/Scanner, Toast: *"✓ Autentikasi Wajah Berhasil!"*, Redirect ke Portal (`:3001`). |
 | **`Login Admin / HRD`** | `/signin?role=admin` | HR, Admin, Executive | Redirect langsung ke form login Manajemen HRIS. | Client-side Router | Navigasi mulus, Auto-highlight tab Admin/HR. |
 | **`Portal Lowongan Kerja Publik`** | `/landing#careers` | Publik / Pelamar | Menampilkan daftar lowongan aktif dari `JOB_POSTING`. | `GET /api/public/jobs` | Card Interaktif, Filter Departemen & Lokasi. |
 | **`Lamar Pekerjaan (Quick Apply)`**| Modal / Form Pelamar | Pelamar | Guard: Wajib isi Nama, Email, No HP & Unggah CV PDF (Maks 5MB). | `POST /api/public/apply` | Toast: "Lamaran berhasil dikirim! Tim HRD akan menghubungi Anda". |
 
-### 8.2 Autentikasi Login Admin vs Login Wajah Karyawan
+### 8.2 Flow Autentikasi Dual-Role & Sesi Akses
 
-| Fitur / Parameter | Mode Admin / HRD Panel | Mode Karyawan (Portal ESS) |
-|---|---|---|
-| **Metode Autentikasi** | Username (Email Perusahaan) & Kata Sandi | **Verifikasi Foto Wajah Biometrik (Camera Face Check-in)** |
-| **Persyaratan Input** | Email valid (`@`) & Password terenkripsi | Pengenalan Wajah Kamera (Tanpa Username/Password) |
-| **Port Akses Default** | `http://localhost:3000` (`/signin` & `/dashboard`) | `http://localhost:3001` (Employee Self-Service) |
-| **Durasi Sesi Tokens** | **30 Menit** (Inactivity Idle Expiration) | **15 Menit** (Inactivity Idle Expiration) |
-| **Action & Redirection** | Redirect ke Admin Dashboard Overview (`/dashboard`) | Redirect ke Portal Karyawan (`:3001`) |
+| Role Pengguna | Metode Utama Autentikasi | Trigger dari Landing Page | Masa Berlaku Token Sesi | UX & State Transition |
+|---|---|---|---|---|
+| **Admin / HR / Manager** | Email & Password Kredensial | Form Login Admin (`/signin?role=admin`) | **30 Menit** (Inactivity Expiration) | Toast Success Top-Right, Sesi Token `ADMIN_TOKEN`, Access ke Admin Dashboard `/dashboard`. |
+| **Karyawan (Employee)** | **Biometric Camera Face Recognition (Foto Selfie)** | Modal Verifikasi Kamera (`EmployeeFaceAuthModal`) via Tombol **"Portal Karyawan (Login Wajah)"** di Landing Page | **15 Menit** (Inactivity Expiration) | Modal 3D Camera Feed/Scanner, Toast Success Top-Right: *"✓ Identitas Terverifikasi: Budi Santoso (EMP-001)"*, Access Token `EMP_FACE_TOKEN`, Auto-Redirect ke Employee Portal (`http://localhost:3001`). |
+| **Action & Redirection** | Redirect ke Admin Dashboard Overview (`/dashboard`) | Redirect ke Portal Karyawan (`:3001`) | | |
 
 ---
 

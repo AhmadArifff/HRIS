@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ToastContainer, ToastMessage } from "@/components/ui/toast/Toast";
+import { EmployeeFaceAuthModal } from "@/components/auth/EmployeeFaceAuthModal";
 
 interface JobOpening {
   id: string;
@@ -19,6 +20,7 @@ const mockJobs: JobOpening[] = [
 ];
 
 export default function LandingPage() {
+  const [showFaceAuthModal, setShowFaceAuthModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobOpening | null>(null);
   const [applicantName, setApplicantName] = useState("");
   const [applicantEmail, setApplicantEmail] = useState("");
@@ -87,6 +89,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-brand-500 selection:text-white relative">
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      <EmployeeFaceAuthModal isOpen={showFaceAuthModal} onClose={() => setShowFaceAuthModal(false)} />
 
       {/* ─────────────────────────────────────────────
           1. NAVIGATION BAR (HRISCorp.dev Branding)
@@ -115,12 +118,12 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link
-              href="/signin?role=employee"
-              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white transition"
+            <button
+              onClick={() => setShowFaceAuthModal(true)}
+              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer"
             >
-              Portal Karyawan
-            </Link>
+              📷 Portal Karyawan (Login Wajah)
+            </button>
             <Link
               href="/signin?role=admin"
               className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition shadow-lg shadow-brand-500/25"
