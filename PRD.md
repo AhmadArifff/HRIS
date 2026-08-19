@@ -925,7 +925,9 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`Drag & Drop Kanban Card`** | `/recruitment/kanban` | HR, Recruiter | Guard: Mencegah perpindahan kartu dari `Applied` langsung ke `Hired` tanpa tahap `Interview`. | `PATCH /api/applications/:id/status` <br/> State: `APPLICATION_STATUS` &rarr; `SCREENING / INTERVIEW / OFFERED / HIRED` | Animasi pergerakan kartu halus (Framer Motion), Notifikasi status kandidat diperbarui. |
+| **`Kanban Board Layout`** | `/recruitment/kanban` | HR, Recruiter | **Fixed Top Header & Column Sticky**: Area Judul Halaman (`PageBreadcrumb`) dan *Header* setiap kolom (`Applied`, `Screening`, `Interview`, `Offered`, `Hired`) terkunci tetap (*fixed*). Hanya area kartu kandidat (*card list container*) yang memiliki *independent vertical scroll* (`overflow-y-auto`). | Layout Responsive Monorepo | UX Modern, Judul dan Kategori tidak pernah terpotong atau tergulung saat men-scroll ratusan pelamar. |
+| **`Drag & Drop Kanban Card`** | `/recruitment/kanban` | HR, Recruiter | Guard: Mencegah perpindahan kartu dari `Applied` langsung ke `Hired` tanpa tahap `Interview`. | `PATCH /api/applications/:id/status` <br/> State: `APPLICATION_STATUS` &rarr; `SCREENING / INTERVIEW / OFFERED / HIRED` | Animasi pergerakan kartu halus, Notifikasi status kandidat diperbarui. |
+| **`+ Tambah Kandidat Pelamar`**| Modal `Tambah Kandidat` | HR, Recruiter | Guard: Validasi Nama, Posisi Pekerjaan, dan format Email sebelum data dimasukkan ke kolom tahap yang dipilih. | `POST /api/recruitment/candidates` | Modal 3D Book-Open, Toast Success Top-Right: *"Kandidat Ditambahkan"*. |
 | **`Simpan Penilaian Wawancara`**| `/recruitment/candidate/[id]` | HR, Interviewer | Guard: Menolak jika skor penilaian 1-5 atau catatan wawancara belum terisi. | `POST /api/applications/:id/interview-score` | Toast Success: "Hasil wawancara berhasil disimpan". |
 
 ---

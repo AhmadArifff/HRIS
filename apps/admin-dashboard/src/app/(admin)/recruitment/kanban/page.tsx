@@ -10,9 +10,14 @@ export const metadata: Metadata = {
 
 export default function KanbanATSPage() {
   return (
-    <div>
-      <PageBreadcrumb pageTitle="Applicant Tracking System (ATS)" />
-      <div className="mt-4">
+    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[580px] w-full overflow-hidden">
+      {/* 1. FIXED TOP AREA (Page Title + Breadcrumbs - Never scrolls away) */}
+      <div className="shrink-0 pb-3">
+        <PageBreadcrumb pageTitle="Applicant Tracking System (ATS)" />
+      </div>
+
+      {/* 2. KANBAN BOARD CONTAINER (Cards scroll independently) */}
+      <div className="flex-1 min-h-0 w-full overflow-hidden">
         <KanbanATS />
       </div>
     </div>

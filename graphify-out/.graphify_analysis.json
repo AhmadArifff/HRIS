@@ -1,54 +1,6 @@
 {
   "communities": {
     "0": [
-      "apps_admin_dashboard_src_components_analytics_analyticsmetrics",
-      "apps_admin_dashboard_src_components_analytics_analyticsmetrics_analyticsmetrics",
-      "apps_admin_dashboard_src_components_common_charttab",
-      "apps_admin_dashboard_src_components_common_charttab_charttab",
-      "apps_admin_dashboard_src_components_crm_estimatedrevenue",
-      "apps_admin_dashboard_src_components_crm_estimatedrevenue_estimatedrevenue",
-      "apps_admin_dashboard_src_components_crm_estimatedrevenue_reactapexchart",
-      "apps_admin_dashboard_src_components_crm_salescategory",
-      "apps_admin_dashboard_src_components_crm_salescategory_reactapexchart",
-      "apps_admin_dashboard_src_components_crm_salescategory_salescategory",
-      "apps_admin_dashboard_src_components_crm_upcomingschedule",
-      "apps_admin_dashboard_src_components_crm_upcomingschedule_scheduledata",
-      "apps_admin_dashboard_src_components_crm_upcomingschedule_upcomingschedule",
-      "apps_admin_dashboard_src_components_ecommerce_statisticschart",
-      "apps_admin_dashboard_src_components_ecommerce_statisticschart_chart",
-      "apps_admin_dashboard_src_components_ecommerce_statisticschart_statisticschart",
-      "apps_admin_dashboard_src_components_logistics_deliveryvehicles",
-      "apps_admin_dashboard_src_components_logistics_deliveryvehicles_deliveryvehicles",
-      "apps_admin_dashboard_src_components_logistics_totalrevenue",
-      "apps_admin_dashboard_src_components_logistics_totalrevenue_reactapexchart",
-      "apps_admin_dashboard_src_components_logistics_totalrevenue_totalrevenue",
-      "apps_admin_dashboard_src_components_logistics_trackingdelivery",
-      "apps_admin_dashboard_src_components_logistics_trackingdelivery_trackingdelivery",
-      "apps_admin_dashboard_src_components_marketing_featuredcampaigns",
-      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_campaigndata",
-      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_featuredcampaigns",
-      "apps_admin_dashboard_src_components_marketing_trafficstats",
-      "apps_admin_dashboard_src_components_marketing_trafficstats_reactapexchart",
-      "apps_admin_dashboard_src_components_marketing_trafficstats_trafficstats",
-      "apps_admin_dashboard_src_components_saas_activities",
-      "apps_admin_dashboard_src_components_saas_activities_activities",
-      "apps_admin_dashboard_src_components_saas_productperformance",
-      "apps_admin_dashboard_src_components_saas_productperformance_productperformance",
-      "apps_admin_dashboard_src_components_saas_productperformance_reactapexchart",
-      "apps_admin_dashboard_src_components_sales_usersrevenuestatistics",
-      "apps_admin_dashboard_src_components_sales_usersrevenuestatistics_chart",
-      "apps_admin_dashboard_src_components_sales_usersrevenuestatistics_usersrevenuestatistics",
-      "apps_admin_dashboard_src_components_stocks_mywatchlist",
-      "apps_admin_dashboard_src_components_stocks_mywatchlist_mywatchlist",
-      "apps_admin_dashboard_src_components_stocks_mywatchlist_watchlist",
-      "apps_admin_dashboard_src_components_stocks_stocktickers",
-      "apps_admin_dashboard_src_components_stocks_stocktickers_stocktickers",
-      "apps_admin_dashboard_src_components_stocks_stocktickers_tickers",
-      "apps_admin_dashboard_src_components_stocks_trendingstocks",
-      "apps_admin_dashboard_src_components_stocks_trendingstocks_trendingstocks",
-      "apps_admin_dashboard_src_icons_index"
-    ],
-    "1": [
       "apps_employee_portal_package",
       "apps_employee_portal_package_author",
       "apps_employee_portal_package_dependencies",
@@ -65,7 +17,6 @@
       "apps_employee_portal_package_devdependencies_types_react",
       "apps_employee_portal_package_devdependencies_types_react_dom",
       "apps_employee_portal_package_devdependencies_typescript",
-      "apps_employee_portal_package_json_react",
       "apps_employee_portal_package_license",
       "apps_employee_portal_package_name",
       "apps_employee_portal_package_private",
@@ -84,11 +35,12 @@
       "packages_ui_package_dependencies_react",
       "packages_ui_package_dependencies_react_dom",
       "packages_ui_package_json_react",
-      "packages_ui_package_json_react_dom",
       "packages_ui_package_main",
       "packages_ui_package_name",
       "packages_ui_package_private",
       "packages_ui_package_version",
+      "react",
+      "react_dom",
       "tailwindcss",
       "tailwindcss_postcss",
       "types_node",
@@ -96,7 +48,7 @@
       "types_react_dom",
       "typescript"
     ],
-    "2": [
+    "1": [
       "apps_admin_dashboard_src_app_admin_layout",
       "apps_admin_dashboard_src_app_admin_layout_adminlayout",
       "apps_admin_dashboard_src_app_full_width_pages_auth_layout",
@@ -115,7 +67,6 @@
       "apps_admin_dashboard_src_components_common_themetogglebutton_themetogglebutton",
       "apps_admin_dashboard_src_components_common_themetogglertwo",
       "apps_admin_dashboard_src_components_common_themetogglertwo_themetogglertwo",
-      "apps_admin_dashboard_src_components_header_notificationdropdown",
       "apps_admin_dashboard_src_components_header_notificationdropdown_notificationdropdown",
       "apps_admin_dashboard_src_context_sidebarcontext",
       "apps_admin_dashboard_src_context_sidebarcontext_sidebarcontext",
@@ -139,36 +90,26 @@
       "apps_admin_dashboard_src_layout_sidebarwidget",
       "apps_admin_dashboard_src_layout_sidebarwidget_sidebarwidget"
     ],
-    "3": [
+    "2": [
       "apps_admin_dashboard_src_components_analytics_acquisitionchannels",
       "apps_admin_dashboard_src_components_analytics_acquisitionchannels_acquisitionchannels",
       "apps_admin_dashboard_src_components_analytics_acquisitionchannels_reactapexchart",
       "apps_admin_dashboard_src_components_analytics_activeusers",
       "apps_admin_dashboard_src_components_analytics_activeusers_activeusers",
       "apps_admin_dashboard_src_components_analytics_activeusers_reactapexchart",
-      "apps_admin_dashboard_src_components_analytics_sessionsbydevice",
-      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_reactapexchart",
-      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_sessionsbydevice",
       "apps_admin_dashboard_src_components_analytics_topchannels",
       "apps_admin_dashboard_src_components_analytics_topchannels_channeldata",
       "apps_admin_dashboard_src_components_analytics_topchannels_topchannels",
       "apps_admin_dashboard_src_components_analytics_toppages",
       "apps_admin_dashboard_src_components_analytics_toppages_pagedata",
       "apps_admin_dashboard_src_components_analytics_toppages_toppages",
-      "apps_admin_dashboard_src_components_ecommerce_countrymap",
-      "apps_admin_dashboard_src_components_ecommerce_countrymap_countrymap",
-      "apps_admin_dashboard_src_components_ecommerce_countrymap_countrymapprops",
-      "apps_admin_dashboard_src_components_ecommerce_countrymap_marker",
-      "apps_admin_dashboard_src_components_ecommerce_countrymap_markerstyle",
-      "apps_admin_dashboard_src_components_ecommerce_countrymap_vectormap",
-      "apps_admin_dashboard_src_components_ecommerce_demographiccard",
-      "apps_admin_dashboard_src_components_ecommerce_demographiccard_demographiccard",
       "apps_admin_dashboard_src_components_ecommerce_monthlysaleschart",
       "apps_admin_dashboard_src_components_ecommerce_monthlysaleschart_monthlysaleschart",
       "apps_admin_dashboard_src_components_ecommerce_monthlysaleschart_reactapexchart",
       "apps_admin_dashboard_src_components_ecommerce_monthlytarget",
       "apps_admin_dashboard_src_components_ecommerce_monthlytarget_monthlytarget",
       "apps_admin_dashboard_src_components_ecommerce_monthlytarget_reactapexchart",
+      "apps_admin_dashboard_src_components_header_notificationdropdown",
       "apps_admin_dashboard_src_components_sales_salesbychannel",
       "apps_admin_dashboard_src_components_sales_salesbychannel_salesbychannel",
       "apps_admin_dashboard_src_components_sales_salesbycountry",
@@ -182,41 +123,7 @@
       "apps_admin_dashboard_src_components_ui_dropdown_dropdownitem_dropdownitem",
       "apps_admin_dashboard_src_components_ui_dropdown_dropdownitem_dropdownitemprops"
     ],
-    "4": [
-      "apps_admin_dashboard_src_components_auth_signupform",
-      "apps_admin_dashboard_src_components_auth_signupform_signupform",
-      "apps_admin_dashboard_src_components_common_componentcard",
-      "apps_admin_dashboard_src_components_common_componentcard_componentcard",
-      "apps_admin_dashboard_src_components_common_componentcard_componentcardprops",
-      "apps_admin_dashboard_src_components_form_date_picker",
-      "apps_admin_dashboard_src_components_form_date_picker_datepicker",
-      "apps_admin_dashboard_src_components_form_date_picker_propstype",
-      "apps_admin_dashboard_src_components_form_form_elements_defaultinputs",
-      "apps_admin_dashboard_src_components_form_form_elements_defaultinputs_defaultinputs",
-      "apps_admin_dashboard_src_components_form_form_elements_dropzone",
-      "apps_admin_dashboard_src_components_form_form_elements_dropzone_dropzonecomponent",
-      "apps_admin_dashboard_src_components_form_form_elements_inputgroup",
-      "apps_admin_dashboard_src_components_form_form_elements_inputgroup_inputgroup",
-      "apps_admin_dashboard_src_components_form_form_elements_inputstates",
-      "apps_admin_dashboard_src_components_form_form_elements_inputstates_inputstates",
-      "apps_admin_dashboard_src_components_form_form_elements_selectinputs",
-      "apps_admin_dashboard_src_components_form_form_elements_selectinputs_selectinputs",
-      "apps_admin_dashboard_src_components_form_form_elements_textareainput",
-      "apps_admin_dashboard_src_components_form_form_elements_textareainput_textareainput",
-      "apps_admin_dashboard_src_components_form_input_inputfield",
-      "apps_admin_dashboard_src_components_form_input_inputfield_input",
-      "apps_admin_dashboard_src_components_form_input_inputfield_inputprops",
-      "apps_admin_dashboard_src_components_form_label",
-      "apps_admin_dashboard_src_components_form_label_label",
-      "apps_admin_dashboard_src_components_form_label_labelprops",
-      "apps_admin_dashboard_src_components_form_select",
-      "apps_admin_dashboard_src_components_form_select_option",
-      "apps_admin_dashboard_src_components_form_select_select",
-      "apps_admin_dashboard_src_components_form_select_selectprops",
-      "apps_admin_dashboard_src_components_hris_candidatedetail",
-      "apps_admin_dashboard_src_components_hris_employeeform"
-    ],
-    "5": [
+    "3": [
       "apps_admin_dashboard_src_app_admin_others_pages_profile_page",
       "apps_admin_dashboard_src_app_admin_others_pages_profile_page_metadata",
       "apps_admin_dashboard_src_app_admin_others_pages_profile_page_profile",
@@ -247,38 +154,7 @@
       "apps_admin_dashboard_src_hooks_usemodal",
       "apps_admin_dashboard_src_hooks_usemodal_usemodal"
     ],
-    "6": [
-      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter",
-      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter_productsfilter",
-      "apps_admin_dashboard_src_components_ecommerce_products_productsheader",
-      "apps_admin_dashboard_src_components_ecommerce_products_productsheader_productsheader",
-      "apps_admin_dashboard_src_components_ecommerce_products_productslayout",
-      "apps_admin_dashboard_src_components_ecommerce_products_productslayout_productslayout",
-      "apps_admin_dashboard_src_components_ecommerce_products_productstable",
-      "apps_admin_dashboard_src_components_ecommerce_products_productstable_productstable",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_customerdetailscard",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_customerdetailscard_customerdetailscard",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard_defaultitems",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard_orderdetailscard",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard_orderitem",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderhistorycard",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderhistorycard_orderhistorycard",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionheader",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionheader_singletransactionheader",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionheader_singletransactionheaderprops",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionlayout",
-      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionlayout_singletransactionlayout",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtableone",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtableone_pricingtableone",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtableslayout",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtableslayout_pricingtableslayout",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtablethree",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtablethree_pricingtablethree",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtabletwo",
-      "apps_admin_dashboard_src_components_pricing_tables_pricingtabletwo_pricingtabletwo"
-    ],
-    "7": [
+    "4": [
       "concurrently",
       "package",
       "package_author",
@@ -286,7 +162,6 @@
       "package_devdependencies_concurrently",
       "package_devdependencies_prettier",
       "package_devdependencies_turbo",
-      "package_json_turbo",
       "package_license",
       "package_name",
       "package_overrides",
@@ -307,35 +182,40 @@
       "package_workspaces",
       "prettier",
       "ref_apps",
-      "ref_packages"
+      "ref_packages",
+      "turbo"
     ],
-    "8": [
-      "apps_employee_portal_src_app_attendance_page",
-      "apps_employee_portal_src_app_attendance_page_attendancepage",
-      "apps_employee_portal_src_app_leave_page",
-      "apps_employee_portal_src_app_leave_page_leavepage",
-      "apps_employee_portal_src_app_performance_page",
-      "apps_employee_portal_src_app_performance_page_performancepage",
-      "apps_employee_portal_src_app_reimbursement_page",
-      "apps_employee_portal_src_app_reimbursement_page_reimbursementpage",
-      "apps_employee_portal_src_components_hris_clockin",
-      "apps_employee_portal_src_components_hris_clockin_clockin",
-      "apps_employee_portal_src_components_hris_leaveform",
-      "apps_employee_portal_src_components_hris_leaveform_leaveform",
-      "apps_employee_portal_src_components_hris_performanceform",
-      "apps_employee_portal_src_components_hris_performanceform_performanceform",
-      "apps_employee_portal_src_components_hris_reimbursementform",
-      "apps_employee_portal_src_components_hris_reimbursementform_reimbursementform",
-      "apps_employee_portal_src_components_ui_button_button",
-      "apps_employee_portal_src_components_ui_button_button_button",
-      "apps_employee_portal_src_components_ui_button_button_buttonprops",
-      "apps_employee_portal_src_components_ui_toast_toast",
-      "apps_employee_portal_src_components_ui_toast_toast_toastcontainer",
-      "apps_employee_portal_src_components_ui_toast_toast_toastcontainerprops",
-      "apps_employee_portal_src_components_ui_toast_toast_toastitem",
-      "apps_employee_portal_src_components_ui_toast_toast_toastmessage"
+    "5": [
+      "apps_admin_dashboard_src_components_analytics_analyticsmetrics",
+      "apps_admin_dashboard_src_components_analytics_analyticsmetrics_analyticsmetrics",
+      "apps_admin_dashboard_src_components_crm_salescategory",
+      "apps_admin_dashboard_src_components_crm_salescategory_reactapexchart",
+      "apps_admin_dashboard_src_components_crm_salescategory_salescategory",
+      "apps_admin_dashboard_src_components_logistics_deliveryvehicles",
+      "apps_admin_dashboard_src_components_logistics_deliveryvehicles_deliveryvehicles",
+      "apps_admin_dashboard_src_components_logistics_trackingdelivery",
+      "apps_admin_dashboard_src_components_logistics_trackingdelivery_trackingdelivery",
+      "apps_admin_dashboard_src_components_marketing_featuredcampaigns",
+      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_campaigndata",
+      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_featuredcampaigns",
+      "apps_admin_dashboard_src_components_marketing_trafficstats",
+      "apps_admin_dashboard_src_components_marketing_trafficstats_reactapexchart",
+      "apps_admin_dashboard_src_components_marketing_trafficstats_trafficstats",
+      "apps_admin_dashboard_src_components_saas_activities",
+      "apps_admin_dashboard_src_components_saas_activities_activities",
+      "apps_admin_dashboard_src_components_saas_productperformance",
+      "apps_admin_dashboard_src_components_saas_productperformance_productperformance",
+      "apps_admin_dashboard_src_components_saas_productperformance_reactapexchart",
+      "apps_admin_dashboard_src_components_stocks_stocktickers",
+      "apps_admin_dashboard_src_components_stocks_stocktickers_stocktickers",
+      "apps_admin_dashboard_src_components_stocks_stocktickers_tickers",
+      "apps_admin_dashboard_src_components_stocks_trendingstocks",
+      "apps_admin_dashboard_src_components_stocks_trendingstocks_trendingstocks",
+      "apps_admin_dashboard_src_icons_index"
     ],
-    "9": [
+    "6": [
+      "apps_admin_dashboard_src_components_ecommerce_ecommercemetrics",
+      "apps_admin_dashboard_src_components_ecommerce_ecommercemetrics_ecommercemetrics",
       "apps_admin_dashboard_src_components_ecommerce_recentorders",
       "apps_admin_dashboard_src_components_ecommerce_recentorders_product",
       "apps_admin_dashboard_src_components_ecommerce_recentorders_recentorders",
@@ -348,6 +228,7 @@
       "apps_admin_dashboard_src_components_tables_basictableone_basictableone",
       "apps_admin_dashboard_src_components_tables_basictableone_order",
       "apps_admin_dashboard_src_components_tables_basictableone_tabledata",
+      "apps_admin_dashboard_src_components_ui_badge_badge_badge",
       "apps_admin_dashboard_src_components_ui_table_index",
       "apps_admin_dashboard_src_components_ui_table_index_table",
       "apps_admin_dashboard_src_components_ui_table_index_tablebody",
@@ -359,6 +240,81 @@
       "apps_admin_dashboard_src_components_ui_table_index_tableprops",
       "apps_admin_dashboard_src_components_ui_table_index_tablerow",
       "apps_admin_dashboard_src_components_ui_table_index_tablerowprops"
+    ],
+    "7": [
+      "apps_admin_dashboard_src_components_auth_signupform",
+      "apps_admin_dashboard_src_components_auth_signupform_signupform",
+      "apps_admin_dashboard_src_components_common_componentcard",
+      "apps_admin_dashboard_src_components_common_componentcard_componentcard",
+      "apps_admin_dashboard_src_components_common_componentcard_componentcardprops",
+      "apps_admin_dashboard_src_components_form_date_picker",
+      "apps_admin_dashboard_src_components_form_date_picker_datepicker",
+      "apps_admin_dashboard_src_components_form_date_picker_propstype",
+      "apps_admin_dashboard_src_components_form_form_elements_defaultinputs",
+      "apps_admin_dashboard_src_components_form_form_elements_defaultinputs_defaultinputs",
+      "apps_admin_dashboard_src_components_form_form_elements_inputgroup",
+      "apps_admin_dashboard_src_components_form_form_elements_inputgroup_inputgroup",
+      "apps_admin_dashboard_src_components_form_form_elements_inputstates",
+      "apps_admin_dashboard_src_components_form_form_elements_inputstates_inputstates",
+      "apps_admin_dashboard_src_components_form_form_elements_selectinputs",
+      "apps_admin_dashboard_src_components_form_form_elements_selectinputs_selectinputs",
+      "apps_admin_dashboard_src_components_form_form_elements_textareainput",
+      "apps_admin_dashboard_src_components_form_form_elements_textareainput_textareainput",
+      "apps_admin_dashboard_src_components_form_input_inputfield",
+      "apps_admin_dashboard_src_components_form_input_inputfield_input",
+      "apps_admin_dashboard_src_components_form_input_inputfield_inputprops",
+      "apps_admin_dashboard_src_components_form_label",
+      "apps_admin_dashboard_src_components_form_label_label",
+      "apps_admin_dashboard_src_components_form_label_labelprops"
+    ],
+    "8": [
+      "apps_employee_portal_src_components_common_componentcard",
+      "apps_employee_portal_src_components_common_componentcard_componentcard",
+      "apps_employee_portal_src_components_common_componentcard_componentcardprops",
+      "apps_employee_portal_src_components_form_date_picker",
+      "apps_employee_portal_src_components_form_date_picker_datepicker",
+      "apps_employee_portal_src_components_form_date_picker_propstype",
+      "apps_employee_portal_src_components_form_form_elements_defaultinputs",
+      "apps_employee_portal_src_components_form_form_elements_defaultinputs_defaultinputs",
+      "apps_employee_portal_src_components_form_form_elements_dropzone",
+      "apps_employee_portal_src_components_form_form_elements_dropzone_dropzonecomponent",
+      "apps_employee_portal_src_components_form_form_elements_fileinputexample",
+      "apps_employee_portal_src_components_form_form_elements_fileinputexample_fileinputexample",
+      "apps_employee_portal_src_components_form_form_elements_inputgroup",
+      "apps_employee_portal_src_components_form_form_elements_inputgroup_inputgroup",
+      "apps_employee_portal_src_components_form_form_elements_inputstates",
+      "apps_employee_portal_src_components_form_form_elements_inputstates_inputstates",
+      "apps_employee_portal_src_components_form_form_elements_selectinputs",
+      "apps_employee_portal_src_components_form_form_elements_selectinputs_selectinputs",
+      "apps_employee_portal_src_components_form_form_elements_textareainput",
+      "apps_employee_portal_src_components_form_form_elements_textareainput_textareainput",
+      "apps_employee_portal_src_components_form_label",
+      "apps_employee_portal_src_components_form_label_label",
+      "apps_employee_portal_src_components_form_label_labelprops"
+    ],
+    "9": [
+      "apps_admin_dashboard_src_app_admin_employee_list_page",
+      "apps_admin_dashboard_src_app_admin_employee_list_page_employeelistpage",
+      "apps_admin_dashboard_src_app_admin_employee_list_page_metadata",
+      "apps_admin_dashboard_src_app_full_width_pages_landing_page",
+      "apps_admin_dashboard_src_app_full_width_pages_landing_page_jobopening",
+      "apps_admin_dashboard_src_app_full_width_pages_landing_page_landingpage",
+      "apps_admin_dashboard_src_app_full_width_pages_landing_page_mockjobs",
+      "apps_admin_dashboard_src_app_page",
+      "apps_admin_dashboard_src_app_page_jobopening",
+      "apps_admin_dashboard_src_app_page_mockjobs",
+      "apps_admin_dashboard_src_app_page_rootlandingpage",
+      "apps_admin_dashboard_src_components_auth_employeefaceauthmodal",
+      "apps_admin_dashboard_src_components_auth_employeefaceauthmodal_employeefaceauthmodal",
+      "apps_admin_dashboard_src_components_auth_employeefaceauthmodal_employeefaceauthmodalprops",
+      "apps_admin_dashboard_src_components_hris_employeetable",
+      "apps_admin_dashboard_src_components_hris_employeetable_employeedata",
+      "apps_admin_dashboard_src_components_hris_employeetable_employeetable",
+      "apps_admin_dashboard_src_components_hris_employeetable_mockemployeedata",
+      "apps_admin_dashboard_src_components_ui_toast_toast",
+      "apps_admin_dashboard_src_components_ui_toast_toast_toastcontainer",
+      "apps_admin_dashboard_src_components_ui_toast_toast_toastitem",
+      "apps_admin_dashboard_src_components_ui_toast_toast_toastprops"
     ],
     "10": [
       "apps_admin_dashboard_src_components_email_composemodal",
@@ -384,91 +340,26 @@
       "apps_admin_dashboard_src_components_email_mailboxsidebar_mailboxsidebar"
     ],
     "11": [
-      "apps_admin_dashboard_src_app_full_width_pages_landing_page",
-      "apps_admin_dashboard_src_app_full_width_pages_landing_page_jobopening",
-      "apps_admin_dashboard_src_app_full_width_pages_landing_page_landingpage",
-      "apps_admin_dashboard_src_app_full_width_pages_landing_page_mockjobs",
-      "apps_admin_dashboard_src_app_page",
-      "apps_admin_dashboard_src_app_page_jobopening",
-      "apps_admin_dashboard_src_app_page_mockjobs",
-      "apps_admin_dashboard_src_app_page_rootlandingpage",
-      "apps_admin_dashboard_src_components_auth_employeefaceauthmodal",
-      "apps_admin_dashboard_src_components_auth_employeefaceauthmodal_employeefaceauthmodal",
-      "apps_admin_dashboard_src_components_auth_employeefaceauthmodal_employeefaceauthmodalprops",
-      "apps_admin_dashboard_src_components_hris_payrollcomponentstable",
-      "apps_admin_dashboard_src_components_hris_payrollcomponentstable_initialdata",
-      "apps_admin_dashboard_src_components_hris_payrollcomponentstable_payrollcomponent",
-      "apps_admin_dashboard_src_components_hris_payrollgenerateform",
-      "apps_admin_dashboard_src_components_ui_toast_toast",
-      "apps_admin_dashboard_src_components_ui_toast_toast_toastcontainer",
-      "apps_admin_dashboard_src_components_ui_toast_toast_toastitem",
-      "apps_admin_dashboard_src_components_ui_toast_toast_toastmessage",
-      "apps_admin_dashboard_src_components_ui_toast_toast_toastprops"
+      "apps_employee_portal_src_app_attendance_page",
+      "apps_employee_portal_src_app_attendance_page_attendancepage",
+      "apps_employee_portal_src_app_payroll_page",
+      "apps_employee_portal_src_app_payroll_page_payrollpage",
+      "apps_employee_portal_src_components_hris_clockin",
+      "apps_employee_portal_src_components_hris_clockin_clockin",
+      "apps_employee_portal_src_components_hris_paysliplist",
+      "apps_employee_portal_src_components_hris_paysliplist_payslipdata",
+      "apps_employee_portal_src_components_hris_paysliplist_paysliplist",
+      "apps_employee_portal_src_components_ui_badge_badge",
+      "apps_employee_portal_src_components_ui_badge_badge_badge",
+      "apps_employee_portal_src_components_ui_badge_badge_badgecolor",
+      "apps_employee_portal_src_components_ui_badge_badge_badgeprops",
+      "apps_employee_portal_src_components_ui_badge_badge_badgesize",
+      "apps_employee_portal_src_components_ui_badge_badge_badgevariant",
+      "apps_employee_portal_src_components_ui_button_button",
+      "apps_employee_portal_src_components_ui_button_button_button",
+      "apps_employee_portal_src_components_ui_button_button_buttonprops"
     ],
     "12": [
-      "apps_admin_dashboard_src_app_admin_employee_add_page",
-      "apps_admin_dashboard_src_app_admin_employee_add_page_employeeaddpage",
-      "apps_admin_dashboard_src_app_admin_employee_add_page_metadata",
-      "apps_admin_dashboard_src_app_admin_payroll_components_page",
-      "apps_admin_dashboard_src_app_admin_payroll_components_page_metadata",
-      "apps_admin_dashboard_src_app_admin_payroll_components_page_payrollcomponentspage",
-      "apps_admin_dashboard_src_app_admin_payroll_generate_page",
-      "apps_admin_dashboard_src_app_admin_payroll_generate_page_metadata",
-      "apps_admin_dashboard_src_app_admin_payroll_generate_page_payrollgeneratepage",
-      "apps_admin_dashboard_src_app_admin_recruitment_candidate_id_page",
-      "apps_admin_dashboard_src_app_admin_recruitment_candidate_id_page_candidatedetailpage",
-      "apps_admin_dashboard_src_app_admin_recruitment_candidate_id_page_metadata",
-      "apps_admin_dashboard_src_components_common_pagebreadcrumb",
-      "apps_admin_dashboard_src_components_common_pagebreadcrumb_breadcrumbprops",
-      "apps_admin_dashboard_src_components_common_pagebreadcrumb_pagebreadcrumb",
-      "apps_admin_dashboard_src_components_hris_candidatedetail_candidatedetail",
-      "apps_admin_dashboard_src_components_hris_employeeform_employeeform",
-      "apps_admin_dashboard_src_components_hris_payrollcomponentstable_payrollcomponentstable",
-      "apps_admin_dashboard_src_components_hris_payrollgenerateform_payrollgenerateform"
-    ],
-    "13": [
-      "apps_admin_dashboard_src_app_admin_employee_id_page",
-      "apps_admin_dashboard_src_app_admin_employee_id_page_employeeprofilepage",
-      "apps_admin_dashboard_src_app_admin_employee_id_page_metadata",
-      "apps_admin_dashboard_src_app_admin_recruitment_jobs_page",
-      "apps_admin_dashboard_src_app_admin_recruitment_jobs_page_jobboardpage",
-      "apps_admin_dashboard_src_app_admin_recruitment_jobs_page_metadata",
-      "apps_admin_dashboard_src_components_ecommerce_ecommercemetrics",
-      "apps_admin_dashboard_src_components_ecommerce_ecommercemetrics_ecommercemetrics",
-      "apps_admin_dashboard_src_components_hris_employeeprofile",
-      "apps_admin_dashboard_src_components_hris_employeeprofile_employeeprofile",
-      "apps_admin_dashboard_src_components_hris_jobboard",
-      "apps_admin_dashboard_src_components_hris_jobboard_jobboard",
-      "apps_admin_dashboard_src_components_hris_jobboard_jobsdata",
-      "apps_admin_dashboard_src_components_ui_badge_badge",
-      "apps_admin_dashboard_src_components_ui_badge_badge_badge",
-      "apps_admin_dashboard_src_components_ui_badge_badge_badgecolor",
-      "apps_admin_dashboard_src_components_ui_badge_badge_badgeprops",
-      "apps_admin_dashboard_src_components_ui_badge_badge_badgesize",
-      "apps_admin_dashboard_src_components_ui_badge_badge_badgevariant"
-    ],
-    "14": [
-      "apps_employee_portal_src_components_common_componentcard",
-      "apps_employee_portal_src_components_common_componentcard_componentcard",
-      "apps_employee_portal_src_components_common_componentcard_componentcardprops",
-      "apps_employee_portal_src_components_form_date_picker",
-      "apps_employee_portal_src_components_form_date_picker_datepicker",
-      "apps_employee_portal_src_components_form_date_picker_propstype",
-      "apps_employee_portal_src_components_form_form_elements_defaultinputs",
-      "apps_employee_portal_src_components_form_form_elements_defaultinputs_defaultinputs",
-      "apps_employee_portal_src_components_form_form_elements_dropzone",
-      "apps_employee_portal_src_components_form_form_elements_dropzone_dropzonecomponent",
-      "apps_employee_portal_src_components_form_form_elements_inputstates",
-      "apps_employee_portal_src_components_form_form_elements_inputstates_inputstates",
-      "apps_employee_portal_src_components_form_form_elements_selectinputs",
-      "apps_employee_portal_src_components_form_form_elements_selectinputs_selectinputs",
-      "apps_employee_portal_src_components_form_form_elements_textareainput",
-      "apps_employee_portal_src_components_form_form_elements_textareainput_textareainput",
-      "apps_employee_portal_src_components_form_label",
-      "apps_employee_portal_src_components_form_label_label",
-      "apps_employee_portal_src_components_form_label_labelprops"
-    ],
-    "15": [
       "apps_admin_dashboard_src_components_file_manager_allfolderssection",
       "apps_admin_dashboard_src_components_file_manager_allfolderssection_allfolderssection",
       "apps_admin_dashboard_src_components_file_manager_allfolderssection_folderitem",
@@ -487,7 +378,7 @@
       "apps_admin_dashboard_src_components_file_manager_storagedetailscard_reactapexchart",
       "apps_admin_dashboard_src_components_file_manager_storagedetailscard_storagedetailscard"
     ],
-    "16": [
+    "13": [
       "ref_build",
       "ref_dist",
       "ref_env_local",
@@ -506,7 +397,25 @@
       "turbo_tasks_dev",
       "turbo_tasks_lint"
     ],
-    "17": [
+    "14": [
+      "apps_admin_dashboard_next_config",
+      "apps_admin_dashboard_next_config_nextconfig",
+      "apps_admin_dashboard_src_app_admin_dashboard_page",
+      "apps_admin_dashboard_src_app_admin_dashboard_page_dashboardpage",
+      "apps_admin_dashboard_src_app_admin_dashboard_page_metadata",
+      "apps_admin_dashboard_src_app_admin_page",
+      "apps_admin_dashboard_src_app_admin_page_dashboardpage",
+      "apps_admin_dashboard_src_app_admin_page_metadata",
+      "apps_admin_dashboard_src_app_full_width_pages_auth_signup_page",
+      "apps_admin_dashboard_src_app_full_width_pages_auth_signup_page_metadata",
+      "apps_admin_dashboard_src_app_full_width_pages_auth_signup_page_signup",
+      "apps_admin_dashboard_src_components_hris_hrismetrics",
+      "apps_admin_dashboard_src_components_hris_hrismetrics_hrismetrics",
+      "apps_employee_portal_next_config",
+      "apps_employee_portal_next_config_nextconfig",
+      "ref_next"
+    ],
+    "15": [
       "apps_admin_dashboard_scratch_extract_billing",
       "apps_admin_dashboard_scratch_extract_billing_billinginfohtml",
       "apps_admin_dashboard_scratch_extract_billing_billinginfostart",
@@ -524,7 +433,7 @@
       "apps_admin_dashboard_scratch_extract_billing_row2start",
       "apps_admin_dashboard_scratch_extract_billing_row3start"
     ],
-    "18": [
+    "16": [
       "apps_admin_dashboard_scratch_extract_video_components",
       "apps_admin_dashboard_scratch_extract_video_components_chatheaderend",
       "apps_admin_dashboard_scratch_extract_video_components_chatheaderjsx",
@@ -542,7 +451,7 @@
       "apps_admin_dashboard_scratch_extract_video_components_trailingdivs",
       "apps_admin_dashboard_scratch_extract_video_components_writecomponent"
     ],
-    "19": [
+    "17": [
       "apps_admin_dashboard_src_components_integrations_addintegrationmodal",
       "apps_admin_dashboard_src_components_integrations_addintegrationmodal_addintegrationmodal",
       "apps_admin_dashboard_src_components_integrations_addintegrationmodal_addintegrationmodalprops",
@@ -560,24 +469,25 @@
       "apps_admin_dashboard_src_components_integrations_integrationslayout_initialintegrations",
       "apps_admin_dashboard_src_components_integrations_integrationslayout_integrationslayout"
     ],
-    "20": [
-      "apps_admin_dashboard_next_config",
-      "apps_admin_dashboard_next_config_nextconfig",
-      "apps_admin_dashboard_src_app_admin_leave_page",
-      "apps_admin_dashboard_src_app_admin_leave_page_leavepage",
-      "apps_admin_dashboard_src_app_admin_leave_page_metadata",
-      "apps_admin_dashboard_src_app_full_width_pages_auth_signup_page",
-      "apps_admin_dashboard_src_app_full_width_pages_auth_signup_page_metadata",
-      "apps_admin_dashboard_src_app_full_width_pages_auth_signup_page_signup",
-      "apps_admin_dashboard_src_components_hris_leavetable",
-      "apps_admin_dashboard_src_components_hris_leavetable_leaverecord",
-      "apps_admin_dashboard_src_components_hris_leavetable_leavetable",
-      "apps_admin_dashboard_src_components_hris_leavetable_mockleavedata",
-      "apps_employee_portal_next_config",
-      "apps_employee_portal_next_config_nextconfig",
-      "ref_next"
+    "18": [
+      "apps_employee_portal_src_app_performance_page",
+      "apps_employee_portal_src_app_performance_page_performancepage",
+      "apps_employee_portal_src_app_reimbursement_page",
+      "apps_employee_portal_src_app_reimbursement_page_reimbursementpage",
+      "apps_employee_portal_src_components_auth_faceauthguard",
+      "apps_employee_portal_src_components_auth_faceauthguard_authcontext",
+      "apps_employee_portal_src_components_auth_faceauthguard_authcontexttype",
+      "apps_employee_portal_src_components_hris_performanceform",
+      "apps_employee_portal_src_components_hris_performanceform_performanceform",
+      "apps_employee_portal_src_components_hris_reimbursementform",
+      "apps_employee_portal_src_components_hris_reimbursementform_reimbursementform",
+      "apps_employee_portal_src_components_ui_toast_toast",
+      "apps_employee_portal_src_components_ui_toast_toast_toastcontainer",
+      "apps_employee_portal_src_components_ui_toast_toast_toastcontainerprops",
+      "apps_employee_portal_src_components_ui_toast_toast_toastitem",
+      "apps_employee_portal_src_components_ui_toast_toast_toastmessage"
     ],
-    "21": [
+    "19": [
       "apps_admin_dashboard_src_components_chat_chatinputbar",
       "apps_admin_dashboard_src_components_chat_chatinputbar_chatinputbar",
       "apps_admin_dashboard_src_components_chat_chatinputbar_chatinputbarprops",
@@ -594,7 +504,7 @@
       "apps_admin_dashboard_src_components_chat_chatsidebar_chatsidebar",
       "apps_admin_dashboard_src_components_chat_chatsidebar_chatsidebarprops"
     ],
-    "22": [
+    "20": [
       "apps_admin_dashboard_src_components_maps_countrytrafficanalyticscard",
       "apps_admin_dashboard_src_components_maps_countrytrafficanalyticscard_countrytrafficanalyticscard",
       "apps_admin_dashboard_src_components_maps_countrytrafficanalyticscard_vectormap",
@@ -611,7 +521,7 @@
       "apps_admin_dashboard_src_components_maps_vectormaplayout",
       "apps_admin_dashboard_src_components_maps_vectormaplayout_vectormaplayout"
     ],
-    "23": [
+    "21": [
       "apps_admin_dashboard_src_components_ticket_reply_ticketdetailssidebar",
       "apps_admin_dashboard_src_components_ticket_reply_ticketdetailssidebar_ticketdetailssidebar",
       "apps_admin_dashboard_src_components_ticket_reply_ticketdetailssidebar_ticketdetailssidebarprops",
@@ -628,7 +538,7 @@
       "apps_admin_dashboard_src_components_ticket_reply_ticketthread_ticketthread",
       "apps_admin_dashboard_src_components_ticket_reply_ticketthread_ticketthreadprops"
     ],
-    "24": [
+    "22": [
       "apps_admin_dashboard_tsconfig_compileroptions",
       "apps_admin_dashboard_tsconfig_compileroptions_allowjs",
       "apps_admin_dashboard_tsconfig_compileroptions_esmoduleinterop",
@@ -645,7 +555,7 @@
       "apps_admin_dashboard_tsconfig_compileroptions_strict",
       "apps_admin_dashboard_tsconfig_compileroptions_target"
     ],
-    "25": [
+    "23": [
       "apps_employee_portal_tsconfig_compileroptions",
       "apps_employee_portal_tsconfig_compileroptions_allowjs",
       "apps_employee_portal_tsconfig_compileroptions_esmoduleinterop",
@@ -662,7 +572,7 @@
       "apps_employee_portal_tsconfig_compileroptions_strict",
       "apps_employee_portal_tsconfig_compileroptions_target"
     ],
-    "26": [
+    "24": [
       "apps_admin_dashboard_src_components_task_task_kanban_kanbancard",
       "apps_admin_dashboard_src_components_task_task_kanban_kanbancard_kanbancard",
       "apps_admin_dashboard_src_components_task_task_kanban_kanbancard_kanbancardprops",
@@ -678,7 +588,7 @@
       "apps_admin_dashboard_src_components_task_task_kanban_taskkanbanlayout_initialkanbantasks",
       "apps_admin_dashboard_src_components_task_task_kanban_taskkanbanlayout_taskkanbanlayout"
     ],
-    "27": [
+    "25": [
       "apps_admin_dashboard_scratch_slice3",
       "apps_admin_dashboard_scratch_slice3_fs",
       "apps_admin_dashboard_scratch_slice3_getblock",
@@ -693,7 +603,7 @@
       "apps_admin_dashboard_scratch_slice3_sidebarstart",
       "apps_admin_dashboard_scratch_slice3_sstart"
     ],
-    "28": [
+    "26": [
       "apps_admin_dashboard_src_components_api_keys_apikeyslayout",
       "apps_admin_dashboard_src_components_api_keys_apikeyslayout_apikeyslayout",
       "apps_admin_dashboard_src_components_api_keys_apikeyslayout_initialapikeys",
@@ -708,7 +618,22 @@
       "apps_admin_dashboard_src_components_api_keys_editapikeymodal_editapikeymodal",
       "apps_admin_dashboard_src_components_api_keys_editapikeymodal_editapikeymodalprops"
     ],
-    "29": [
+    "27": [
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_customerdetailscard",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_customerdetailscard_customerdetailscard",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard_defaultitems",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard_orderdetailscard",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderdetailscard_orderitem",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderhistorycard",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_orderhistorycard_orderhistorycard",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionheader",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionheader_singletransactionheader",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionheader_singletransactionheaderprops",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionlayout",
+      "apps_admin_dashboard_src_components_ecommerce_single_transaction_singletransactionlayout_singletransactionlayout"
+    ],
+    "28": [
       "apps_admin_dashboard_src_components_faq_faqlayout",
       "apps_admin_dashboard_src_components_faq_faqlayout_faqlayout",
       "apps_admin_dashboard_src_components_faq_faqone",
@@ -723,7 +648,7 @@
       "apps_admin_dashboard_src_components_faq_faqtwo_leftfaqs",
       "apps_admin_dashboard_src_components_faq_faqtwo_rightfaqs"
     ],
-    "30": [
+    "29": [
       "apps_admin_dashboard_scratch_process_ecommerce",
       "apps_admin_dashboard_scratch_process_ecommerce_filterhtml",
       "apps_admin_dashboard_scratch_process_ecommerce_filterstart",
@@ -737,7 +662,7 @@
       "apps_admin_dashboard_scratch_process_ecommerce_thtml",
       "apps_admin_dashboard_scratch_process_ecommerce_writecomponent"
     ],
-    "31": [
+    "30": [
       "apps_admin_dashboard_src_components_ecommerce_billing_billingheader",
       "apps_admin_dashboard_src_components_ecommerce_billing_billingheader_billingheader",
       "apps_admin_dashboard_src_components_ecommerce_billing_billinginfo",
@@ -751,7 +676,7 @@
       "apps_admin_dashboard_src_components_ecommerce_billing_plandetails",
       "apps_admin_dashboard_src_components_ecommerce_billing_plandetails_plandetails"
     ],
-    "32": [
+    "31": [
       "apps_admin_dashboard_src_components_ecommerce_transactions_transactionsfilter",
       "apps_admin_dashboard_src_components_ecommerce_transactions_transactionsfilter_transactionsfilter",
       "apps_admin_dashboard_src_components_ecommerce_transactions_transactionsfilter_transactionsfilterprops",
@@ -765,7 +690,7 @@
       "apps_admin_dashboard_src_components_ecommerce_transactions_transactionstable_transactionstable",
       "apps_admin_dashboard_src_components_ecommerce_transactions_transactionstable_transactionstableprops"
     ],
-    "33": [
+    "32": [
       "apps_admin_dashboard_src_components_support_tickets_supportticketslayout",
       "apps_admin_dashboard_src_components_support_tickets_supportticketslayout_initialtickets",
       "apps_admin_dashboard_src_components_support_tickets_supportticketslayout_supportticketslayout",
@@ -779,7 +704,7 @@
       "apps_admin_dashboard_src_components_support_tickets_tickettablefilterbar_tickettablefilterbar",
       "apps_admin_dashboard_src_components_support_tickets_tickettablefilterbar_tickettablefilterbarprops"
     ],
-    "34": [
+    "33": [
       "apps_admin_dashboard_src_components_tables_data_tables_datatableone",
       "apps_admin_dashboard_src_components_tables_data_tables_datatableone_datatableone",
       "apps_admin_dashboard_src_components_tables_data_tables_datatableone_datatableuser",
@@ -793,19 +718,31 @@
       "apps_admin_dashboard_src_components_tables_data_tables_datatabletwo_datatabletwo",
       "apps_admin_dashboard_src_components_tables_data_tables_datatabletwo_mockusers"
     ],
+    "34": [
+      "apps_admin_dashboard_src_app_admin_employee_add_page",
+      "apps_admin_dashboard_src_app_admin_employee_add_page_employeeaddpage",
+      "apps_admin_dashboard_src_app_admin_employee_add_page_metadata",
+      "apps_admin_dashboard_src_components_form_form_elements_dropzone",
+      "apps_admin_dashboard_src_components_form_form_elements_dropzone_dropzonecomponent",
+      "apps_admin_dashboard_src_components_form_select",
+      "apps_admin_dashboard_src_components_form_select_option",
+      "apps_admin_dashboard_src_components_form_select_select",
+      "apps_admin_dashboard_src_components_form_select_selectprops",
+      "apps_admin_dashboard_src_components_hris_employeeform",
+      "apps_admin_dashboard_src_components_hris_employeeform_employeeform"
+    ],
     "35": [
-      "apps_employee_portal_src_app_layout",
-      "apps_employee_portal_src_app_layout_geistmono",
-      "apps_employee_portal_src_app_layout_geistsans",
-      "apps_employee_portal_src_app_layout_metadata",
-      "apps_employee_portal_src_app_layout_rootlayout",
-      "apps_employee_portal_src_components_auth_faceauthguard",
-      "apps_employee_portal_src_components_auth_faceauthguard_authcontext",
-      "apps_employee_portal_src_components_auth_faceauthguard_authcontexttype",
-      "apps_employee_portal_src_components_auth_faceauthguard_faceauthguard",
-      "apps_employee_portal_src_components_auth_faceauthguard_useauth",
-      "apps_employee_portal_src_components_header",
-      "apps_employee_portal_src_components_header_header"
+      "apps_admin_dashboard_src_components_common_pagebreadcrumb",
+      "apps_admin_dashboard_src_components_common_pagebreadcrumb_breadcrumbprops",
+      "apps_admin_dashboard_src_components_common_pagebreadcrumb_pagebreadcrumb",
+      "apps_admin_dashboard_src_components_maps_mapslayout",
+      "apps_admin_dashboard_src_components_maps_mapslayout_mapslayout",
+      "apps_admin_dashboard_src_components_maps_maptwocard",
+      "apps_admin_dashboard_src_components_maps_maptwocard_maptwocard",
+      "apps_admin_dashboard_src_components_maps_mapviewcard",
+      "apps_admin_dashboard_src_components_maps_mapviewcard_mapviewcard",
+      "apps_admin_dashboard_src_components_maps_washingtondcregioncard",
+      "apps_admin_dashboard_src_components_maps_washingtondcregioncard_washingtondcregioncard"
     ],
     "36": [
       "apps_admin_dashboard_src_components_ecommerce_create_invoice_createinvoiceform",
@@ -834,19 +771,6 @@
       "apps_admin_dashboard_src_components_task_task_list_tasklistlayout_tasklistlayout"
     ],
     "38": [
-      "apps_employee_portal_src_app_payroll_page",
-      "apps_employee_portal_src_app_payroll_page_payrollpage",
-      "apps_employee_portal_src_components_hris_paysliplist",
-      "apps_employee_portal_src_components_hris_paysliplist_payslipdata",
-      "apps_employee_portal_src_components_hris_paysliplist_paysliplist",
-      "apps_employee_portal_src_components_ui_badge_badge",
-      "apps_employee_portal_src_components_ui_badge_badge_badge",
-      "apps_employee_portal_src_components_ui_badge_badge_badgecolor",
-      "apps_employee_portal_src_components_ui_badge_badge_badgeprops",
-      "apps_employee_portal_src_components_ui_badge_badge_badgesize",
-      "apps_employee_portal_src_components_ui_badge_badge_badgevariant"
-    ],
-    "39": [
       "apps_employee_portal_src_components_ui_table_index",
       "apps_employee_portal_src_components_ui_table_index_table",
       "apps_employee_portal_src_components_ui_table_index_tablebody",
@@ -859,7 +783,7 @@
       "apps_employee_portal_src_components_ui_table_index_tablerow",
       "apps_employee_portal_src_components_ui_table_index_tablerowprops"
     ],
-    "40": [
+    "39": [
       "apps_admin_dashboard_scratch_generate_billing_components",
       "apps_admin_dashboard_scratch_generate_billing_components_billinginfohtml",
       "apps_admin_dashboard_scratch_generate_billing_components_extractbetween",
@@ -871,7 +795,7 @@
       "apps_admin_dashboard_scratch_generate_billing_components_plandetailshtml",
       "apps_admin_dashboard_scratch_generate_billing_components_writecomponent"
     ],
-    "41": [
+    "40": [
       "apps_admin_dashboard_src_app_admin_attendance_shift_page",
       "apps_admin_dashboard_src_app_admin_attendance_shift_page_metadata",
       "apps_admin_dashboard_src_app_admin_attendance_shift_page_shiftpage",
@@ -883,19 +807,19 @@
       "apps_admin_dashboard_src_components_hris_shifttable_shiftassignment",
       "apps_admin_dashboard_src_components_hris_shifttable_shifttable"
     ],
-    "42": [
-      "apps_admin_dashboard_src_app_full_width_pages_auth_signin_page",
-      "apps_admin_dashboard_src_app_full_width_pages_auth_signin_page_metadata",
-      "apps_admin_dashboard_src_app_full_width_pages_auth_signin_page_signin",
-      "apps_admin_dashboard_src_components_auth_signinform",
-      "apps_admin_dashboard_src_components_auth_signinform_signinform",
-      "apps_admin_dashboard_src_components_form_form_elements_checkboxcomponents",
-      "apps_admin_dashboard_src_components_form_form_elements_checkboxcomponents_checkboxcomponents",
-      "apps_admin_dashboard_src_components_form_input_checkbox",
-      "apps_admin_dashboard_src_components_form_input_checkbox_checkbox",
-      "apps_admin_dashboard_src_components_form_input_checkbox_checkboxprops"
+    "41": [
+      "apps_admin_dashboard_src_app_admin_employee_id_page",
+      "apps_admin_dashboard_src_app_admin_employee_id_page_employeeprofilepage",
+      "apps_admin_dashboard_src_app_admin_employee_id_page_metadata",
+      "apps_admin_dashboard_src_components_hris_employeeprofile",
+      "apps_admin_dashboard_src_components_hris_employeeprofile_employeeprofile",
+      "apps_admin_dashboard_src_components_ui_badge_badge",
+      "apps_admin_dashboard_src_components_ui_badge_badge_badgecolor",
+      "apps_admin_dashboard_src_components_ui_badge_badge_badgeprops",
+      "apps_admin_dashboard_src_components_ui_badge_badge_badgesize",
+      "apps_admin_dashboard_src_components_ui_badge_badge_badgevariant"
     ],
-    "43": [
+    "42": [
       "apps_admin_dashboard_src_components_video_generator_chatheader",
       "apps_admin_dashboard_src_components_video_generator_chatheader_chatheader",
       "apps_admin_dashboard_src_components_video_generator_chatsidebar",
@@ -907,7 +831,7 @@
       "apps_admin_dashboard_src_components_video_generator_videogeneratorlayout",
       "apps_admin_dashboard_src_components_video_generator_videogeneratorlayout_videogeneratorlayout"
     ],
-    "44": [
+    "43": [
       "apps_admin_dashboard_tsconfig_include",
       "apps_admin_dashboard_tsconfig_json_ref_next_env_d_ts",
       "apps_admin_dashboard_tsconfig_json_ref_next_types_ts",
@@ -918,26 +842,36 @@
       "apps_employee_portal_tsconfig_json_ref_tsx",
       "ref_next_dev_types_ts"
     ],
+    "44": [
+      "apps_employee_portal_src_app_layout",
+      "apps_employee_portal_src_app_layout_geistmono",
+      "apps_employee_portal_src_app_layout_geistsans",
+      "apps_employee_portal_src_app_layout_metadata",
+      "apps_employee_portal_src_app_layout_rootlayout",
+      "apps_employee_portal_src_components_auth_faceauthguard_faceauthguard",
+      "apps_employee_portal_src_components_auth_faceauthguard_useauth",
+      "apps_employee_portal_src_components_header",
+      "apps_employee_portal_src_components_header_header"
+    ],
     "45": [
-      "apps_employee_portal_src_components_form_form_elements_inputgroup",
-      "apps_employee_portal_src_components_form_form_elements_inputgroup_inputgroup",
-      "apps_employee_portal_src_components_form_group_input_phoneinput",
-      "apps_employee_portal_src_components_form_group_input_phoneinput_countrycode",
-      "apps_employee_portal_src_components_form_group_input_phoneinput_phoneinput",
-      "apps_employee_portal_src_components_form_group_input_phoneinput_phoneinputprops",
-      "apps_employee_portal_src_components_form_input_inputfield",
-      "apps_employee_portal_src_components_form_input_inputfield_input",
-      "apps_employee_portal_src_components_form_input_inputfield_inputprops"
+      "apps_admin_dashboard_src_app_admin_attendance_page",
+      "apps_admin_dashboard_src_app_admin_attendance_page_attendancepage",
+      "apps_admin_dashboard_src_app_admin_attendance_page_metadata",
+      "apps_admin_dashboard_src_components_hris_attendancetable",
+      "apps_admin_dashboard_src_components_hris_attendancetable_attendancerecord",
+      "apps_admin_dashboard_src_components_hris_attendancetable_attendancetable",
+      "apps_admin_dashboard_src_components_hris_attendancetable_mockattendancedata",
+      "apps_admin_dashboard_src_components_ui_toast_toast_toastmessage"
     ],
     "46": [
-      "apps_admin_dashboard_src_app_admin_dashboard_page",
-      "apps_admin_dashboard_src_app_admin_dashboard_page_dashboardpage",
-      "apps_admin_dashboard_src_app_admin_dashboard_page_metadata",
-      "apps_admin_dashboard_src_app_admin_page",
-      "apps_admin_dashboard_src_app_admin_page_dashboardpage",
-      "apps_admin_dashboard_src_app_admin_page_metadata",
-      "apps_admin_dashboard_src_components_hris_hrismetrics",
-      "apps_admin_dashboard_src_components_hris_hrismetrics_hrismetrics"
+      "apps_admin_dashboard_src_app_admin_recruitment_kanban_page",
+      "apps_admin_dashboard_src_app_admin_recruitment_kanban_page_kanbanatspage",
+      "apps_admin_dashboard_src_app_admin_recruitment_kanban_page_metadata",
+      "apps_admin_dashboard_src_components_hris_kanbanats",
+      "apps_admin_dashboard_src_components_hris_kanbanats_candidate",
+      "apps_admin_dashboard_src_components_hris_kanbanats_initialcandidates",
+      "apps_admin_dashboard_src_components_hris_kanbanats_initialcolumns",
+      "apps_admin_dashboard_src_components_hris_kanbanats_kanbanats"
     ],
     "47": [
       "apps_admin_dashboard_src_components_coming_soon_comingsooncountdown",
@@ -950,16 +884,46 @@
       "apps_admin_dashboard_src_components_coming_soon_comingsoonsubscribeform_comingsoonsubscribeform"
     ],
     "48": [
-      "apps_admin_dashboard_src_components_maps_mapslayout",
-      "apps_admin_dashboard_src_components_maps_mapslayout_mapslayout",
-      "apps_admin_dashboard_src_components_maps_maptwocard",
-      "apps_admin_dashboard_src_components_maps_maptwocard_maptwocard",
-      "apps_admin_dashboard_src_components_maps_mapviewcard",
-      "apps_admin_dashboard_src_components_maps_mapviewcard_mapviewcard",
-      "apps_admin_dashboard_src_components_maps_washingtondcregioncard",
-      "apps_admin_dashboard_src_components_maps_washingtondcregioncard_washingtondcregioncard"
+      "apps_admin_dashboard_src_components_common_charttab",
+      "apps_admin_dashboard_src_components_common_charttab_charttab",
+      "apps_admin_dashboard_src_components_ecommerce_statisticschart",
+      "apps_admin_dashboard_src_components_ecommerce_statisticschart_chart",
+      "apps_admin_dashboard_src_components_ecommerce_statisticschart_statisticschart",
+      "apps_admin_dashboard_src_components_sales_usersrevenuestatistics",
+      "apps_admin_dashboard_src_components_sales_usersrevenuestatistics_chart",
+      "apps_admin_dashboard_src_components_sales_usersrevenuestatistics_usersrevenuestatistics"
     ],
     "49": [
+      "apps_admin_dashboard_src_components_ecommerce_countrymap",
+      "apps_admin_dashboard_src_components_ecommerce_countrymap_countrymap",
+      "apps_admin_dashboard_src_components_ecommerce_countrymap_countrymapprops",
+      "apps_admin_dashboard_src_components_ecommerce_countrymap_marker",
+      "apps_admin_dashboard_src_components_ecommerce_countrymap_markerstyle",
+      "apps_admin_dashboard_src_components_ecommerce_countrymap_vectormap",
+      "apps_admin_dashboard_src_components_ecommerce_demographiccard",
+      "apps_admin_dashboard_src_components_ecommerce_demographiccard_demographiccard"
+    ],
+    "50": [
+      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter",
+      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter_productsfilter",
+      "apps_admin_dashboard_src_components_ecommerce_products_productsheader",
+      "apps_admin_dashboard_src_components_ecommerce_products_productsheader_productsheader",
+      "apps_admin_dashboard_src_components_ecommerce_products_productslayout",
+      "apps_admin_dashboard_src_components_ecommerce_products_productslayout_productslayout",
+      "apps_admin_dashboard_src_components_ecommerce_products_productstable",
+      "apps_admin_dashboard_src_components_ecommerce_products_productstable_productstable"
+    ],
+    "51": [
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtableone",
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtableone_pricingtableone",
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtableslayout",
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtableslayout_pricingtableslayout",
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtablethree",
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtablethree_pricingtablethree",
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtabletwo",
+      "apps_admin_dashboard_src_components_pricing_tables_pricingtabletwo_pricingtabletwo"
+    ],
+    "52": [
       "apps_admin_dashboard_scratch_slice2",
       "apps_admin_dashboard_scratch_slice2_fs",
       "apps_admin_dashboard_scratch_slice2_headerend",
@@ -968,7 +932,7 @@
       "apps_admin_dashboard_scratch_slice2_inputend",
       "apps_admin_dashboard_scratch_slice2_sidebarstart"
     ],
-    "50": [
+    "53": [
       "apps_admin_dashboard_scratch_slice_jsx",
       "apps_admin_dashboard_scratch_slice_jsx_fs",
       "apps_admin_dashboard_scratch_slice_jsx_headerend",
@@ -977,25 +941,16 @@
       "apps_admin_dashboard_scratch_slice_jsx_inputend",
       "apps_admin_dashboard_scratch_slice_jsx_sidebarstart"
     ],
-    "51": [
-      "apps_admin_dashboard_src_app_admin_attendance_page",
-      "apps_admin_dashboard_src_app_admin_attendance_page_attendancepage",
-      "apps_admin_dashboard_src_app_admin_attendance_page_metadata",
-      "apps_admin_dashboard_src_components_hris_attendancetable",
-      "apps_admin_dashboard_src_components_hris_attendancetable_attendancerecord",
-      "apps_admin_dashboard_src_components_hris_attendancetable_attendancetable",
-      "apps_admin_dashboard_src_components_hris_attendancetable_mockattendancedata"
+    "54": [
+      "apps_admin_dashboard_src_app_admin_leave_page",
+      "apps_admin_dashboard_src_app_admin_leave_page_leavepage",
+      "apps_admin_dashboard_src_app_admin_leave_page_metadata",
+      "apps_admin_dashboard_src_components_hris_leavetable",
+      "apps_admin_dashboard_src_components_hris_leavetable_leaverecord",
+      "apps_admin_dashboard_src_components_hris_leavetable_leavetable",
+      "apps_admin_dashboard_src_components_hris_leavetable_mockleavedata"
     ],
-    "52": [
-      "apps_admin_dashboard_src_app_admin_employee_list_page",
-      "apps_admin_dashboard_src_app_admin_employee_list_page_employeelistpage",
-      "apps_admin_dashboard_src_app_admin_employee_list_page_metadata",
-      "apps_admin_dashboard_src_components_hris_employeetable",
-      "apps_admin_dashboard_src_components_hris_employeetable_employeedata",
-      "apps_admin_dashboard_src_components_hris_employeetable_employeetable",
-      "apps_admin_dashboard_src_components_hris_employeetable_mockemployeedata"
-    ],
-    "53": [
+    "55": [
       "apps_admin_dashboard_src_app_admin_offboarding_page",
       "apps_admin_dashboard_src_app_admin_offboarding_page_metadata",
       "apps_admin_dashboard_src_app_admin_offboarding_page_offboardingpage",
@@ -1004,16 +959,16 @@
       "apps_admin_dashboard_src_components_hris_offboardingtable_offboardingrecord",
       "apps_admin_dashboard_src_components_hris_offboardingtable_offboardingtable"
     ],
-    "54": [
-      "apps_admin_dashboard_src_app_admin_recruitment_kanban_page",
-      "apps_admin_dashboard_src_app_admin_recruitment_kanban_page_kanbanatspage",
-      "apps_admin_dashboard_src_app_admin_recruitment_kanban_page_metadata",
-      "apps_admin_dashboard_src_components_hris_kanbanats",
-      "apps_admin_dashboard_src_components_hris_kanbanats_candidates",
-      "apps_admin_dashboard_src_components_hris_kanbanats_columns",
-      "apps_admin_dashboard_src_components_hris_kanbanats_kanbanats"
+    "56": [
+      "apps_admin_dashboard_src_app_admin_payroll_components_page",
+      "apps_admin_dashboard_src_app_admin_payroll_components_page_metadata",
+      "apps_admin_dashboard_src_app_admin_payroll_components_page_payrollcomponentspage",
+      "apps_admin_dashboard_src_components_hris_payrollcomponentstable",
+      "apps_admin_dashboard_src_components_hris_payrollcomponentstable_initialdata",
+      "apps_admin_dashboard_src_components_hris_payrollcomponentstable_payrollcomponent",
+      "apps_admin_dashboard_src_components_hris_payrollcomponentstable_payrollcomponentstable"
     ],
-    "55": [
+    "57": [
       "apps_admin_dashboard_tsconfig_compileroptions_lib",
       "apps_admin_dashboard_tsconfig_json_ref_dom",
       "apps_admin_dashboard_tsconfig_json_ref_dom_iterable",
@@ -1022,7 +977,16 @@
       "apps_employee_portal_tsconfig_json_ref_dom",
       "apps_employee_portal_tsconfig_json_ref_esnext"
     ],
-    "56": [
+    "58": [
+      "apps_employee_portal_src_app_leave_page",
+      "apps_employee_portal_src_app_leave_page_leavepage",
+      "apps_employee_portal_src_components_form_input_inputfield",
+      "apps_employee_portal_src_components_form_input_inputfield_input",
+      "apps_employee_portal_src_components_form_input_inputfield_inputprops",
+      "apps_employee_portal_src_components_hris_leaveform",
+      "apps_employee_portal_src_components_hris_leaveform_leaveform"
+    ],
+    "59": [
       "apps_admin_dashboard_scratch_balance_tags",
       "apps_admin_dashboard_scratch_balance_tags_balancetags",
       "apps_admin_dashboard_scratch_balance_tags_counttags",
@@ -1030,7 +994,7 @@
       "apps_admin_dashboard_scratch_balance_tags_fs",
       "apps_admin_dashboard_scratch_balance_tags_path"
     ],
-    "57": [
+    "60": [
       "apps_admin_dashboard_scratch_clean_video",
       "apps_admin_dashboard_scratch_clean_video_cleanhtml",
       "apps_admin_dashboard_scratch_clean_video_endindex",
@@ -1038,7 +1002,7 @@
       "apps_admin_dashboard_scratch_clean_video_html",
       "apps_admin_dashboard_scratch_clean_video_startindex"
     ],
-    "58": [
+    "61": [
       "apps_admin_dashboard_scratch_extract_ecommerce_products",
       "apps_admin_dashboard_scratch_extract_ecommerce_products_fs",
       "apps_admin_dashboard_scratch_extract_ecommerce_products_html",
@@ -1046,7 +1010,7 @@
       "apps_admin_dashboard_scratch_extract_ecommerce_products_snippet",
       "apps_admin_dashboard_scratch_extract_ecommerce_products_startindex"
     ],
-    "59": [
+    "62": [
       "apps_admin_dashboard_scratch_extract_image_generator",
       "apps_admin_dashboard_scratch_extract_image_generator_dom",
       "apps_admin_dashboard_scratch_extract_image_generator_fs",
@@ -1054,7 +1018,7 @@
       "apps_admin_dashboard_scratch_extract_image_generator_jsdom",
       "apps_admin_dashboard_scratch_extract_image_generator_maincontent"
     ],
-    "60": [
+    "63": [
       "apps_admin_dashboard_scratch_swap_menu",
       "apps_admin_dashboard_scratch_swap_menu_aiend",
       "apps_admin_dashboard_scratch_swap_menu_c",
@@ -1062,7 +1026,15 @@
       "apps_admin_dashboard_scratch_swap_menu_ecommstart",
       "apps_admin_dashboard_scratch_swap_menu_fs"
     ],
-    "61": [
+    "64": [
+      "apps_admin_dashboard_src_app_admin_recruitment_jobs_page",
+      "apps_admin_dashboard_src_app_admin_recruitment_jobs_page_jobboardpage",
+      "apps_admin_dashboard_src_app_admin_recruitment_jobs_page_metadata",
+      "apps_admin_dashboard_src_components_hris_jobboard",
+      "apps_admin_dashboard_src_components_hris_jobboard_jobboard",
+      "apps_admin_dashboard_src_components_hris_jobboard_jobsdata"
+    ],
+    "65": [
       "apps_admin_dashboard_src_components_ui_avatar_avatar",
       "apps_admin_dashboard_src_components_ui_avatar_avatar_avatar",
       "apps_admin_dashboard_src_components_ui_avatar_avatar_avatarprops",
@@ -1070,7 +1042,7 @@
       "apps_admin_dashboard_src_components_ui_avatar_avatar_statuscolorclasses",
       "apps_admin_dashboard_src_components_ui_avatar_avatar_statussizeclasses"
     ],
-    "62": [
+    "66": [
       "apps_admin_dashboard_src_components_ui_video_videosexample",
       "apps_admin_dashboard_src_components_ui_video_videosexample_videosexample",
       "apps_admin_dashboard_src_components_ui_video_youtubeembed",
@@ -1078,7 +1050,7 @@
       "apps_admin_dashboard_src_components_ui_video_youtubeembed_youtubeembed",
       "apps_admin_dashboard_src_components_ui_video_youtubeembed_youtubeembedprops"
     ],
-    "63": [
+    "67": [
       "apps_employee_portal_src_components_ui_avatar_avatar",
       "apps_employee_portal_src_components_ui_avatar_avatar_avatar",
       "apps_employee_portal_src_components_ui_avatar_avatar_avatarprops",
@@ -1086,7 +1058,7 @@
       "apps_employee_portal_src_components_ui_avatar_avatar_statuscolorclasses",
       "apps_employee_portal_src_components_ui_avatar_avatar_statussizeclasses"
     ],
-    "64": [
+    "68": [
       "apps_employee_portal_src_components_ui_video_videosexample",
       "apps_employee_portal_src_components_ui_video_videosexample_videosexample",
       "apps_employee_portal_src_components_ui_video_youtubeembed",
@@ -1094,707 +1066,764 @@
       "apps_employee_portal_src_components_ui_video_youtubeembed_youtubeembed",
       "apps_employee_portal_src_components_ui_video_youtubeembed_youtubeembedprops"
     ],
-    "65": [
+    "69": [
       "apps_admin_dashboard_scratch_balance_ecommerce",
       "apps_admin_dashboard_scratch_balance_ecommerce_balancetags",
       "apps_admin_dashboard_scratch_balance_ecommerce_files",
       "apps_admin_dashboard_scratch_balance_ecommerce_fs",
       "apps_admin_dashboard_scratch_balance_ecommerce_path"
     ],
-    "66": [
+    "70": [
       "apps_admin_dashboard_scratch_check_all_img",
       "apps_admin_dashboard_scratch_check_all_img_allfiles",
       "apps_admin_dashboard_scratch_check_all_img_fs",
       "apps_admin_dashboard_scratch_check_all_img_getfiles",
       "apps_admin_dashboard_scratch_check_all_img_path"
     ],
-    "67": [
+    "71": [
       "apps_admin_dashboard_scratch_convert_to_jsx",
       "apps_admin_dashboard_scratch_convert_to_jsx_files",
       "apps_admin_dashboard_scratch_convert_to_jsx_fs",
       "apps_admin_dashboard_scratch_convert_to_jsx_processhtml",
       "apps_admin_dashboard_scratch_convert_to_jsx_tocamelcase"
     ],
-    "68": [
+    "72": [
       "apps_admin_dashboard_scratch_extract_image_generator_2",
       "apps_admin_dashboard_scratch_extract_image_generator_2_fs",
       "apps_admin_dashboard_scratch_extract_image_generator_2_html",
       "apps_admin_dashboard_scratch_extract_image_generator_2_mainend",
       "apps_admin_dashboard_scratch_extract_image_generator_2_mainstart"
     ],
-    "69": [
+    "73": [
       "apps_admin_dashboard_scratch_fix_mycards",
       "apps_admin_dashboard_scratch_fix_mycards_content",
       "apps_admin_dashboard_scratch_fix_mycards_fs",
       "apps_admin_dashboard_scratch_fix_mycards_nextslideindex",
       "apps_admin_dashboard_scratch_fix_mycards_swiperendindex"
     ],
-    "70": [
+    "74": [
       "apps_admin_dashboard_scratch_swap_menu_regex",
       "apps_admin_dashboard_scratch_swap_menu_regex_aimatch",
       "apps_admin_dashboard_scratch_swap_menu_regex_c",
       "apps_admin_dashboard_scratch_swap_menu_regex_ecommmatch",
       "apps_admin_dashboard_scratch_swap_menu_regex_fs"
     ],
-    "71": [
+    "75": [
+      "apps_admin_dashboard_src_app_admin_payroll_generate_page",
+      "apps_admin_dashboard_src_app_admin_payroll_generate_page_metadata",
+      "apps_admin_dashboard_src_app_admin_payroll_generate_page_payrollgeneratepage",
+      "apps_admin_dashboard_src_components_hris_payrollgenerateform",
+      "apps_admin_dashboard_src_components_hris_payrollgenerateform_payrollgenerateform"
+    ],
+    "76": [
+      "apps_admin_dashboard_src_app_admin_recruitment_candidate_id_page",
+      "apps_admin_dashboard_src_app_admin_recruitment_candidate_id_page_candidatedetailpage",
+      "apps_admin_dashboard_src_app_admin_recruitment_candidate_id_page_metadata",
+      "apps_admin_dashboard_src_components_hris_candidatedetail",
+      "apps_admin_dashboard_src_components_hris_candidatedetail_candidatedetail"
+    ],
+    "77": [
+      "apps_admin_dashboard_src_app_full_width_pages_auth_signin_page",
+      "apps_admin_dashboard_src_app_full_width_pages_auth_signin_page_metadata",
+      "apps_admin_dashboard_src_app_full_width_pages_auth_signin_page_signin",
+      "apps_admin_dashboard_src_components_auth_signinform",
+      "apps_admin_dashboard_src_components_auth_signinform_signinform"
+    ],
+    "78": [
       "apps_admin_dashboard_src_components_code_generator_chatheader_chatheader",
       "apps_admin_dashboard_src_components_code_generator_codechatsidebar_codechatsidebar",
       "apps_admin_dashboard_src_components_code_generator_codegeneratorlayout",
       "apps_admin_dashboard_src_components_code_generator_messageinput_messageinput",
       "apps_admin_dashboard_src_components_code_generator_messagelist_messagelist"
     ],
-    "72": [
+    "79": [
+      "apps_admin_dashboard_src_components_form_form_elements_checkboxcomponents",
+      "apps_admin_dashboard_src_components_form_form_elements_checkboxcomponents_checkboxcomponents",
+      "apps_admin_dashboard_src_components_form_input_checkbox",
+      "apps_admin_dashboard_src_components_form_input_checkbox_checkbox",
+      "apps_admin_dashboard_src_components_form_input_checkbox_checkboxprops"
+    ],
+    "80": [
       "apps_admin_dashboard_src_components_form_form_elements_fileinputexample",
       "apps_admin_dashboard_src_components_form_form_elements_fileinputexample_fileinputexample",
       "apps_admin_dashboard_src_components_form_input_fileinput",
       "apps_admin_dashboard_src_components_form_input_fileinput_fileinput",
       "apps_admin_dashboard_src_components_form_input_fileinput_fileinputprops"
     ],
-    "73": [
+    "81": [
       "apps_admin_dashboard_src_components_form_form_elements_radiobuttons",
       "apps_admin_dashboard_src_components_form_form_elements_radiobuttons_radiobuttons",
       "apps_admin_dashboard_src_components_form_input_radio",
       "apps_admin_dashboard_src_components_form_input_radio_radio",
       "apps_admin_dashboard_src_components_form_input_radio_radioprops"
     ],
-    "74": [
+    "82": [
       "apps_admin_dashboard_src_components_form_form_elements_toggleswitch",
       "apps_admin_dashboard_src_components_form_form_elements_toggleswitch_toggleswitch",
       "apps_admin_dashboard_src_components_form_switch_switch",
       "apps_admin_dashboard_src_components_form_switch_switch_switch",
       "apps_admin_dashboard_src_components_form_switch_switch_switchprops"
     ],
-    "75": [
+    "83": [
       "apps_admin_dashboard_tsconfig",
       "apps_admin_dashboard_tsconfig_exclude",
       "apps_admin_dashboard_tsconfig_json_ref_node_modules",
       "apps_employee_portal_tsconfig",
       "apps_employee_portal_tsconfig_exclude"
     ],
-    "76": [
+    "84": [
       "apps_employee_portal_eslint_config",
       "apps_employee_portal_eslint_config_compat",
       "apps_employee_portal_eslint_config_dirname",
       "apps_employee_portal_eslint_config_eslintconfig",
       "apps_employee_portal_eslint_config_filename"
     ],
-    "77": [
+    "85": [
       "apps_employee_portal_src_components_form_form_elements_checkboxcomponents",
       "apps_employee_portal_src_components_form_form_elements_checkboxcomponents_checkboxcomponents",
       "apps_employee_portal_src_components_form_input_checkbox",
       "apps_employee_portal_src_components_form_input_checkbox_checkbox",
       "apps_employee_portal_src_components_form_input_checkbox_checkboxprops"
     ],
-    "78": [
-      "apps_employee_portal_src_components_form_form_elements_fileinputexample",
-      "apps_employee_portal_src_components_form_form_elements_fileinputexample_fileinputexample",
-      "apps_employee_portal_src_components_form_input_fileinput",
-      "apps_employee_portal_src_components_form_input_fileinput_fileinput",
-      "apps_employee_portal_src_components_form_input_fileinput_fileinputprops"
-    ],
-    "79": [
+    "86": [
       "apps_employee_portal_src_components_form_form_elements_radiobuttons",
       "apps_employee_portal_src_components_form_form_elements_radiobuttons_radiobuttons",
       "apps_employee_portal_src_components_form_input_radio",
       "apps_employee_portal_src_components_form_input_radio_radio",
       "apps_employee_portal_src_components_form_input_radio_radioprops"
     ],
-    "80": [
+    "87": [
       "apps_employee_portal_src_components_form_form_elements_toggleswitch",
       "apps_employee_portal_src_components_form_form_elements_toggleswitch_toggleswitch",
       "apps_employee_portal_src_components_form_switch_switch",
       "apps_employee_portal_src_components_form_switch_switch_switch",
       "apps_employee_portal_src_components_form_switch_switch_switchprops"
     ],
-    "81": [
+    "88": [
       "apps_admin_dashboard_scratch_check_img",
       "apps_admin_dashboard_scratch_check_img_c",
       "apps_admin_dashboard_scratch_check_img_fs",
       "apps_admin_dashboard_scratch_check_img_m"
     ],
-    "82": [
+    "89": [
       "apps_admin_dashboard_scratch_clean_html",
       "apps_admin_dashboard_scratch_clean_html_bodymatch",
       "apps_admin_dashboard_scratch_clean_html_fs",
       "apps_admin_dashboard_scratch_clean_html_html"
     ],
-    "83": [
+    "90": [
       "apps_admin_dashboard_scratch_convert_billing",
       "apps_admin_dashboard_scratch_convert_billing_fs",
       "apps_admin_dashboard_scratch_convert_billing_html",
       "apps_admin_dashboard_scratch_convert_billing_jsx"
     ],
-    "84": [
+    "91": [
       "apps_admin_dashboard_scratch_extract_video",
       "apps_admin_dashboard_scratch_extract_video_fs",
       "apps_admin_dashboard_scratch_extract_video_html",
       "apps_admin_dashboard_scratch_extract_video_lines"
     ],
-    "85": [
+    "92": [
       "apps_admin_dashboard_scratch_fix_bool",
       "apps_admin_dashboard_scratch_fix_bool_boolattrs",
       "apps_admin_dashboard_scratch_fix_bool_files",
       "apps_admin_dashboard_scratch_fix_bool_fs"
     ],
-    "86": [
+    "93": [
       "apps_admin_dashboard_scratch_fix_charts",
       "apps_admin_dashboard_scratch_fix_charts_cashflowcontent",
       "apps_admin_dashboard_scratch_fix_charts_fs",
       "apps_admin_dashboard_scratch_fix_charts_spendingcontent"
     ],
-    "87": [
+    "94": [
       "apps_admin_dashboard_scratch_replace_ai_svg",
       "apps_admin_dashboard_scratch_replace_ai_svg_c",
       "apps_admin_dashboard_scratch_replace_ai_svg_fs",
       "apps_admin_dashboard_scratch_replace_ai_svg_oldiconstart"
     ],
-    "88": [
+    "95": [
       "apps_admin_dashboard_scratch_slice",
       "apps_admin_dashboard_scratch_slice_fs",
       "apps_admin_dashboard_scratch_slice_html",
       "apps_admin_dashboard_scratch_slice_layoutstart"
     ],
-    "89": [
+    "96": [
       "apps_admin_dashboard_scratch_slice_components",
       "apps_admin_dashboard_scratch_slice_components_fs",
       "apps_admin_dashboard_scratch_slice_components_html",
       "apps_admin_dashboard_scratch_slice_components_maincontentstart"
     ],
-    "90": [
+    "97": [
       "apps_admin_dashboard_scratch_wrap_fragment",
       "apps_admin_dashboard_scratch_wrap_fragment_files",
       "apps_admin_dashboard_scratch_wrap_fragment_fs",
       "apps_admin_dashboard_scratch_wrap_fragment_wrapwithfragment"
     ],
-    "91": [
+    "98": [
       "apps_admin_dashboard_src_components_form_group_input_phoneinput",
       "apps_admin_dashboard_src_components_form_group_input_phoneinput_countrycode",
       "apps_admin_dashboard_src_components_form_group_input_phoneinput_phoneinput",
       "apps_admin_dashboard_src_components_form_group_input_phoneinput_phoneinputprops"
     ],
-    "92": [
+    "99": [
       "apps_admin_dashboard_src_components_form_multiselect",
       "apps_admin_dashboard_src_components_form_multiselect_multiselect",
       "apps_admin_dashboard_src_components_form_multiselect_multiselectprops",
       "apps_admin_dashboard_src_components_form_multiselect_option"
     ],
-    "93": [
+    "100": [
+      "apps_employee_portal_src_components_form_group_input_phoneinput",
+      "apps_employee_portal_src_components_form_group_input_phoneinput_countrycode",
+      "apps_employee_portal_src_components_form_group_input_phoneinput_phoneinput",
+      "apps_employee_portal_src_components_form_group_input_phoneinput_phoneinputprops"
+    ],
+    "101": [
       "apps_employee_portal_src_components_form_multiselect",
       "apps_employee_portal_src_components_form_multiselect_multiselect",
       "apps_employee_portal_src_components_form_multiselect_multiselectprops",
       "apps_employee_portal_src_components_form_multiselect_option"
     ],
-    "94": [
+    "102": [
       "apps_employee_portal_src_components_form_select",
       "apps_employee_portal_src_components_form_select_option",
       "apps_employee_portal_src_components_form_select_select",
       "apps_employee_portal_src_components_form_select_selectprops"
     ],
-    "95": [
+    "103": [
       "apps_admin_dashboard_eslintrc",
       "apps_admin_dashboard_eslintrc_extends",
       "ref_next_core_web_vitals"
     ],
-    "96": [
+    "104": [
       "apps_admin_dashboard_scratch_convert_single",
       "apps_admin_dashboard_scratch_convert_single_fs",
       "apps_admin_dashboard_scratch_convert_single_html"
     ],
-    "97": [
+    "105": [
       "apps_admin_dashboard_scratch_fix_all_dropdowns",
       "apps_admin_dashboard_scratch_fix_all_dropdowns_code",
       "apps_admin_dashboard_scratch_fix_all_dropdowns_fs"
     ],
-    "98": [
+    "106": [
       "apps_admin_dashboard_scratch_fix_badge_layout",
       "apps_admin_dashboard_scratch_fix_badge_layout_c",
       "apps_admin_dashboard_scratch_fix_badge_layout_fs"
     ],
-    "99": [
+    "107": [
       "apps_admin_dashboard_scratch_fix_booleans",
       "apps_admin_dashboard_scratch_fix_booleans_c",
       "apps_admin_dashboard_scratch_fix_booleans_fs"
     ],
-    "100": [
+    "108": [
       "apps_admin_dashboard_scratch_fix_img",
       "apps_admin_dashboard_scratch_fix_img_files",
       "apps_admin_dashboard_scratch_fix_img_fs"
     ],
-    "101": [
+    "109": [
       "apps_admin_dashboard_scratch_fix_invoices_dropdown",
       "apps_admin_dashboard_scratch_fix_invoices_dropdown_code",
       "apps_admin_dashboard_scratch_fix_invoices_dropdown_fs"
     ],
-    "102": [
+    "110": [
       "apps_admin_dashboard_scratch_fix_paths",
       "apps_admin_dashboard_scratch_fix_paths_content",
       "apps_admin_dashboard_scratch_fix_paths_fs"
     ],
-    "103": [
+    "111": [
       "apps_admin_dashboard_scratch_flex_fix",
       "apps_admin_dashboard_scratch_flex_fix_c",
       "apps_admin_dashboard_scratch_flex_fix_fs"
     ],
-    "104": [
+    "112": [
       "apps_admin_dashboard_scratch_flex_fix_regex",
       "apps_admin_dashboard_scratch_flex_fix_regex_c",
       "apps_admin_dashboard_scratch_flex_fix_regex_fs"
     ],
-    "105": [
+    "113": [
       "apps_admin_dashboard_scratch_make_comps",
       "apps_admin_dashboard_scratch_make_comps_fs",
       "apps_admin_dashboard_scratch_make_comps_writecomp"
     ],
-    "106": [
+    "114": [
       "apps_admin_dashboard_scratch_refactor_invoices",
       "apps_admin_dashboard_scratch_refactor_invoices_code",
       "apps_admin_dashboard_scratch_refactor_invoices_fs"
     ],
-    "107": [
+    "115": [
       "apps_admin_dashboard_scratch_remove_style",
       "apps_admin_dashboard_scratch_remove_style_files",
       "apps_admin_dashboard_scratch_remove_style_fs"
     ],
-    "108": [
+    "116": [
       "apps_admin_dashboard_scratch_update_cashflow",
       "apps_admin_dashboard_scratch_update_cashflow_code",
       "apps_admin_dashboard_scratch_update_cashflow_fs"
     ],
-    "109": [
+    "117": [
       "apps_admin_dashboard_scratch_update_recent",
       "apps_admin_dashboard_scratch_update_recent_code",
       "apps_admin_dashboard_scratch_update_recent_fs"
     ],
-    "110": [
+    "118": [
       "apps_admin_dashboard_scratch_update_sidebar_styles",
       "apps_admin_dashboard_scratch_update_sidebar_styles_c",
       "apps_admin_dashboard_scratch_update_sidebar_styles_fs"
     ],
-    "111": [
+    "119": [
       "apps_admin_dashboard_scratch_update_spending",
       "apps_admin_dashboard_scratch_update_spending_code",
       "apps_admin_dashboard_scratch_update_spending_fs"
     ],
-    "112": [
+    "120": [
       "apps_admin_dashboard_scratch_update_total",
       "apps_admin_dashboard_scratch_update_total_code",
       "apps_admin_dashboard_scratch_update_total_fs"
     ],
-    "113": [
+    "121": [
+      "apps_admin_dashboard_src_components_analytics_sessionsbydevice",
+      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_reactapexchart",
+      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_sessionsbydevice"
+    ],
+    "122": [
       "apps_admin_dashboard_src_components_analytics_visitoranalyticschart",
       "apps_admin_dashboard_src_components_analytics_visitoranalyticschart_reactapexchart",
       "apps_admin_dashboard_src_components_analytics_visitoranalyticschart_visitoranalyticschart"
     ],
-    "114": [
+    "123": [
       "apps_admin_dashboard_src_components_charts_bar_barchartone",
       "apps_admin_dashboard_src_components_charts_bar_barchartone_barchartone",
       "apps_admin_dashboard_src_components_charts_bar_barchartone_reactapexchart"
     ],
-    "115": [
+    "124": [
       "apps_admin_dashboard_src_components_charts_line_linechartone",
       "apps_admin_dashboard_src_components_charts_line_linechartone_linechartone",
       "apps_admin_dashboard_src_components_charts_line_linechartone_reactapexchart"
     ],
-    "116": [
+    "125": [
+      "apps_admin_dashboard_src_components_crm_estimatedrevenue",
+      "apps_admin_dashboard_src_components_crm_estimatedrevenue_estimatedrevenue",
+      "apps_admin_dashboard_src_components_crm_estimatedrevenue_reactapexchart"
+    ],
+    "126": [
       "apps_admin_dashboard_src_components_crm_recentorders",
       "apps_admin_dashboard_src_components_crm_recentorders_ordersdata",
       "apps_admin_dashboard_src_components_crm_recentorders_recentorders"
     ],
-    "117": [
+    "127": [
       "apps_admin_dashboard_src_components_crm_statisticschart",
       "apps_admin_dashboard_src_components_crm_statisticschart_reactapexchart",
       "apps_admin_dashboard_src_components_crm_statisticschart_statisticschart"
     ],
-    "118": [
+    "128": [
+      "apps_admin_dashboard_src_components_crm_upcomingschedule",
+      "apps_admin_dashboard_src_components_crm_upcomingschedule_scheduledata",
+      "apps_admin_dashboard_src_components_crm_upcomingschedule_upcomingschedule"
+    ],
+    "129": [
       "apps_admin_dashboard_src_components_form_form",
       "apps_admin_dashboard_src_components_form_form_form",
       "apps_admin_dashboard_src_components_form_form_formprops"
     ],
-    "119": [
+    "130": [
       "apps_admin_dashboard_src_components_form_input_radiosm",
       "apps_admin_dashboard_src_components_form_input_radiosm_radioprops",
       "apps_admin_dashboard_src_components_form_input_radiosm_radiosm"
     ],
-    "120": [
+    "131": [
       "apps_admin_dashboard_src_components_form_input_textarea",
       "apps_admin_dashboard_src_components_form_input_textarea_textarea",
       "apps_admin_dashboard_src_components_form_input_textarea_textareaprops"
     ],
-    "121": [
+    "132": [
       "apps_admin_dashboard_src_components_logistics_deliveryactivities",
       "apps_admin_dashboard_src_components_logistics_deliveryactivities_activities",
       "apps_admin_dashboard_src_components_logistics_deliveryactivities_deliveryactivities"
     ],
-    "122": [
+    "133": [
       "apps_admin_dashboard_src_components_logistics_deliverystatistics",
       "apps_admin_dashboard_src_components_logistics_deliverystatistics_deliverystatistics",
       "apps_admin_dashboard_src_components_logistics_deliverystatistics_reactapexchart"
     ],
-    "123": [
+    "134": [
+      "apps_admin_dashboard_src_components_logistics_totalrevenue",
+      "apps_admin_dashboard_src_components_logistics_totalrevenue_reactapexchart",
+      "apps_admin_dashboard_src_components_logistics_totalrevenue_totalrevenue"
+    ],
+    "135": [
       "apps_admin_dashboard_src_components_marketing_impressiondatatraffic",
       "apps_admin_dashboard_src_components_marketing_impressiondatatraffic_impressiondatatraffic",
       "apps_admin_dashboard_src_components_marketing_impressiondatatraffic_reactapexchart"
     ],
-    "124": [
+    "136": [
       "apps_admin_dashboard_src_components_marketing_toptrafficsource",
       "apps_admin_dashboard_src_components_marketing_toptrafficsource_sourcedata",
       "apps_admin_dashboard_src_components_marketing_toptrafficsource_toptrafficsource"
     ],
-    "125": [
+    "137": [
       "apps_admin_dashboard_src_components_saas_churnrate",
       "apps_admin_dashboard_src_components_saas_churnrate_churnrate",
       "apps_admin_dashboard_src_components_saas_churnrate_reactapexchart"
     ],
-    "126": [
+    "138": [
       "apps_admin_dashboard_src_components_saas_conversionfunnel",
       "apps_admin_dashboard_src_components_saas_conversionfunnel_conversionfunnel",
       "apps_admin_dashboard_src_components_saas_conversionfunnel_reactapexchart"
     ],
-    "127": [
+    "139": [
       "apps_admin_dashboard_src_components_saas_recentinvoices",
       "apps_admin_dashboard_src_components_saas_recentinvoices_invoices",
       "apps_admin_dashboard_src_components_saas_recentinvoices_recentinvoices"
     ],
-    "128": [
+    "140": [
       "apps_admin_dashboard_src_components_saas_usergrowth",
       "apps_admin_dashboard_src_components_saas_usergrowth_reactapexchart",
       "apps_admin_dashboard_src_components_saas_usergrowth_usergrowth"
     ],
-    "129": [
+    "141": [
       "apps_admin_dashboard_src_components_sales_salesmetrics",
       "apps_admin_dashboard_src_components_sales_salesmetrics_chart",
       "apps_admin_dashboard_src_components_sales_salesmetrics_salesmetrics"
     ],
-    "130": [
+    "142": [
       "apps_admin_dashboard_src_components_stocks_dividend",
       "apps_admin_dashboard_src_components_stocks_dividend_dividend",
       "apps_admin_dashboard_src_components_stocks_dividend_reactapexchart"
     ],
-    "131": [
+    "143": [
       "apps_admin_dashboard_src_components_stocks_latesttransactions",
       "apps_admin_dashboard_src_components_stocks_latesttransactions_latesttransactions",
       "apps_admin_dashboard_src_components_stocks_latesttransactions_transactions"
     ],
-    "132": [
+    "144": [
+      "apps_admin_dashboard_src_components_stocks_mywatchlist",
+      "apps_admin_dashboard_src_components_stocks_mywatchlist_mywatchlist",
+      "apps_admin_dashboard_src_components_stocks_mywatchlist_watchlist"
+    ],
+    "145": [
       "apps_admin_dashboard_src_components_stocks_portfolioperformance",
       "apps_admin_dashboard_src_components_stocks_portfolioperformance_portfolioperformance",
       "apps_admin_dashboard_src_components_stocks_portfolioperformance_reactapexchart"
     ],
-    "133": [
+    "146": [
       "apps_admin_dashboard_src_components_tables_pagination",
       "apps_admin_dashboard_src_components_tables_pagination_pagination",
       "apps_admin_dashboard_src_components_tables_pagination_paginationprops"
     ],
-    "134": [
+    "147": [
       "apps_admin_dashboard_src_components_ui_alert_alert",
       "apps_admin_dashboard_src_components_ui_alert_alert_alert",
       "apps_admin_dashboard_src_components_ui_alert_alert_alertprops"
     ],
-    "135": [
+    "148": [
       "apps_admin_dashboard_src_components_ui_avatar_avatartext",
       "apps_admin_dashboard_src_components_ui_avatar_avatartext_avatartext",
       "apps_admin_dashboard_src_components_ui_avatar_avatartext_avatartextprops"
     ],
-    "136": [
+    "149": [
       "apps_employee_portal_src_components_common_pagebreadcrumb",
       "apps_employee_portal_src_components_common_pagebreadcrumb_breadcrumbprops",
       "apps_employee_portal_src_components_common_pagebreadcrumb_pagebreadcrumb"
     ],
-    "137": [
+    "150": [
       "apps_employee_portal_src_components_form_form",
       "apps_employee_portal_src_components_form_form_form",
       "apps_employee_portal_src_components_form_form_formprops"
     ],
-    "138": [
+    "151": [
+      "apps_employee_portal_src_components_form_input_fileinput",
+      "apps_employee_portal_src_components_form_input_fileinput_fileinput",
+      "apps_employee_portal_src_components_form_input_fileinput_fileinputprops"
+    ],
+    "152": [
       "apps_employee_portal_src_components_form_input_radiosm",
       "apps_employee_portal_src_components_form_input_radiosm_radioprops",
       "apps_employee_portal_src_components_form_input_radiosm_radiosm"
     ],
-    "139": [
+    "153": [
       "apps_employee_portal_src_components_form_input_textarea",
       "apps_employee_portal_src_components_form_input_textarea_textarea",
       "apps_employee_portal_src_components_form_input_textarea_textareaprops"
     ],
-    "140": [
+    "154": [
       "apps_employee_portal_src_components_ui_alert_alert",
       "apps_employee_portal_src_components_ui_alert_alert_alert",
       "apps_employee_portal_src_components_ui_alert_alert_alertprops"
     ],
-    "141": [
+    "155": [
       "apps_employee_portal_src_components_ui_avatar_avatartext",
       "apps_employee_portal_src_components_ui_avatar_avatartext_avatartext",
       "apps_employee_portal_src_components_ui_avatar_avatartext_avatartextprops"
     ],
-    "142": [
+    "156": [
       "apps_employee_portal_src_components_ui_dropdown_dropdown",
       "apps_employee_portal_src_components_ui_dropdown_dropdown_dropdown",
       "apps_employee_portal_src_components_ui_dropdown_dropdown_dropdownprops"
     ],
-    "143": [
+    "157": [
       "apps_employee_portal_src_components_ui_dropdown_dropdownitem",
       "apps_employee_portal_src_components_ui_dropdown_dropdownitem_dropdownitem",
       "apps_employee_portal_src_components_ui_dropdown_dropdownitem_dropdownitemprops"
     ],
-    "144": [
+    "158": [
       "apps_employee_portal_src_components_ui_modal_index",
       "apps_employee_portal_src_components_ui_modal_index_modal",
       "apps_employee_portal_src_components_ui_modal_index_modalprops"
     ],
-    "145": [
+    "159": [
       "apps_admin_dashboard_eslint_config",
       "apps_admin_dashboard_eslint_config_eslintconfig"
     ],
-    "146": [
+    "160": [
       "apps_admin_dashboard_jsvectormap_d",
       "apps_admin_dashboard_jsvectormap_d_jsvectormap"
     ],
-    "147": [
+    "161": [
       "apps_admin_dashboard_scratch_fix_checked",
       "apps_admin_dashboard_scratch_fix_checked_fs"
     ],
-    "148": [
+    "162": [
       "apps_admin_dashboard_scratch_fix_img_paths",
       "apps_admin_dashboard_scratch_fix_img_paths_fs"
     ],
-    "149": [
+    "163": [
       "apps_admin_dashboard_src_app_full_width_pages_layout",
       "apps_admin_dashboard_src_app_full_width_pages_layout_fullwidthpagelayout"
     ],
-    "150": [
+    "164": [
       "apps_admin_dashboard_src_components_crm_crmmetrics",
       "apps_admin_dashboard_src_components_crm_crmmetrics_crmmetrics"
     ],
-    "151": [
+    "165": [
       "apps_admin_dashboard_src_components_ecommerce_invoices_invoicestable",
       "apps_admin_dashboard_src_components_ecommerce_invoices_invoicestable_invoicestable"
     ],
-    "152": [
+    "166": [
       "apps_admin_dashboard_src_components_image_generator_imagegeneratorlayout",
       "apps_admin_dashboard_src_components_image_generator_imagegeneratorlayout_imagegeneratorlayout"
     ],
-    "153": [
+    "167": [
       "apps_admin_dashboard_src_components_logistics_topmetrics",
       "apps_admin_dashboard_src_components_logistics_topmetrics_topmetrics"
     ],
-    "154": [
+    "168": [
       "apps_admin_dashboard_src_components_marketing_marketingmetrics",
       "apps_admin_dashboard_src_components_marketing_marketingmetrics_marketingmetrics"
     ],
-    "155": [
+    "169": [
       "apps_admin_dashboard_src_components_saas_overview",
       "apps_admin_dashboard_src_components_saas_overview_overview"
     ],
-    "156": [
+    "170": [
       "apps_admin_dashboard_src_components_ui_images_responsiveimage",
       "apps_admin_dashboard_src_components_ui_images_responsiveimage_responsiveimage"
     ],
-    "157": [
+    "171": [
       "apps_admin_dashboard_src_components_ui_images_threecolumnimagegrid",
       "apps_admin_dashboard_src_components_ui_images_threecolumnimagegrid_threecolumnimagegrid"
     ],
-    "158": [
+    "172": [
       "apps_admin_dashboard_src_components_ui_images_twocolumnimagegrid",
       "apps_admin_dashboard_src_components_ui_images_twocolumnimagegrid_twocolumnimagegrid"
     ],
-    "159": [
+    "173": [
       "apps_admin_dashboard_src_components_videos_fouristothree",
       "apps_admin_dashboard_src_components_videos_fouristothree_fouristothree"
     ],
-    "160": [
+    "174": [
       "apps_admin_dashboard_src_components_videos_oneistoone",
       "apps_admin_dashboard_src_components_videos_oneistoone_oneistoone"
     ],
-    "161": [
+    "175": [
       "apps_admin_dashboard_src_components_videos_sixteenistonine",
       "apps_admin_dashboard_src_components_videos_sixteenistonine_sixteenistonine"
     ],
-    "162": [
+    "176": [
       "apps_admin_dashboard_src_components_videos_twentyoneistonine",
       "apps_admin_dashboard_src_components_videos_twentyoneistonine_twentyoneistonine"
     ],
-    "163": [
+    "177": [
       "apps_admin_dashboard_src_hooks_usegoback",
       "apps_admin_dashboard_src_hooks_usegoback_usegoback"
     ],
-    "164": [
+    "178": [
       "apps_admin_dashboard_src_svg_d",
       "apps_admin_dashboard_src_svg_d_svg"
     ],
-    "165": [
+    "179": [
       "apps_employee_portal_postcss_config",
       "apps_employee_portal_postcss_config_config"
     ],
-    "166": [
+    "180": [
       "apps_employee_portal_src_app_page",
       "apps_employee_portal_src_app_page_employeedashboard"
     ],
-    "167": [
+    "181": [
       "apps_employee_portal_src_components_common_charttab",
       "apps_employee_portal_src_components_common_charttab_charttab"
     ],
-    "168": [
+    "182": [
       "apps_employee_portal_src_components_common_gridshape",
       "apps_employee_portal_src_components_common_gridshape_gridshape"
     ],
-    "169": [
+    "183": [
       "apps_employee_portal_src_components_common_themetogglebutton",
       "apps_employee_portal_src_components_common_themetogglebutton_themetogglebutton"
     ],
-    "170": [
+    "184": [
       "apps_employee_portal_src_components_common_themetogglertwo",
       "apps_employee_portal_src_components_common_themetogglertwo_themetogglertwo"
     ],
-    "171": [
+    "185": [
       "apps_employee_portal_src_components_ui_images_responsiveimage",
       "apps_employee_portal_src_components_ui_images_responsiveimage_responsiveimage"
     ],
-    "172": [
+    "186": [
       "apps_employee_portal_src_components_ui_images_threecolumnimagegrid",
       "apps_employee_portal_src_components_ui_images_threecolumnimagegrid_threecolumnimagegrid"
     ],
-    "173": [
+    "187": [
       "apps_employee_portal_src_components_ui_images_twocolumnimagegrid",
       "apps_employee_portal_src_components_ui_images_twocolumnimagegrid_twocolumnimagegrid"
     ],
-    "174": [
+    "188": [
       "apps_admin_dashboard_postcss_config"
     ],
-    "175": [
+    "189": [
       "apps_admin_dashboard_prettier_config"
     ],
-    "176": [
+    "190": [
       "apps_admin_dashboard_scratch_image_generator"
     ],
-    "177": [
+    "191": [
       "apps_admin_dashboard_scratch_image_header"
     ],
-    "178": [
+    "192": [
       "apps_admin_dashboard_scratch_image_input"
     ],
-    "179": [
+    "193": [
       "apps_admin_dashboard_scratch_image_list"
     ],
-    "180": [
+    "194": [
       "apps_admin_dashboard_scratch_image_sidebar"
     ],
-    "181": [
+    "195": [
       "apps_admin_dashboard_src_components_code_generator_codegeneratorlayout_codegeneratorlayout"
     ],
-    "182": [
+    "196": [
       "apps_admin_dashboard_src_components_finance_cashflowoverview_cashflowoverview"
     ],
-    "183": [
+    "197": [
       "apps_admin_dashboard_src_components_finance_financemetrics_financemetrics"
     ],
-    "184": [
+    "198": [
       "apps_admin_dashboard_src_components_finance_mycards_mycards"
     ],
-    "185": [
+    "199": [
       "apps_admin_dashboard_src_components_finance_quicksend_quicksend"
     ],
-    "186": [
+    "200": [
       "apps_admin_dashboard_src_components_finance_recenttransactions_recenttransactions"
     ],
-    "187": [
+    "201": [
       "apps_admin_dashboard_src_components_finance_spending_spending"
     ],
-    "188": [
+    "202": [
       "apps_admin_dashboard_src_components_finance_totalbalance_totalbalance"
     ],
-    "189": [
+    "203": [
       "apps_admin_dashboard_src_components_header_userdropdown_userdropdown"
     ],
-    "190": [
+    "204": [
       "apps_admin_dashboard_src_components_user_profile_usermetacard_usermetacard"
     ]
   },
   "cohesion": {
-    "0": 0.0463768115942029,
-    "1": 0.043478260869565216,
-    "2": 0.08292682926829269,
-    "3": 0.09146341463414634,
-    "4": 0.11088709677419355,
-    "5": 0.17980295566502463,
-    "6": 0.08866995073891626,
-    "7": 0.06896551724137931,
-    "8": 0.15217391304347827,
-    "9": 0.14624505928853754,
+    "0": 0.043478260869565216,
+    "1": 0.08333333333333333,
+    "2": 0.12688172043010754,
+    "3": 0.17980295566502463,
+    "4": 0.06896551724137931,
+    "5": 0.07692307692307693,
+    "6": 0.12923076923076923,
+    "7": 0.14130434782608695,
+    "8": 0.1422924901185771,
+    "9": 0.12987012987012986,
     "10": 0.13333333333333333,
-    "11": 0.1736842105263158,
-    "12": 0.1286549707602339,
-    "13": 0.13450292397660818,
-    "14": 0.16374269005847952,
-    "15": 0.14705882352941177,
-    "16": 0.11764705882352941,
-    "17": 0.125,
-    "18": 0.125,
-    "19": 0.21666666666666667,
-    "20": 0.14285714285714285,
-    "21": 0.20952380952380953,
-    "22": 0.1619047619047619,
-    "23": 0.18095238095238095,
-    "24": 0.13333333333333333,
-    "25": 0.13333333333333333,
-    "26": 0.23076923076923078,
-    "27": 0.15384615384615385,
-    "28": 0.24358974358974358,
-    "29": 0.19230769230769232,
-    "30": 0.16666666666666666,
-    "31": 0.24242424242424243,
-    "32": 0.21212121212121213,
-    "33": 0.22727272727272727,
-    "34": 0.2727272727272727,
-    "35": 0.24242424242424243,
+    "11": 0.1568627450980392,
+    "12": 0.14705882352941177,
+    "13": 0.11764705882352941,
+    "14": 0.15,
+    "15": 0.125,
+    "16": 0.125,
+    "17": 0.21666666666666667,
+    "18": 0.19166666666666668,
+    "19": 0.20952380952380953,
+    "20": 0.1619047619047619,
+    "21": 0.18095238095238095,
+    "22": 0.13333333333333333,
+    "23": 0.13333333333333333,
+    "24": 0.23076923076923078,
+    "25": 0.15384615384615385,
+    "26": 0.24358974358974358,
+    "27": 0.20512820512820512,
+    "28": 0.19230769230769232,
+    "29": 0.16666666666666666,
+    "30": 0.24242424242424243,
+    "31": 0.21212121212121213,
+    "32": 0.22727272727272727,
+    "33": 0.2727272727272727,
+    "34": 0.21818181818181817,
+    "35": 0.2545454545454545,
     "36": 0.23636363636363636,
     "37": 0.2545454545454545,
-    "38": 0.21818181818181817,
-    "39": 0.18181818181818182,
-    "40": 0.2,
-    "41": 0.24444444444444444,
-    "42": 0.2222222222222222,
-    "43": 0.28888888888888886,
-    "44": 0.25,
-    "45": 0.2222222222222222,
-    "46": 0.32142857142857145,
+    "38": 0.18181818181818182,
+    "39": 0.2,
+    "40": 0.24444444444444444,
+    "41": 0.2222222222222222,
+    "42": 0.28888888888888886,
+    "43": 0.25,
+    "44": 0.2777777777777778,
+    "45": 0.2857142857142857,
+    "46": 0.2857142857142857,
     "47": 0.35714285714285715,
-    "48": 0.35714285714285715,
+    "48": 0.32142857142857145,
     "49": 0.2857142857142857,
-    "50": 0.2857142857142857,
-    "51": 0.3333333333333333,
-    "52": 0.3333333333333333,
-    "53": 0.3333333333333333,
+    "50": 0.35714285714285715,
+    "51": 0.35714285714285715,
+    "52": 0.2857142857142857,
+    "53": 0.2857142857142857,
     "54": 0.3333333333333333,
-    "55": 0.2857142857142857,
-    "56": 0.4,
-    "57": 0.3333333333333333,
+    "55": 0.3333333333333333,
+    "56": 0.3333333333333333,
+    "57": 0.2857142857142857,
     "58": 0.3333333333333333,
-    "59": 0.3333333333333333,
+    "59": 0.4,
     "60": 0.3333333333333333,
     "61": 0.3333333333333333,
     "62": 0.3333333333333333,
     "63": 0.3333333333333333,
-    "64": 0.3333333333333333,
-    "65": 0.4,
-    "66": 0.4,
-    "67": 0.4,
-    "68": 0.4,
+    "64": 0.4,
+    "65": 0.3333333333333333,
+    "66": 0.3333333333333333,
+    "67": 0.3333333333333333,
+    "68": 0.3333333333333333,
     "69": 0.4,
     "70": 0.4,
     "71": 0.4,
-    "72": 0.5,
-    "73": 0.5,
-    "74": 0.5,
-    "75": 0.4,
-    "76": 0.4,
-    "77": 0.4,
-    "78": 0.5,
-    "79": 0.5,
+    "72": 0.4,
+    "73": 0.4,
+    "74": 0.4,
+    "75": 0.5,
+    "76": 0.5,
+    "77": 0.5,
+    "78": 0.4,
+    "79": 0.4,
     "80": 0.5,
     "81": 0.5,
     "82": 0.5,
-    "83": 0.5,
-    "84": 0.5,
-    "85": 0.5,
+    "83": 0.4,
+    "84": 0.4,
+    "85": 0.4,
     "86": 0.5,
     "87": 0.5,
     "88": 0.5,
@@ -1804,14 +1833,14 @@
     "92": 0.5,
     "93": 0.5,
     "94": 0.5,
-    "95": 0.6666666666666666,
-    "96": 0.6666666666666666,
-    "97": 0.6666666666666666,
-    "98": 0.6666666666666666,
-    "99": 0.6666666666666666,
-    "100": 0.6666666666666666,
-    "101": 0.6666666666666666,
-    "102": 0.6666666666666666,
+    "95": 0.5,
+    "96": 0.5,
+    "97": 0.5,
+    "98": 0.5,
+    "99": 0.5,
+    "100": 0.5,
+    "101": 0.5,
+    "102": 0.5,
     "103": 0.6666666666666666,
     "104": 0.6666666666666666,
     "105": 0.6666666666666666,
@@ -1854,20 +1883,20 @@
     "142": 0.6666666666666666,
     "143": 0.6666666666666666,
     "144": 0.6666666666666666,
-    "145": 1.0,
-    "146": 1.0,
-    "147": 1.0,
-    "148": 1.0,
-    "149": 1.0,
-    "150": 1.0,
-    "151": 1.0,
-    "152": 1.0,
-    "153": 1.0,
-    "154": 1.0,
-    "155": 1.0,
-    "156": 1.0,
-    "157": 1.0,
-    "158": 1.0,
+    "145": 0.6666666666666666,
+    "146": 0.6666666666666666,
+    "147": 0.6666666666666666,
+    "148": 0.6666666666666666,
+    "149": 0.6666666666666666,
+    "150": 0.6666666666666666,
+    "151": 0.6666666666666666,
+    "152": 0.6666666666666666,
+    "153": 0.6666666666666666,
+    "154": 0.6666666666666666,
+    "155": 0.6666666666666666,
+    "156": 0.6666666666666666,
+    "157": 0.6666666666666666,
+    "158": 0.6666666666666666,
     "159": 1.0,
     "160": 1.0,
     "161": 1.0,
@@ -1899,33 +1928,37 @@
     "187": 1.0,
     "188": 1.0,
     "189": 1.0,
-    "190": 1.0
+    "190": 1.0,
+    "191": 1.0,
+    "192": 1.0,
+    "193": 1.0,
+    "194": 1.0,
+    "195": 1.0,
+    "196": 1.0,
+    "197": 1.0,
+    "198": 1.0,
+    "199": 1.0,
+    "200": 1.0,
+    "201": 1.0,
+    "202": 1.0,
+    "203": 1.0,
+    "204": 1.0
   },
   "gods": [
-    {
-      "id": "apps_admin_dashboard_src_components_common_pagebreadcrumb_pagebreadcrumb",
-      "label": "PageBreadcrumb()",
-      "degree": 31
-    },
     {
       "id": "ref_next",
       "label": ".next/**",
       "degree": 22
     },
     {
+      "id": "apps_admin_dashboard_src_components_common_pagebreadcrumb_pagebreadcrumb",
+      "label": "PageBreadcrumb()",
+      "degree": 20
+    },
+    {
       "id": "apps_admin_dashboard_src_hooks_usemodal_usemodal",
       "label": "useModal()",
       "degree": 17
-    },
-    {
-      "id": "apps_admin_dashboard_src_components_form_label_label",
-      "label": "Label()",
-      "degree": 16
-    },
-    {
-      "id": "apps_admin_dashboard_src_components_ui_badge_badge_badge",
-      "label": "Badge()",
-      "degree": 16
     },
     {
       "id": "apps_admin_dashboard_tsconfig_compileroptions",
@@ -1938,11 +1971,6 @@
       "degree": 16
     },
     {
-      "id": "apps_admin_dashboard_src_components_ui_button_button_button",
-      "label": "Button()",
-      "degree": 14
-    },
-    {
       "id": "apps_admin_dashboard_src_components_ui_dropdown_dropdown_dropdown",
       "label": "Dropdown()",
       "degree": 13
@@ -1951,6 +1979,21 @@
       "id": "apps_admin_dashboard_src_components_ui_dropdown_dropdownitem_dropdownitem",
       "label": "DropdownItem()",
       "degree": 13
+    },
+    {
+      "id": "apps_admin_dashboard_src_components_ui_toast_toast_toastmessage",
+      "label": "ToastMessage",
+      "degree": 13
+    },
+    {
+      "id": "apps_admin_dashboard_src_components_ui_toast_toast_toastcontainer",
+      "label": "ToastContainer()",
+      "degree": 13
+    },
+    {
+      "id": "apps_admin_dashboard_src_components_form_label_label",
+      "label": "Label()",
+      "degree": 12
     }
   ],
   "surprises": [
