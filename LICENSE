@@ -1,0 +1,39 @@
+HRISCorp.dev Commercial & Enterprise License Agreement
+
+Copyright (c) 2026 Ahmad Arif (HRISCorp.dev). All Rights Reserved.
+
+Primary Author & Lead Developer: Ahmad Arif
+Platform & Ecosystem: HRISCorp.dev Enterprise Platform
+Project: HRIS Enterprise System (Human Resource Information System)
+
+===============================================================================
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+===============================================================================
+
+1. DEFINITIONS
+   - "Licensor" refers to Ahmad Arif, the author, primary developer, and rights holder of the HRIS Enterprise Platform and HRISCorp.dev system.
+   - "Software" refers to the HRIS Enterprise codebase, including but not limited to Next.js frontends (Admin Dashboard & Employee Portal), shared package UI components, database schemas (Prisma & PostgreSQL), documentation, and design specifications.
+   - "HRISCorp.dev" refers to the official enterprise platform domain and brand maintained by Ahmad Arif.
+
+2. LICENSE GRANT & PERMITTED USE
+   Subject to the terms and conditions of this Agreement, Ahmad Arif grants the licensee a non-exclusive, non-transferable, limited enterprise license to install, execute, and utilize the Software for internal corporate Human Resource management.
+
+3. INTELLECTUAL PROPERTY & ATTRIBUTION
+   - Full intellectual property rights, copyright, source code architecture, database designs, and system algorithms remain exclusively with Ahmad Arif.
+   - All copies, forks, builds, or derivative works of this Software MUST preserve this License notice and prominently credit:
+     * Author & Developer: Ahmad Arif
+     * Official Platform: HRISCorp.dev (https://hriscorp.dev)
+
+4. RESTRICTIONS
+   - Licensees may NOT redistribute, resell, sublicense, rent, lease, or publicly expose the raw source code without explicit written consent from Ahmad Arif.
+   - Unauthorized commercialization or rebranding of the Software without crediting Ahmad Arif and HRISCorp.dev is strictly prohibited.
+
+5. DISCLAIMER OF WARRANTY & LIMITATION OF LIABILITY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL AHMAD ARIF OR HRISCORP.DEV BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+-------------------------------------------------------------------------------
+Official Author & Contact Information:
+Lead Developer & Author: Ahmad Arif
+Official Platform: https://hriscorp.dev
+Support Email: support@hriscorp.dev / ahmadarif@hriscorp.dev
+-------------------------------------------------------------------------------

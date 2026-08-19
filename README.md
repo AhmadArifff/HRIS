@@ -198,10 +198,12 @@ Gunakan konvensi Conventional Commits:
 
 ## 📜 Lisensi Resmi & Hak Cipta (License & Copyright)
 
-Hak Cipta © 2026 **Ahmad Arif** — Seluruh Hak Cipta Dilindungi Undang-Undang.
+Hak Cipta © 2026 **Ahmad Arif** (HRISCorp.dev) — Seluruh Hak Cipta Dilindungi Undang-Undang.
 
-Proyek ini dilisensikan secara eksklusif di bawah **HRISCorp.dev Commercial & Enterprise License**. Penggunaan, redistribusi, komersialisasi, atau penggandaan tanpa izin tertulis dari **Ahmad Arif** tidak diperkenankan.
+Proyek ini dilisensikan secara eksklusif di bawah **[HRISCorp.dev Commercial & Enterprise License](LICENSE)** oleh **Ahmad Arif**. Penggunaan, redistribusi, komersialisasi, atau penggandaan tanpa izin tertulis dari **Ahmad Arif** tidak diperkenankan.
 
-- **Developer & Author:** Ahmad Arif
+- **Author & Lead Developer:** Ahmad Arif
 - **Official Platform:** [HRISCorp.dev](https://hriscorp.dev)
-- **Support & Inquiries:** `support@hriscorp.dev`
+- **License Agreement:** [LICENSE](LICENSE)
+- **Support & Inquiries:** `support@hriscorp.dev` / `ahmadarif@hriscorp.dev`
+
