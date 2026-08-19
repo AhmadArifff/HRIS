@@ -1,5 +1,42 @@
 @import 'tailwindcss';
 
+@keyframes modalBookOpenIn {
+  0% {
+    opacity: 0;
+    transform: perspective(1400px) rotateX(-20deg) rotateY(-35deg) scale(0.88);
+    transform-origin: left top;
+  }
+  65% {
+    transform: perspective(1400px) rotateX(4deg) rotateY(6deg) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1400px) rotateX(0deg) rotateY(0deg) scale(1);
+    transform-origin: left top;
+  }
+}
+
+@keyframes modalBookCloseOut {
+  0% {
+    opacity: 1;
+    transform: perspective(1400px) rotateX(0deg) rotateY(0deg) scale(1);
+    transform-origin: left top;
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(1400px) rotateX(-20deg) rotateY(-35deg) scale(0.88);
+    transform-origin: left top;
+  }
+}
+
+.animate-modal-book-open {
+  animation: modalBookOpenIn 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-modal-book-close {
+  animation: modalBookCloseOut 380ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {

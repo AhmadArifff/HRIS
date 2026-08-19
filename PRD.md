@@ -963,14 +963,19 @@ Halaman ini adalah pintu gerbang awal aplikasi HRIS Enterprise sebelum pengguna 
 
 ---
 
-### 8.3 Kebijakan Token Autentikasi & Masa Berlaku Sesi (Session Idle Expiration)
+### 8.3 Kebijakan Token Autentikasi & Gatekeeper Portal Karyawan (localhost:3001)
 
-Sistem menetapkan kebijakan batas waktu aktif token autentikasi (*Session Token Lifetime & Idle Timeout*) untuk menjamin keamanan data riil perusahaan:
+Sistem menetapkan kebijakan batas waktu aktif token autentikasi (*Session Token Lifetime & Idle Timeout*) dan proteksi pintu gerbang (*Gatekeeper Auth Guard*) untuk menjamin keamanan data riil perusahaan:
 
-1. **Sesi Karyawan (Login Biometrik Foto Wajah)**:
+1. **Gatekeeper Proteksi Penuh Portal Karyawan (`localhost:3001`)**:
+   - Seluruh halaman dan rute di dalam Portal Karyawan (`/`, `/attendance`, `/leave`, `/payroll`, `/performance`, `/reimbursement`) **TIDAK DAPAT DIAKSES** secara langsung tanpa melewati validasi biometrik pindaian wajah (`FaceAuthGuard`).
+   - Apabila pengguna membuka `http://localhost:3001` tanpa token valid atau token sudah kedaluwarsa, layar aplikasi otomatis terkunci dalam mode **Face Recognition Biometric Login Gate Screen** yang mewajibkan pindaian foto selfie kamera sebelum dashboard dibuka.
+2. **Sesi Karyawan (Login Biometrik Foto Wajah)**:
    - Token berlaku selama **15 Menit** sejak verifikasi foto wajah berhasil dilakukan.
-   - Apabila tidak ada aktivitas (gerakan kursor, *touch event*, atau pengisian form) dalam kurun waktu 15 menit, sesi dianggap hangus (*expired*) dan pengguna otomatis diarahkan kembali ke layar Verifikasi Biometrik Foto Wajah.
-2. **Sesi Admin / Management (Login Email & Password)**:
+   - Header aplikasi menampilkan indikator waktu mundur (*live countdown timer* `⏱️ Sesi: 14:32`).
+   - Karyawan dapat mengunci portal secara manual kapan saja melalui tombol **"Kunci Akses"**.
+   - Apabila waktu 15 menit habis, sesi otomatis kadaluarsa (*auto-logout*), layar terkunci kembali, dan pengguna diminta memindai wajah ulang.
+3. **Sesi Admin / Management (Login Email & Password)**:
    - Token berlaku selama **30 Menit** sejak autentikasi kredensial manajemen berhasil.
    - Apabila pengguna idle tanpa aktivitas selama 30 menit, sesi otomatis kadaluarsa demi keamanan data SDM perusahaan.
 

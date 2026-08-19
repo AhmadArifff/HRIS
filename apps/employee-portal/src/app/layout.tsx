@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { FaceAuthGuard } from "@/components/auth/FaceAuthGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,8 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex flex-col`}
       >
-        <Header />
-        <main className="flex-1">{children}</main>
+        <FaceAuthGuard>
+          <Header />
+          <main className="flex-1">{children}</main>
+        </FaceAuthGuard>
       </body>
     </html>
   );
