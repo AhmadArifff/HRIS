@@ -20,3 +20,8 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('reimbursement-claims', 'reimbursement-claims', false) 
 ON CONFLICT (id) DO NOTHING;
+
+-- Create applicant-resumes bucket
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('applicant-resumes', 'applicant-resumes', false) 
+ON CONFLICT (id) DO NOTHING;
