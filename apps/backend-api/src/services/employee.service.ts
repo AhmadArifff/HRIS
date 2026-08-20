@@ -19,10 +19,10 @@ export class EmployeeService {
 
     if (options.search) {
       whereClause.OR = [
-        { user: { firstName: { contains: options.search, mode: "insensitive" } } },
-        { user: { lastName: { contains: options.search, mode: "insensitive" } } },
+        { firstName: { contains: options.search, mode: "insensitive" } },
+        { lastName: { contains: options.search, mode: "insensitive" } },
         { user: { email: { contains: options.search, mode: "insensitive" } } },
-        { nip: { contains: options.search, mode: "insensitive" } },
+        { employeeCode: { contains: options.search, mode: "insensitive" } },
       ];
     }
 
@@ -36,11 +36,10 @@ export class EmployeeService {
         include: {
           user: {
             select: {
-              firstName: true,
-              lastName: true,
               email: true,
-              avatarUrl: true,
-              role: true,
+              role: {
+                select: { name: true }
+              }
             },
           },
           department: {
@@ -50,8 +49,7 @@ export class EmployeeService {
           },
           position: {
             select: {
-              title: true,
-              level: true,
+              name: true,
             },
           },
         },
@@ -67,16 +65,16 @@ export class EmployeeService {
     ]);
 
     // Flatten user properties to the root of each employee object for easier frontend consumption
-    const formattedData = data.map(emp => ({
+    const formattedData = data.map((emp: any) => ({
       ...emp,
-      firstName: emp.user?.firstName || "",
-      lastName: emp.user?.lastName || "",
+      firstName: emp.firstName,
+      lastName: emp.lastName,
       email: emp.user?.email || "",
-      avatarUrl: emp.user?.avatarUrl || null,
-      role: emp.user?.role || "EMPLOYEE",
+      avatarUrl: "/images/user/user-01.jpg", // Fallback, not in schema
+      role: emp.user?.role?.name || "Staff",
       departmentName: emp.department?.name || "N/A",
-      positionTitle: emp.position?.title || "N/A",
-      positionLevel: emp.position?.level || "STAFF",
+      positionTitle: emp.position?.name || "N/A",
+      positionLevel: "STAFF",
     }));
 
     return {

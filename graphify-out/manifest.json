@@ -1195,9 +1195,9 @@
     "semantic_hash": "d953b4f1dd1a8cbb24b882f82acb4df2"
   },
   "apps/admin-dashboard/src/components/hris/EmployeeTable.tsx": {
-    "mtime": 1787195551.4857557,
-    "ast_hash": "264959cf3c7309aec4ce5cfbf210cc0a",
-    "semantic_hash": "264959cf3c7309aec4ce5cfbf210cc0a"
+    "mtime": 1787204342.0929282,
+    "ast_hash": "3d2b523e2fa5ef400c7b98fad7843019",
+    "semantic_hash": "3d2b523e2fa5ef400c7b98fad7843019"
   },
   "apps/admin-dashboard/src/components/hris/HrisMetrics.tsx": {
     "mtime": 1786176923.791781,
@@ -3205,9 +3205,9 @@
     "semantic_hash": "6fe9abbfeca0f23f945005e880539961"
   },
   "apps/backend-api/src/server.ts": {
-    "mtime": 1787201759.7862406,
-    "ast_hash": "92d33684a0d15aed317a5c062ab924c3",
-    "semantic_hash": "92d33684a0d15aed317a5c062ab924c3"
+    "mtime": 1787204342.0969667,
+    "ast_hash": "9d9a1162394c350e42a51cc5db20b8d1",
+    "semantic_hash": "9d9a1162394c350e42a51cc5db20b8d1"
   },
   "apps/backend-api/src/utils/Result.ts": {
     "mtime": 1787200468.8548632,
@@ -3233,5 +3233,15 @@
     "mtime": 1787203765.2878792,
     "ast_hash": "24fd5d792f148f30512529ee356a22d6",
     "semantic_hash": "24fd5d792f148f30512529ee356a22d6"
+  },
+  "apps/backend-api/src/controllers/employee.controller.ts": {
+    "mtime": 1787204342.094895,
+    "ast_hash": "9691b357840bf18fd24f593d5b1f198b",
+    "semantic_hash": "9691b357840bf18fd24f593d5b1f198b"
+  },
+  "apps/backend-api/src/services/employee.service.ts": {
+    "mtime": 1787204342.0990133,
+    "ast_hash": "959d88ac91478cb9d4dd4021c1e280ab",
+    "semantic_hash": "959d88ac91478cb9d4dd4021c1e280ab"
   }
 }
