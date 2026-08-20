@@ -4,6 +4,35 @@ import Image from "next/image";
 import Badge from "../ui/badge/Badge";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 
+const EmployeeAvatar: React.FC<{ src?: string; name: string; size?: "sm" | "md" | "lg" }> = ({ src, name, size = "md" }) => {
+  const [imgError, setImgError] = useState(false);
+  const sizeClasses = size === "lg" ? "w-16 h-16 text-lg" : size === "sm" ? "w-7 h-7 text-xs" : "w-9 h-9 text-xs";
+
+  const getInitials = (nameStr: string) => {
+    if (!nameStr) return "EP";
+    const parts = nameStr.trim().split(" ");
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return nameStr.substring(0, 2).toUpperCase();
+  };
+
+  const isExternalOrValid = src && src.trim().length > 0 && !imgError;
+
+  return (
+    <div className={`relative ${sizeClasses} rounded-full overflow-hidden bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center font-bold text-white shrink-0 border border-gray-200 dark:border-gray-700 shadow-sm`}>
+      {isExternalOrValid ? (
+        <img
+          src={src}
+          alt={name}
+          onError={() => setImgError(true)}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span>{getInitials(name)}</span>
+      )}
+    </div>
+  );
+};
+
 export interface EmployeeData {
   id: number;
   emp_id: string;
@@ -51,12 +80,12 @@ export const EmployeeTable: React.FC = () => {
             id: emp.id,
             emp_id: emp.employeeCode || `EMP-${emp.id}`,
             name: `${emp.firstName} ${emp.lastName}`.trim(),
-            position: emp.position?.name || "N/A",
-            department: emp.department?.name || "N/A",
+            position: emp.position?.name || emp.positionTitle || "N/A",
+            department: emp.department?.name || emp.departmentName || "N/A",
             status: emp.deletedAt !== null ? "Terminated" : "Active",
-            avatar: emp.user?.avatarUrl || "/images/user/user-01.jpg",
-            email: emp.user?.email || "",
-            joinDate: new Date(emp.joinDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
+            avatar: emp.avatarUrl || emp.user?.avatarUrl || "/images/user/user-01.jpg",
+            email: emp.email || emp.user?.email || "",
+            joinDate: emp.joinDate ? new Date(emp.joinDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "-",
           }));
           setData(formatted);
         }
@@ -280,14 +309,7 @@ export const EmployeeTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0 border border-gray-200 dark:border-gray-700">
-                        <Image
-                          src={emp.avatar}
-                          alt={emp.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
+                      <EmployeeAvatar src={emp.avatar} name={emp.name} size="md" />
                       <div>
                         <span className="font-medium text-gray-800 dark:text-white block">
                           {emp.name}
@@ -426,11 +448,19 @@ export const EmployeeTable: React.FC = () => {
       {detailEmp && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-md">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl relative">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-              Profil 360° — {detailEmp.name}
-            </h3>
+            <div className="flex items-center gap-4 mb-4">
+              <EmployeeAvatar src={detailEmp.avatar} name={detailEmp.name} size="lg" />
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                  {detailEmp.name}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                  {detailEmp.emp_id} • {detailEmp.position}
+                </p>
+              </div>
+            </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
-              Informasi detail karyawan ({detailEmp.emp_id}) (PRD §3.1 & §7.1).
+              Informasi profil detail karyawan (PRD §3.1 & §7.1).
             </p>
 
             <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300 mb-6">

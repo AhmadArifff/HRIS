@@ -102,6 +102,7 @@ export class EmployeeService {
           user: {
             select: {
               email: true,
+              avatarUrl: true,
               role: {
                 select: { name: true }
               }
@@ -135,7 +136,7 @@ export class EmployeeService {
       firstName: emp.firstName,
       lastName: emp.lastName,
       email: emp.user?.email || "",
-      avatarUrl: "/images/user/user-01.jpg", // Fallback, not in schema
+      avatarUrl: emp.user?.avatarUrl || "/images/user/user-01.jpg",
       role: emp.user?.role?.name || "Staff",
       departmentName: emp.department?.name || "N/A",
       positionTitle: emp.position?.name || "N/A",
