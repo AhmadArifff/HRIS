@@ -1,0 +1,402 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// 1. Auth & Core
+// ==========================================
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  roleId       String    @map("role_id")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  role     Role      @relation(fields: [roleId], references: [id])
+  employee Employee?
+
+  @@map("users")
+}
+
+model Role {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  permissions Json      @default("{}")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  users User[]
+
+  @@map("roles")
+}
+
+model MasterStatus {
+  id        String    @id @default(uuid())
+  category  String // e.g. "Leave", "Employee", "Payroll", "Application", "Asset"
+  label     String
+  value     String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  employees          Employee[]
+  contracts          EmployeeContract[]
+  attendances        Attendance[]
+  leaveRequests      LeaveRequest[]
+  payrolls           Payroll[]
+  jobPostings        JobPosting[]
+  applications       Application[]
+  performanceReviews PerformanceReview[]
+  offboardings       Offboarding[]
+  reimbursements     Reimbursement[]
+
+  @@unique([category, value])
+  @@map("master_statuses")
+}
+
+// ==========================================
+// 2. Organization & Employees
+// ==========================================
+
+model Department {
+  id        String    @id @default(uuid())
+  code      String    @unique
+  name      String
+  managerId String?   @map("manager_id") // Optional UUID of employee
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  positions   Position[]
+  employees   Employee[]
+  jobPostings JobPosting[]
+
+  @@map("departments")
+}
+
+model Position {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  name         String
+  departmentId String    @map("department_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  department Department @relation(fields: [departmentId], references: [id])
+  employees  Employee[]
+
+  @@map("positions")
+}
+
+model Employee {
+  id           String    @id @default(uuid())
+  userId       String    @unique @map("user_id")
+  employeeCode String    @unique @map("employee_code")
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  birthDate    DateTime  @map("birth_date") @db.Date
+  gender       String
+  phone        String?
+  address      String?   @db.Text
+  departmentId String    @map("department_id")
+  positionId   String    @map("position_id")
+  joinDate     DateTime  @map("join_date") @db.Date
+  statusId     String    @map("status_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  user       User         @relation(fields: [userId], references: [id])
+  department Department   @relation(fields: [departmentId], references: [id])
+  position   Position     @relation(fields: [positionId], references: [id])
+  status     MasterStatus @relation(fields: [statusId], references: [id])
+
+  contracts          EmployeeContract[]
+  attendances        Attendance[]
+  leaveRequests      LeaveRequest[]      @relation("EmployeeLeave")
+  leaveApprovals     LeaveRequest[]      @relation("ApproverLeave")
+  payrolls           Payroll[]
+  performanceReviews PerformanceReview[] @relation("EmployeeReview")
+  reviewerReviews    PerformanceReview[] @relation("ReviewerReview")
+  offboardings       Offboarding[]
+  reimbursements     Reimbursement[]
+
+  @@map("employees")
+}
+
+model EmployeeContract {
+  id                     String    @id @default(uuid())
+  employeeId             String    @map("employee_id")
+  startDate              DateTime  @map("start_date") @db.Date
+  endDate                DateTime? @map("end_date") @db.Date
+  contractTypeId         String    @map("contract_type_id")
+  basicSalary            Decimal   @map("basic_salary") @db.Decimal(15, 2)
+  documentUrl            String?   @map("document_url")
+  expiryNotificationDate DateTime? @map("expiry_notification_date") @db.Date
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
+
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  contractType MasterStatus @relation(fields: [contractTypeId], references: [id])
+
+  @@map("employee_contracts")
+}
+
+// ==========================================
+// 3. Time & Attendance
+// ==========================================
+
+model ShiftMaster {
+  id               String    @id @default(uuid())
+  name             String
+  startTime        DateTime  @map("start_time") @db.Time
+  endTime          DateTime  @map("end_time") @db.Time
+  totalWorkHours   Decimal   @map("total_work_hours") @db.Decimal(5, 2)
+  toleranceMinutes Int       @default(0) @map("tolerance_minutes")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  attendances Attendance[]
+
+  @@map("shift_masters")
+}
+
+model Attendance {
+  id                  String    @id @default(uuid())
+  employeeId          String    @map("employee_id")
+  shiftId             String    @map("shift_id")
+  recordDate          DateTime  @map("record_date") @db.Date
+  clockIn             DateTime? @map("clock_in")
+  clockOut            DateTime? @map("clock_out")
+  isLate              Boolean   @default(false) @map("is_late")
+  lateDurationMinutes Int       @default(0) @map("late_duration_minutes")
+  earlyLeaveMinutes   Int       @default(0) @map("early_leave_minutes")
+  overtimeMinutes     Int       @default(0) @map("overtime_minutes")
+  statusId            String    @map("status_id")
+  locationInLatlng    String?   @map("location_in_latlng")
+  locationOutLatlng   String?   @map("location_out_latlng")
+  imageProofUrl       String?   @map("image_proof_url")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  employee Employee     @relation(fields: [employeeId], references: [id])
+  shift    ShiftMaster  @relation(fields: [shiftId], references: [id])
+  status   MasterStatus @relation(fields: [statusId], references: [id])
+
+  @@map("attendances")
+}
+
+model LeaveType {
+  id             String    @id @default(uuid())
+  name           String // Sick, Annual, Maternity, Unpaid
+  maxDaysPerYear Int       @map("max_days_per_year")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  requests LeaveRequest[]
+
+  @@map("leave_types")
+}
+
+model LeaveRequest {
+  id            String    @id @default(uuid())
+  employeeId    String    @map("employee_id")
+  leaveTypeId   String    @map("leave_type_id")
+  startDate     DateTime  @map("start_date") @db.Date
+  endDate       DateTime  @map("end_date") @db.Date
+  reason        String    @db.Text
+  statusId      String    @map("status_id")
+  approverId    String?   @map("approver_id")
+  attachmentUrl String?   @map("attachment_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  employee  Employee     @relation("EmployeeLeave", fields: [employeeId], references: [id])
+  approver  Employee?    @relation("ApproverLeave", fields: [approverId], references: [id])
+  leaveType LeaveType    @relation(fields: [leaveTypeId], references: [id])
+  status    MasterStatus @relation(fields: [statusId], references: [id])
+
+  @@map("leave_requests")
+}
+
+// ==========================================
+// 4. Payroll & Compensation
+// ==========================================
+
+model Payroll {
+  id             String    @id @default(uuid())
+  employeeId     String    @map("employee_id")
+  periodStart    DateTime  @map("period_start") @db.Date
+  periodEnd      DateTime  @map("period_end") @db.Date
+  baseSalary     Decimal   @map("base_salary") @db.Decimal(15, 2)
+  totalAllowance Decimal   @map("total_allowance") @db.Decimal(15, 2)
+  totalDeduction Decimal   @map("total_deduction") @db.Decimal(15, 2)
+  taxAmount      Decimal   @map("tax_amount") @db.Decimal(15, 2)
+  netSalary      Decimal   @map("net_salary") @db.Decimal(15, 2)
+  statusId       String    @map("status_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  employee Employee        @relation(fields: [employeeId], references: [id])
+  status   MasterStatus    @relation(fields: [statusId], references: [id])
+  details  PayrollDetail[]
+
+  @@map("payrolls")
+}
+
+model PayrollComponent {
+  id        String    @id @default(uuid())
+  name      String
+  type      String // Allowance, Deduction
+  isTaxable Boolean   @default(true) @map("is_taxable")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  details PayrollDetail[]
+
+  @@map("payroll_components")
+}
+
+model PayrollDetail {
+  id          String   @id @default(uuid())
+  payrollId   String   @map("payroll_id")
+  componentId String   @map("component_id")
+  amount      Decimal  @db.Decimal(15, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  payroll   Payroll          @relation(fields: [payrollId], references: [id])
+  component PayrollComponent @relation(fields: [componentId], references: [id])
+
+  @@map("payroll_details")
+}
+
+// ==========================================
+// 5. Recruitment & Offboarding
+// ==========================================
+
+model JobPosting {
+  id           String    @id @default(uuid())
+  title        String
+  departmentId String    @map("department_id")
+  description  String    @db.Text
+  requirements String    @db.Text
+  statusId     String    @map("status_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  department   Department    @relation(fields: [departmentId], references: [id])
+  status       MasterStatus  @relation(fields: [statusId], references: [id])
+  applications Application[]
+
+  @@map("job_postings")
+}
+
+model Applicant {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String?
+  resumeUrl String?   @map("resume_url")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  applications Application[]
+
+  @@map("applicants")
+}
+
+model Application {
+  id           String    @id @default(uuid())
+  jobPostingId String    @map("job_posting_id")
+  applicantId  String    @map("applicant_id")
+  applyDate    DateTime  @default(now()) @map("apply_date")
+  statusId     String    @map("status_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  jobPosting JobPosting   @relation(fields: [jobPostingId], references: [id])
+  applicant  Applicant    @relation(fields: [applicantId], references: [id])
+  status     MasterStatus @relation(fields: [statusId], references: [id])
+
+  @@map("applications")
+}
+
+model PerformanceReview {
+  id                String    @id @default(uuid())
+  employeeId        String    @map("employee_id")
+  reviewerId        String    @map("reviewer_id")
+  reviewPeriodStart DateTime  @map("review_period_start") @db.Date
+  reviewPeriodEnd   DateTime  @map("review_period_end") @db.Date
+  overallScore      Decimal   @map("overall_score") @db.Decimal(5, 2)
+  feedback          String    @db.Text
+  statusId          String    @map("status_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  employee Employee     @relation("EmployeeReview", fields: [employeeId], references: [id])
+  reviewer Employee     @relation("ReviewerReview", fields: [reviewerId], references: [id])
+  status   MasterStatus @relation(fields: [statusId], references: [id])
+
+  @@map("performance_reviews")
+}
+
+model Offboarding {
+  id           String    @id @default(uuid())
+  employeeId   String    @map("employee_id")
+  exitDate     DateTime  @map("exit_date") @db.Date
+  reason       String    @db.Text
+  statusId     String    @map("status_id")
+  assetCleared Boolean   @default(false) @map("asset_cleared")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  employee Employee     @relation(fields: [employeeId], references: [id])
+  status   MasterStatus @relation(fields: [statusId], references: [id])
+
+  @@map("offboardings")
+}
+
+model Reimbursement {
+  id          String    @id @default(uuid())
+  employeeId  String    @map("employee_id")
+  requestDate DateTime  @map("request_date") @db.Date
+  amount      Decimal   @db.Decimal(15, 2)
+  category    String // Medical, Operational
+  receiptUrl  String?   @map("receipt_url")
+  statusId    String    @map("status_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  employee Employee     @relation(fields: [employeeId], references: [id])
+  status   MasterStatus @relation(fields: [statusId], references: [id])
+
+  @@map("reimbursements")
+}

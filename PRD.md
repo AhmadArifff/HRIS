@@ -94,6 +94,14 @@ Sistem HRISCorp.dev dirancang berbasis **Progressive Web App (PWA)** agar dapat 
     *   *Network-First Strategy*: Menjamin data transaksi Payroll & Kehadiran selalu paling mutakhir dari server.
 *   **Akses Hardware Perangkat Native:** Integrasi API Browser Native untuk Kamera (Absen Foto Wajah), Geolocation GPS (Geofencing Absensi), dan Web Push Notifications.
 
+### 1.8 Konfigurasi Infrastruktur Eksternal
+Untuk mendukung performa dan *caching*, sistem ini menggunakan **Upstash Redis** (Vercel KV) sebagai penyimpanan in-memory.
+*   **Endpoint:** `legible-trout-123335.upstash.io`
+*   **Port:** `6379`
+*   **Protocol:** `TCP` / `REST`
+*   **TLS/SSL:** `Enabled`
+*   **Redis-CLI Connect:** `redis-cli --tls -u redis://default:********@legible-trout-123335.upstash.io:6379`
+
 ---
 
 ## 2. Perancangan Database (ERD) - Dioptimalkan
