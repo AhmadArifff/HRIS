@@ -1800,9 +1800,9 @@
     "semantic_hash": "ba8aefc3c082104a35fb60da9475d293"
   },
   "apps/admin-dashboard/src/layout/AppSidebar.tsx": {
-    "mtime": 1787144362.0083735,
-    "ast_hash": "0817a5752977dc2c29074d81862eb65d",
-    "semantic_hash": "0817a5752977dc2c29074d81862eb65d"
+    "mtime": 1787201759.7837954,
+    "ast_hash": "93469256d9c99c5c9def0144e1d1e663",
+    "semantic_hash": "93469256d9c99c5c9def0144e1d1e663"
   },
   "apps/admin-dashboard/src/layout/Backdrop.tsx": {
     "mtime": 1777371739.0,
@@ -3205,9 +3205,9 @@
     "semantic_hash": "6fe9abbfeca0f23f945005e880539961"
   },
   "apps/backend-api/src/server.ts": {
-    "mtime": 1787201185.7800682,
-    "ast_hash": "901246b1efc12c115d893902d62c544e",
-    "semantic_hash": "901246b1efc12c115d893902d62c544e"
+    "mtime": 1787201759.7862406,
+    "ast_hash": "92d33684a0d15aed317a5c062ab924c3",
+    "semantic_hash": "92d33684a0d15aed317a5c062ab924c3"
   },
   "apps/backend-api/src/utils/Result.ts": {
     "mtime": 1787200468.8548632,
@@ -3223,5 +3223,15 @@
     "mtime": 1787201185.7783823,
     "ast_hash": "05d73e2b80276a2da1c6b7fe9bd9a6b3",
     "semantic_hash": "05d73e2b80276a2da1c6b7fe9bd9a6b3"
+  },
+  "apps/admin-dashboard/src/app/(admin)/infrastructure/redis/page.tsx": {
+    "mtime": 1787201759.7821116,
+    "ast_hash": "7bbf9544b87b52e833d9ead9b52a7390",
+    "semantic_hash": "7bbf9544b87b52e833d9ead9b52a7390"
+  },
+  "apps/backend-api/src/controllers/infrastructure.controller.ts": {
+    "mtime": 1787201759.7850485,
+    "ast_hash": "7a4c4e7ff1323ab2fbe4b31277a232fa",
+    "semantic_hash": "7a4c4e7ff1323ab2fbe4b31277a232fa"
   }
 }
