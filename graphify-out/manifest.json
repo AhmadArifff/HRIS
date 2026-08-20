@@ -3205,9 +3205,9 @@
     "semantic_hash": "6fe9abbfeca0f23f945005e880539961"
   },
   "apps/backend-api/src/server.ts": {
-    "mtime": 1787200468.8548632,
-    "ast_hash": "8ddec4c2f8eba023d8b2749f7fca808a",
-    "semantic_hash": "8ddec4c2f8eba023d8b2749f7fca808a"
+    "mtime": 1787201185.7800682,
+    "ast_hash": "901246b1efc12c115d893902d62c544e",
+    "semantic_hash": "901246b1efc12c115d893902d62c544e"
   },
   "apps/backend-api/src/utils/Result.ts": {
     "mtime": 1787200468.8548632,
@@ -3218,5 +3218,10 @@
     "mtime": 1787200468.8548632,
     "ast_hash": "f57dd12a32b5f261a66c8d97b7fc920b",
     "semantic_hash": "f57dd12a32b5f261a66c8d97b7fc920b"
+  },
+  "apps/backend-api/src/env.ts": {
+    "mtime": 1787201185.7783823,
+    "ast_hash": "05d73e2b80276a2da1c6b7fe9bd9a6b3",
+    "semantic_hash": "05d73e2b80276a2da1c6b7fe9bd9a6b3"
   }
 }
