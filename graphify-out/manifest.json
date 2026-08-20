@@ -335,9 +335,9 @@
     "semantic_hash": "44a10dbbafe3fddfad8c01b6bf4d1a0d"
   },
   "apps/admin-dashboard/src/app/(admin)/layout.tsx": {
-    "mtime": 1787194295.3302853,
-    "ast_hash": "57eddcdf9563d597aa765d29467f07f7",
-    "semantic_hash": "57eddcdf9563d597aa765d29467f07f7"
+    "mtime": 1787195551.471824,
+    "ast_hash": "4c19fbff6c099c519a761adee7f6a506",
+    "semantic_hash": "4c19fbff6c099c519a761adee7f6a506"
   },
   "apps/admin-dashboard/src/app/(admin)/leave/page.tsx": {
     "mtime": 1787144361.9035144,
@@ -375,9 +375,9 @@
     "semantic_hash": "2e1e154474a4873ad2bc76eadb973a0b"
   },
   "apps/admin-dashboard/src/app/(admin)/recruitment/kanban/page.tsx": {
-    "mtime": 1787194301.398921,
-    "ast_hash": "78ad3754411afecd7ca7849fd6fc547c",
-    "semantic_hash": "78ad3754411afecd7ca7849fd6fc547c"
+    "mtime": 1787195551.4738235,
+    "ast_hash": "f2b8743cd5859c378ce34da93ee09411",
+    "semantic_hash": "f2b8743cd5859c378ce34da93ee09411"
   },
   "apps/admin-dashboard/src/app/(full-width-pages)/(auth)/layout.tsx": {
     "mtime": 1785543429.975801,
@@ -525,12 +525,12 @@
     "semantic_hash": "72634568cf5408b351ed9e005cf4a5ee"
   },
   "apps/admin-dashboard/src/components/auth/EmployeeFaceAuthModal.tsx": {
-    "mtime": 1787146005.3846273,
+    "mtime": 1787195551.477704,
     "ast_hash": "ce8cd8b9ed333f2539ad63ff1dc835cb",
     "semantic_hash": "ce8cd8b9ed333f2539ad63ff1dc835cb"
   },
   "apps/admin-dashboard/src/components/auth/SignInForm.tsx": {
-    "mtime": 1787146016.898625,
+    "mtime": 1787195551.4817462,
     "ast_hash": "1b477c39c2d41c4dea73664c18f9b3d3",
     "semantic_hash": "1b477c39c2d41c4dea73664c18f9b3d3"
   },
@@ -1175,7 +1175,7 @@
     "semantic_hash": "eab46316b78081e548e43f745b95b879"
   },
   "apps/admin-dashboard/src/components/hris/AttendanceTable.tsx": {
-    "mtime": 1787195224.4537346,
+    "mtime": 1787195551.4817462,
     "ast_hash": "7d9b399fc651481ac438476da7c25635",
     "semantic_hash": "7d9b399fc651481ac438476da7c25635"
   },
@@ -1195,7 +1195,7 @@
     "semantic_hash": "d953b4f1dd1a8cbb24b882f82acb4df2"
   },
   "apps/admin-dashboard/src/components/hris/EmployeeTable.tsx": {
-    "mtime": 1787195197.0994174,
+    "mtime": 1787195551.4857557,
     "ast_hash": "264959cf3c7309aec4ce5cfbf210cc0a",
     "semantic_hash": "264959cf3c7309aec4ce5cfbf210cc0a"
   },
@@ -1210,22 +1210,22 @@
     "semantic_hash": "0f0d0d8ca15c1d0d1660132e278dc8c4"
   },
   "apps/admin-dashboard/src/components/hris/KanbanATS.tsx": {
-    "mtime": 1787195311.4944348,
-    "ast_hash": "fffe5f0770f4f9f38cc624efe35e9648",
-    "semantic_hash": "fffe5f0770f4f9f38cc624efe35e9648"
+    "mtime": 1787195551.4857557,
+    "ast_hash": "451f7631dc8c9ce626f61fb606a72330",
+    "semantic_hash": "451f7631dc8c9ce626f61fb606a72330"
   },
   "apps/admin-dashboard/src/components/hris/LeaveTable.tsx": {
-    "mtime": 1787195248.7448347,
+    "mtime": 1787195551.4917805,
     "ast_hash": "d69f39bb6ebbdd0d668cfc29fad56ed5",
     "semantic_hash": "d69f39bb6ebbdd0d668cfc29fad56ed5"
   },
   "apps/admin-dashboard/src/components/hris/OffboardingTable.tsx": {
-    "mtime": 1787195304.1767168,
+    "mtime": 1787195551.4950097,
     "ast_hash": "738880ee504c5baba86d3b76746cf463",
     "semantic_hash": "738880ee504c5baba86d3b76746cf463"
   },
   "apps/admin-dashboard/src/components/hris/PayrollComponentsTable.tsx": {
-    "mtime": 1787195296.1616812,
+    "mtime": 1787195551.4962964,
     "ast_hash": "ab7bc199ebe279548969872f75a16731",
     "semantic_hash": "ab7bc199ebe279548969872f75a16731"
   },
@@ -1235,7 +1235,7 @@
     "semantic_hash": "016e16f28ec61c63540946f40b96b5a9"
   },
   "apps/admin-dashboard/src/components/hris/ShiftTable.tsx": {
-    "mtime": 1787195261.6916635,
+    "mtime": 1787195551.4986153,
     "ast_hash": "b417a179460e77c00644f62fe9f4e6e6",
     "semantic_hash": "b417a179460e77c00644f62fe9f4e6e6"
   },
@@ -1795,9 +1795,9 @@
     "semantic_hash": "45de7ccc40af893db42de80e4d5b72df"
   },
   "apps/admin-dashboard/src/layout/AppHeader.tsx": {
-    "mtime": 1787195162.4340713,
-    "ast_hash": "d78bbe254ea2798e0705c87d0d8b0f23",
-    "semantic_hash": "d78bbe254ea2798e0705c87d0d8b0f23"
+    "mtime": 1787195551.5012457,
+    "ast_hash": "ba8aefc3c082104a35fb60da9475d293",
+    "semantic_hash": "ba8aefc3c082104a35fb60da9475d293"
   },
   "apps/admin-dashboard/src/layout/AppSidebar.tsx": {
     "mtime": 1787144362.0083735,
@@ -2135,9 +2135,9 @@
     "semantic_hash": "0cf97a81150d3b8904f285780896980d"
   },
   "package.json": {
-    "mtime": 1787144362.4939606,
-    "ast_hash": "116da21912cf40838e493ef6b20135ff",
-    "semantic_hash": "116da21912cf40838e493ef6b20135ff"
+    "mtime": 1787197729.8499892,
+    "ast_hash": "47d1e3b2a0a47db7cc3803bda456348b",
+    "semantic_hash": "47d1e3b2a0a47db7cc3803bda456348b"
   },
   "packages/ui/package.json": {
     "mtime": 1786173880.5757327,
@@ -3155,8 +3155,68 @@
     "semantic_hash": "a2760511c65806022ad20adf74370ff3"
   },
   "apps/employee-portal/src/components/auth/FaceAuthGuard.tsx": {
-    "mtime": 1787145997.518703,
+    "mtime": 1787195551.5043054,
     "ast_hash": "c2abdfc7595b865c1476a662b2a8604a",
     "semantic_hash": "c2abdfc7595b865c1476a662b2a8604a"
+  },
+  "packages/database/package.json": {
+    "mtime": 1787196904.3053463,
+    "ast_hash": "8641801571490af95ed4f73d49fe4091",
+    "semantic_hash": "8641801571490af95ed4f73d49fe4091"
+  },
+  "packages/database/prisma/seed.ts": {
+    "mtime": 1787196990.511559,
+    "ast_hash": "f416370e112e0ecdf997a944a1060558",
+    "semantic_hash": "f416370e112e0ecdf997a944a1060558"
+  },
+  "packages/database/src/index.ts": {
+    "mtime": 1787196918.584213,
+    "ast_hash": "ce807d10e29f449a5ca49ae6da53e836",
+    "semantic_hash": "ce807d10e29f449a5ca49ae6da53e836"
+  },
+  "packages/database/tsconfig.json": {
+    "mtime": 1787196911.356619,
+    "ast_hash": "10680efefa8cdafd921c5dfb681d9ed4",
+    "semantic_hash": "10680efefa8cdafd921c5dfb681d9ed4"
+  },
+  "apps/backend-api/package.json": {
+    "mtime": 1787197643.4778743,
+    "ast_hash": "045e7db17faf19dc3ab86bfdf808e094",
+    "semantic_hash": "045e7db17faf19dc3ab86bfdf808e094"
+  },
+  "apps/backend-api/src/config/redis.ts": {
+    "mtime": 1787197700.4996207,
+    "ast_hash": "70f93f01338ee72c6ec9b40f2f5f5890",
+    "semantic_hash": "70f93f01338ee72c6ec9b40f2f5f5890"
+  },
+  "apps/backend-api/src/controllers/health.controller.ts": {
+    "mtime": 1787197708.936254,
+    "ast_hash": "805958b56121a45b4a9c901f6b1dc1b5",
+    "semantic_hash": "805958b56121a45b4a9c901f6b1dc1b5"
+  },
+  "apps/backend-api/src/middlewares/errorHandler.ts": {
+    "mtime": 1787197683.0968094,
+    "ast_hash": "4ae842a49a45fbf8adafb21e5da1ca47",
+    "semantic_hash": "4ae842a49a45fbf8adafb21e5da1ca47"
+  },
+  "apps/backend-api/src/middlewares/rateLimiter.ts": {
+    "mtime": 1787197692.5090098,
+    "ast_hash": "25a67e37b30f0b3e95df95291908afa3",
+    "semantic_hash": "25a67e37b30f0b3e95df95291908afa3"
+  },
+  "apps/backend-api/src/server.ts": {
+    "mtime": 1787197717.9318786,
+    "ast_hash": "be890e635dde05b3bfa10c396cae1a10",
+    "semantic_hash": "be890e635dde05b3bfa10c396cae1a10"
+  },
+  "apps/backend-api/src/utils/Result.ts": {
+    "mtime": 1787197675.3729987,
+    "ast_hash": "399930b4ac797970490e80c4681eb5bd",
+    "semantic_hash": "399930b4ac797970490e80c4681eb5bd"
+  },
+  "apps/backend-api/tsconfig.json": {
+    "mtime": 1787197650.836386,
+    "ast_hash": "736b2f33b047ea8c74f4dca7525723fe",
+    "semantic_hash": "736b2f33b047ea8c74f4dca7525723fe"
   }
 }
