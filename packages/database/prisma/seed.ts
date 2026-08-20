@@ -57,9 +57,35 @@ async function main() {
     },
   });
 
-  // 5. Generate Dummy Employees
-  console.log("Generating 50 dummy employees...");
-  for (let i = 0; i < 50; i++) {
+  // 5. Generate HRD Admin
+  console.log("Generating 1 HRD Admin...");
+  const adminUser = await prisma.user.create({
+    data: {
+      email: "hrd@hriscorp.dev",
+      passwordHash: "$2b$10$xyz123...", // bcrypt hash placeholder
+      roleId: adminRole.id,
+    },
+  });
+
+  await prisma.employee.create({
+    data: {
+      userId: adminUser.id,
+      employeeCode: `HRD-0001`,
+      firstName: "Admin",
+      lastName: "HRD",
+      birthDate: faker.date.birthdate({ min: 30, max: 50, mode: "age" }),
+      gender: "female",
+      phone: faker.phone.number(),
+      departmentId: itDept.id,
+      positionId: devPosition.id,
+      joinDate: faker.date.past({ years: 5 }),
+      statusId: activeStatus.id,
+    },
+  });
+
+  // 6. Generate Dummy Employees
+  console.log("Generating 5 dummy employees...");
+  for (let i = 0; i < 5; i++) {
     const user = await prisma.user.create({
       data: {
         email: faker.internet.email(),

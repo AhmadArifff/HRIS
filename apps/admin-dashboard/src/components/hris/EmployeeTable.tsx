@@ -49,7 +49,7 @@ export const EmployeeTable: React.FC = () => {
         if (result.success && result.data) {
           const formatted = result.data.map((emp: any) => ({
             id: emp.id,
-            emp_id: emp.nip || `EMP-${emp.id}`,
+            emp_id: emp.employeeCode || `EMP-${emp.id}`,
             name: `${emp.firstName} ${emp.lastName}`.trim(),
             position: emp.positionTitle,
             department: emp.departmentName,
