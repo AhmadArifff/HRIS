@@ -32,12 +32,42 @@ const mockEmployeeData: EmployeeData[] = [
 ];
 
 export const EmployeeTable: React.FC = () => {
-  const [data, setData] = useState<EmployeeData[]>(mockEmployeeData);
+  const [data, setData] = useState<EmployeeData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof EmployeeData>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("http://localhost:3002/api/employees");
+        const result = await res.json();
+        if (result.success && result.data) {
+          const formatted = result.data.map((emp: any) => ({
+            id: emp.id,
+            emp_id: emp.nip || `EMP-${emp.id}`,
+            name: `${emp.firstName} ${emp.lastName}`.trim(),
+            position: emp.positionTitle,
+            department: emp.departmentName,
+            status: emp.isDeleted ? "Terminated" : "Active", // simplistic mapping for demo
+            avatar: emp.avatarUrl || "/images/user/user-01.jpg",
+            email: emp.email,
+            joinDate: new Date(emp.joinDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
+          }));
+          setData(formatted);
+        }
+      } catch (error) {
+        console.error("Failed to fetch employees:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   // Toast State
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -224,9 +254,25 @@ export const EmployeeTable: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {displayedEmployees.map((emp) => (
-                <tr
-                  key={emp.id}
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
+                    <div className="flex justify-center items-center gap-2">
+                      <div className="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></div>
+                      Memuat data dari server...
+                    </div>
+                  </td>
+                </tr>
+              ) : displayedEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
+                    Tidak ada data yang ditemukan.
+                  </td>
+                </tr>
+              ) : (
+                displayedEmployees.map((emp) => (
+                  <tr
+                    key={emp.id}
                   className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
                 >
                   <td className="px-6 py-4 font-mono text-xs text-gray-500">
@@ -328,6 +374,7 @@ export const EmployeeTable: React.FC = () => {
                   </td>
                 </tr>
               ))}
+              )}
             </tbody>
           </table>
         </div>
