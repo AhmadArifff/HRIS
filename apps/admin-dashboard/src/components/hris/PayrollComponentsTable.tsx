@@ -147,50 +147,69 @@ export const PayrollComponentsTable = () => {
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 fill-current text-gray-400" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M8 4C5.79086 4 4 5.79086 4 8C4 10.2091 5.79086 12 8 12C10.2091 12 12 10.2091 12 8C12 5.79086 10.2091 4 8 4ZM2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8C14 9.29583 13.5873 10.495 12.8856 11.4714L17.7071 16.2929C18.0976 16.6834 18.0976 17.3166 17.7071 16.2929C17.3166 18.0976 16.6834 18.0976 16.2929 17.7071L11.4714 12.8856C10.495 13.5873 9.29583 14 8 14C4.68629 14 2 11.3137 2 8Z" /></svg>
           </div>
         </div>
+        {/* Mobile Swipe Hint */}
+        <div className="flex sm:hidden items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 font-medium mb-2.5 px-0.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+          <span>Geser tabel ke samping untuk melihat data lengkap</span>
+        </div>
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
-              <tr>
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">Nama Komponen</th>
-                <th className="px-6 py-4">Tipe</th>
-                <th className="px-6 py-4">Besaran / Rumus</th>
-                <th className="px-6 py-4 text-center">Pajak (Taxable)</th>
-                <th className="px-6 py-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {displayedData.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
-                  <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                    {record.name}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge color={record.type === "Allowance" ? "success" : "error"}>
-                      {record.type === "Allowance" ? "Tunjangan" : "Potongan"}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 font-mono">{record.amount}</td>
-                  <td className="px-6 py-4 text-center">
-                    <Badge color={record.taxable ? "warning" : "light"}>
-                      {record.taxable ? "Ya" : "Tidak"}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => setEditingItem(record)}
-                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-                    >
-                      Edit Komponen
-                    </button>
-                  </td>
+        <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto custom-scrollbar w-full">
+            <table className="w-full min-w-[850px] text-left text-sm text-gray-600 dark:text-gray-300">
+              <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+                <tr>
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">Nama Komponen</th>
+                  <th className="px-6 py-4">Tipe</th>
+                  <th className="px-6 py-4">Besaran / Rumus</th>
+                  <th className="px-6 py-4 text-center">Pajak (Taxable)</th>
+                  <th className="px-6 py-4 text-right">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                {displayedData.map((record) => (
+                  <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
+                    <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                      {record.name}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge color={record.type === "Allowance" ? "success" : "error"}>
+                        {record.type === "Allowance" ? "Tunjangan (+)" : "Potongan (-)"}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">
+                      {record.amount}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge color={record.taxable ? "warning" : "light"}>
+                        {record.taxable ? "Kena Pajak" : "Non-Pajak"}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setEditingItem(record)}
+                          className="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteComponent(record.id, record.name)}
+                          className="px-3 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Pagination */}

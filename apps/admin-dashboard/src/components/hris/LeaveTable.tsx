@@ -180,84 +180,95 @@ export const LeaveTable: React.FC = () => {
             </svg>
           </div>
         </div>
+        {/* Mobile Swipe Hint */}
+        <div className="flex sm:hidden items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 font-medium mb-2.5 px-0.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+          <span>Geser tabel ke samping untuk melihat data lengkap</span>
+        </div>
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
-              <tr>
-                <th onClick={() => handleSort("id")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  ID {sortField === "id" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("name")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Pemohon {sortField === "name" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("type")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Jenis Cuti {sortField === "type" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("date")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Tanggal {sortField === "date" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("status")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Status {sortField === "status" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th className="px-6 py-4 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {displayedRecords.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
-                  <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                    <div>
-                      <span>{record.name}</span>
-                      <span className="block text-xs font-normal text-gray-400">{record.department}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <span className="font-medium text-gray-800 dark:text-white">{record.type}</span>
-                      <span className="block text-xs text-gray-400">Durasi: {record.duration}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-xs">{record.date}</td>
-                  <td className="px-6 py-4">
-                    <Badge
-                      color={
-                        record.status === "Approved"
-                          ? "success"
-                          : record.status === "Pending"
-                          ? "warning"
-                          : "error"
-                      }
-                    >
-                      {record.status}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {record.status === "Pending" ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleApprove(record.id, record.name)}
-                          className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-sm"
-                        >
-                          Setujui
-                        </button>
-                        <button
-                          onClick={() => openRejectModal(record)}
-                          className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
-                        >
-                          Tolak
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">Telah Diproses</span>
-                    )}
-                  </td>
+        <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto custom-scrollbar w-full">
+            <table className="w-full min-w-[850px] text-left text-sm text-gray-600 dark:text-gray-300">
+              <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+                <tr>
+                  <th onClick={() => handleSort("id")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    ID {sortField === "id" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("name")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Pemohon {sortField === "name" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("type")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Jenis Cuti {sortField === "type" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("date")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Tanggal {sortField === "date" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("status")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Status {sortField === "status" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th className="px-6 py-4 text-center">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                {displayedRecords.map((record) => (
+                  <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
+                    <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                      <div>
+                        <span>{record.name}</span>
+                        <span className="block text-xs font-normal text-gray-400">{record.department}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <span className="font-medium text-gray-800 dark:text-white">{record.type}</span>
+                        <span className="block text-xs text-gray-400">Durasi: {record.duration}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono text-xs">
+                      {record.date}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge
+                        color={
+                          record.status === "Approved"
+                            ? "success"
+                            : record.status === "Pending"
+                            ? "warning"
+                            : "error"
+                        }
+                      >
+                        {record.status}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {record.status === "Pending" ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleApprove(record.id, record.name)}
+                            className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-sm"
+                          >
+                            Setujui
+                          </button>
+                          <button
+                            onClick={() => openRejectModal(record)}
+                            className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+                          >
+                            Tolak
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">Telah Diproses</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Footer Pagination */}

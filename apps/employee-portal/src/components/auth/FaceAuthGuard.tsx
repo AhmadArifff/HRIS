@@ -340,16 +340,33 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
             type="button"
             onClick={handleFaceScanLogin}
             disabled={isScanning || faceVerified}
-            className="w-full py-4 text-sm font-extrabold text-white bg-brand-500 hover:bg-brand-600 rounded-2xl transition shadow-xl shadow-brand-500/30 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="w-full py-3.5 px-6 text-sm font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 active:scale-[0.99] rounded-2xl transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {isScanning ? "Memindai Biometrik Wajah..." : "📸 Pindai Wajah & Buka Portal Karyawan (Sesi 15 Min)"}
+            {isScanning ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                <span className="text-sm font-semibold">Memverifikasi Biometrik Wajah...</span>
+              </>
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div className="text-left flex-1">
+                  <span className="block text-sm font-extrabold leading-tight">Pindai Wajah & Buka Portal</span>
+                  <span className="block text-[11px] text-brand-200 font-medium leading-none mt-1">Sesi Biometrik Aktif 15 Menit</span>
+                </div>
+                <svg className="w-4 h-4 text-white/70 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </>
+            )}
           </button>
 
-          <div className="text-center pt-2">
+          <div className="text-center pt-1">
             <a
               href="http://localhost:3000"
               className="text-xs text-slate-400 hover:text-white transition inline-flex items-center gap-1.5"

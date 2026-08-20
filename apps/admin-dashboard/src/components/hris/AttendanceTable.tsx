@@ -171,97 +171,107 @@ export const AttendanceTable: React.FC = () => {
           </div>
         </div>
 
+        {/* Mobile Swipe Hint */}
+        <div className="flex sm:hidden items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 font-medium mb-2.5 px-0.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+          <span>Geser tabel ke samping untuk melihat data lengkap</span>
+        </div>
+
         {/* Table */}
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
-              <tr>
-                <th onClick={() => handleSort("id")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  ID {sortField === "id" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("name")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Nama Karyawan {sortField === "name" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("shiftName")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Shift Rujukan {sortField === "shiftName" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("clockIn")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Clock-In {sortField === "clockIn" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th onClick={() => handleSort("clockOut")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Clock-Out {sortField === "clockOut" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-                <th className="px-6 py-4">Keterlambatan / Pulang Cepat</th>
-                <th onClick={() => handleSort("status")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
-                  Status {sortField === "status" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {displayedRecords.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
-                  <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                    <div>
-                      <span>{record.name}</span>
-                      <span className="block text-xs font-normal text-gray-400">{record.department}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <span className="font-medium text-gray-800 dark:text-white">{record.shiftName}</span>
-                      <span className="block text-xs font-mono text-gray-400">{record.shiftHours}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`font-mono ${record.lateDurationMinutes > 0 ? "text-error-500 font-bold" : ""}`}>
-                      {record.clockIn}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`font-mono ${record.earlyLeaveMinutes > 0 ? "text-warning-500 font-bold" : ""}`}>
-                      {record.clockOut}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      {record.lateDurationMinutes > 0 ? (
-                        <span className="inline-flex items-center text-xs font-medium text-error-600 dark:text-error-400">
-                          ⏱️ Telat +{record.lateDurationMinutes} Menit
-                        </span>
-                      ) : null}
-                      {record.earlyLeaveMinutes > 0 ? (
-                        <span className="inline-flex items-center text-xs font-medium text-warning-600 dark:text-warning-400">
-                          🏃 Pulang Awal {record.earlyLeaveMinutes} Menit
-                        </span>
-                      ) : null}
-                      {record.lateDurationMinutes === 0 && record.earlyLeaveMinutes === 0 && record.status === "Hadir" ? (
-                        <span className="text-xs text-success-600 dark:text-success-400">✓ Tepat Waktu</span>
-                      ) : null}
-                      {record.status === "Mangkir" || record.status === "Izin" ? (
-                        <span className="text-xs text-gray-400">-</span>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge
-                      color={
-                        record.status === "Hadir"
-                          ? "success"
-                          : record.status === "Terlambat"
-                          ? "warning"
-                          : record.status === "Izin"
-                          ? "info"
-                          : "error"
-                      }
-                    >
-                      {record.status}
-                    </Badge>
-                  </td>
+        <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto custom-scrollbar w-full">
+            <table className="w-full min-w-[800px] text-left text-sm text-gray-600 dark:text-gray-300">
+              <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+                <tr>
+                  <th onClick={() => handleSort("id")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    ID {sortField === "id" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("name")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Nama Karyawan {sortField === "name" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("shiftName")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Shift Rujukan {sortField === "shiftName" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("clockIn")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Clock-In {sortField === "clockIn" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th onClick={() => handleSort("clockOut")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Clock-Out {sortField === "clockOut" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
+                  <th className="px-6 py-4">Keterlambatan / Pulang Cepat</th>
+                  <th onClick={() => handleSort("status")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
+                    Status {sortField === "status" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                {displayedRecords.map((record) => (
+                  <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
+                    <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                      <div>
+                        <span>{record.name}</span>
+                        <span className="block text-xs font-normal text-gray-400">{record.department}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <span className="font-medium text-gray-800 dark:text-white">{record.shiftName}</span>
+                        <span className="block text-xs font-mono text-gray-400">{record.shiftHours}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`font-mono ${record.lateDurationMinutes > 0 ? "text-error-500 font-bold" : ""}`}>
+                        {record.clockIn}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`font-mono ${record.earlyLeaveMinutes > 0 ? "text-warning-500 font-bold" : ""}`}>
+                        {record.clockOut}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        {record.lateDurationMinutes > 0 ? (
+                          <span className="inline-flex items-center text-xs font-medium text-error-600 dark:text-error-400">
+                            ⏱️ Telat +{record.lateDurationMinutes} Menit
+                          </span>
+                        ) : null}
+                        {record.earlyLeaveMinutes > 0 ? (
+                          <span className="inline-flex items-center text-xs font-medium text-warning-600 dark:text-warning-400">
+                            🏃 Pulang Awal {record.earlyLeaveMinutes} Menit
+                          </span>
+                        ) : null}
+                        {record.lateDurationMinutes === 0 && record.earlyLeaveMinutes === 0 && record.status === "Hadir" ? (
+                          <span className="text-xs text-success-600 dark:text-success-400">✓ Tepat Waktu</span>
+                        ) : null}
+                        {record.status === "Mangkir" || record.status === "Izin" ? (
+                          <span className="text-xs text-gray-400">-</span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge
+                        color={
+                          record.status === "Hadir"
+                            ? "success"
+                            : record.status === "Terlambat"
+                            ? "warning"
+                            : record.status === "Izin"
+                            ? "info"
+                            : "error"
+                        }
+                      >
+                        {record.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Footer Pagination */}

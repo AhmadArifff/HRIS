@@ -159,9 +159,18 @@ export const EmployeeTable: React.FC = () => {
           </div>
         </div>
 
+        {/* Mobile Swipe Hint */}
+        <div className="flex sm:hidden items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 font-medium mb-2.5 px-0.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+          <span>Geser tabel ke samping untuk melihat data lengkap</span>
+        </div>
+
         {/* Table */}
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+        <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto custom-scrollbar w-full">
+            <table className="w-full min-w-[850px] text-left text-sm text-gray-600 dark:text-gray-300">
             <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
               <tr>
                 <th
@@ -322,6 +331,7 @@ export const EmployeeTable: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
 
         {/* Footer Pagination */}
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500 dark:text-gray-400">

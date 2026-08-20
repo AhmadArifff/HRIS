@@ -234,94 +234,106 @@ export const ShiftTable: React.FC = () => {
           </button>
         </div>
 
+        {/* Mobile Swipe Hint */}
+        <div className="flex sm:hidden items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 font-medium mb-2.5 px-0.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+          <span>Geser tabel ke samping untuk melihat data lengkap</span>
+        </div>
+
         {/* Content Tabs */}
         <div className="pt-6">
           {activeTab === "master" ? (
-            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
-                  <tr>
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Nama Shift</th>
-                    <th className="px-6 py-4">Jam Masuk (Clock-In)</th>
-                    <th className="px-6 py-4">Jam Pulang (Clock-Out)</th>
-                    <th className="px-6 py-4 text-center">Total Jam Kerja</th>
-                    <th className="px-6 py-4">Toleransi Telat</th>
-                    <th className="px-6 py-4 text-center">Karyawan Aktif</th>
-                    <th className="px-6 py-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                  {shifts.map((s) => (
-                    <tr key={s.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                      <td className="px-6 py-4 font-mono text-xs text-gray-500">{s.id}</td>
-                      <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">{s.name}</td>
-                      <td className="px-6 py-4 font-mono font-semibold text-brand-500">{s.startTime}</td>
-                      <td className="px-6 py-4 font-mono font-semibold text-gray-700 dark:text-gray-300">{s.endTime}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 font-mono">
-                          ⏱️ {s.totalWorkHours} Jam
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge color="warning">{s.toleranceMinutes} Menit</Badge>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-semibold text-gray-800 dark:text-white">{s.activeEmployees} Karyawan</span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setEditingShift(s)}
-                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-                        >
-                          Edit Shift
-                        </button>
-                      </td>
+            <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+              <div className="overflow-x-auto custom-scrollbar w-full">
+                <table className="w-full min-w-[850px] text-left text-sm text-gray-600 dark:text-gray-300">
+                  <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+                    <tr>
+                      <th className="px-6 py-4">ID</th>
+                      <th className="px-6 py-4">Nama Shift</th>
+                      <th className="px-6 py-4">Jam Masuk (Clock-In)</th>
+                      <th className="px-6 py-4">Jam Pulang (Clock-Out)</th>
+                      <th className="px-6 py-4 text-center">Total Jam Kerja</th>
+                      <th className="px-6 py-4">Toleransi Telat</th>
+                      <th className="px-6 py-4 text-center">Karyawan Aktif</th>
+                      <th className="px-6 py-4 text-right">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                    {shifts.map((s) => (
+                      <tr key={s.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                        <td className="px-6 py-4 font-mono text-xs text-gray-500">{s.id}</td>
+                        <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">{s.name}</td>
+                        <td className="px-6 py-4 font-mono font-semibold text-brand-500">{s.startTime}</td>
+                        <td className="px-6 py-4 font-mono font-semibold text-gray-700 dark:text-gray-300">{s.endTime}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 font-mono">
+                            ⏱️ {s.totalWorkHours} Jam
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge color="warning">{s.toleranceMinutes} Menit</Badge>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="font-semibold text-gray-800 dark:text-white">{s.activeEmployees} Karyawan</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => setEditingShift(s)}
+                            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                          >
+                            Edit Shift
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
-                  <tr>
-                    <th className="px-6 py-4">ID Plotting</th>
-                    <th className="px-6 py-4">Kode & Karyawan</th>
-                    <th className="px-6 py-4">Departemen</th>
-                    <th className="px-6 py-4">Jadwal Shift</th>
-                    <th className="px-6 py-4">Tanggal Plotting</th>
-                    <th className="px-6 py-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                  {assignments.map((a) => (
-                    <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                      <td className="px-6 py-4 font-mono text-xs text-gray-500">{a.id}</td>
-                      <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                        <div>
-                          <span>{a.employeeName}</span>
-                          <span className="block text-xs font-mono text-gray-400">{a.employeeCode}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">{a.department}</td>
-                      <td className="px-6 py-4">
-                        <Badge color="info">{a.shiftName}</Badge>
-                      </td>
-                      <td className="px-6 py-4 font-mono">{a.date}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setEditingAssignment(a)}
-                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-                        >
-                          Ubah Shift
-                        </button>
-                      </td>
+            <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+              <div className="overflow-x-auto custom-scrollbar w-full">
+                <table className="w-full min-w-[850px] text-left text-sm text-gray-600 dark:text-gray-300">
+                  <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+                    <tr>
+                      <th className="px-6 py-4">ID Plotting</th>
+                      <th className="px-6 py-4">Kode & Karyawan</th>
+                      <th className="px-6 py-4">Departemen</th>
+                      <th className="px-6 py-4">Jadwal Shift</th>
+                      <th className="px-6 py-4">Tanggal Plotting</th>
+                      <th className="px-6 py-4 text-right">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                    {assignments.map((a) => (
+                      <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                        <td className="px-6 py-4 font-mono text-xs text-gray-500">{a.id}</td>
+                        <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                          <div>
+                            <span>{a.employeeName}</span>
+                            <span className="block text-xs font-mono text-gray-400">{a.employeeCode}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">{a.department}</td>
+                        <td className="px-6 py-4">
+                          <Badge color="info">{a.shiftName}</Badge>
+                        </td>
+                        <td className="px-6 py-4 font-mono">{a.date}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => setEditingAssignment(a)}
+                            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                          >
+                            Ubah Shift
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
