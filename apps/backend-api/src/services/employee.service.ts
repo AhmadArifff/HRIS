@@ -14,7 +14,7 @@ export class EmployeeService {
     const skip = (page - 1) * limit;
 
     const whereClause: any = {
-      isDeleted: false,
+      deletedAt: null,
     };
 
     if (options.search) {

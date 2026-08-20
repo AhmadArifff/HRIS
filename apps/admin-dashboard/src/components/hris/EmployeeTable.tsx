@@ -53,7 +53,7 @@ export const EmployeeTable: React.FC = () => {
             name: `${emp.firstName} ${emp.lastName}`.trim(),
             position: emp.positionTitle,
             department: emp.departmentName,
-            status: emp.isDeleted ? "Terminated" : "Active", // simplistic mapping for demo
+            status: emp.deletedAt !== null ? "Terminated" : "Active", // simplistic mapping for demo
             avatar: emp.avatarUrl || "/images/user/user-01.jpg",
             email: emp.email,
             joinDate: new Date(emp.joinDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),

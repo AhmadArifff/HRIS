@@ -119,6 +119,7 @@ erDiagram
         string password_hash
         string role_id FK "Dinamic Role"
         boolean is_active
+        string avatar_url
         datetime created_at
     }
     ROLE {
@@ -625,7 +626,7 @@ erDiagram
 
 ### 3.1 Manajemen Database (Wajib)
 **Target Pengguna:** Seluruh Perusahaan
-*   **Employee Master Data:** Penyimpanan terpusat profil lengkap karyawan (data pribadi, kontak darurat, informasi bank).
+*   **Employee Master Data:** Penyimpanan terpusat profil lengkap karyawan (data pribadi, avatar/foto profil dengan Supabase Storage, kontak darurat, informasi bank).
 *   **Contract Management:** Pelacakan riwayat kontrak karyawan (PKWT, PKWTT, Freelance), notifikasi otomatis masa berakhir kontrak (H-30, H-14).
 *   **Organization Structure:** Visualisasi dinamis struktur organisasi (Department > Divisi > Karyawan).
 *   **Document Vault:** Penyimpanan aman tersentralisasi untuk ID KTP, Ijazah, dan dokumen penting (Supabase Storage).
