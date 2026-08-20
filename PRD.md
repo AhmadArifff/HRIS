@@ -799,6 +799,11 @@ erDiagram
 *   **Data Masking:** Penyamaran data sensitif (NIK, Rekening, Gaji) pada tampilan antar pengguna.
 *   **Audit Logging & Access Control:** Riwayat aksi sistem (*Audit Trail*) tak terhapuskan untuk menjamin kepatuhan UU Pelindungan Data Pribadi (PDP).
 
+### 3.35 System Monitoring & Infrastructure (Admin IT)
+**Target Pengguna:** DevOps & IT Admin
+*   **Redis Monitoring Dashboard:** Menu khusus pada Admin Dashboard untuk memantau status server Redis (Upstash). Menampilkan metrik *real-time* seperti koneksi aktif, penggunaan memori (Memory Usage), *Cache Hits/Misses*, serta manajemen sesi pengguna.
+*   **Database Health Check:** Visualisasi kesehatan query Supabase PostgreSQL dan *latency* server.
+
 ---
 
 ## 4. Keamanan & Role-Based Access Control (RBAC)

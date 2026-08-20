@@ -1,3 +1,4 @@
+import "./env";
 import express, { Application } from "express";
 import cors from "cors";
 import helmet from "helmet";
