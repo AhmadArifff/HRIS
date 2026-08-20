@@ -66,6 +66,7 @@ Berikut adalah rincian *Buckets* yang diwajibkan untuk dibuat dan digunakan pada
 2.  `kanban-documents`: *Bucket* khusus untuk melampirkan berkas pada *Board/Task Kanban* internal (mendukung multi-format: PDF, DOCX/Word, XLSX/Excel, PPT, Gambar/JPG/PNG).
 3.  `leave-attachments`: *Bucket* penyimpanan bukti-bukti cuti (misal: Surat Keterangan Dokter, Dokumen Pendukung Sakit/Cuti) untuk menu **Pengajuan Cuti**. Format: PDF/JPG, Maks: 5MB.
 4.  `reimbursement-claims`: *Bucket* untuk menyimpan bukti struk/kuitansi biaya pengeluaran dari **Form Pengajuan Reimbursement/Klaim Biaya**. Format: PDF/JPG, Maks: 5MB.
+5.  `applicant-resumes`: *Bucket* penyimpanan *file* CV / Resume (PDF) dari pelamar kerja melalui halaman publik **Form Lamaran Kerja (Careers)**. Format: PDF, Maks: 5MB.
 
 #### B. Frontend Engineering (/frontend)
 *   **UI/UX Pro Max Design Intelligence (HRISCorp.dev Integration):** Antarmuka memberikan *WOW factor* dengan standar *Enterprise*. Tampilan visual, tata letak (*layout*), dan komponen *dashboard* secara khusus mematuhi standar lisensi dan komponen **HRISCorp.dev**. Komponen diintegrasikan bersama *Tailwind CSS v4*, *Framer Motion*, dan *library* (seperti *ApexCharts* untuk analitik, *FullCalendar* untuk jadwal *shift*/cuti, *Flatpickr*, dan *React jvectormap* untuk peta distribusi karyawan) agar terlihat sangat premium.
