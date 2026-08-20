@@ -15,12 +15,20 @@ interface Candidate {
   experience: string;
 }
 
-const initialColumns = [
-  { id: "applied", title: "Applied", color: "bg-slate-50 dark:bg-slate-900/60" },
-  { id: "screening", title: "Screening", color: "bg-blue-50/70 dark:bg-blue-950/30" },
-  { id: "interview", title: "Interview", color: "bg-amber-50/70 dark:bg-amber-950/30" },
-  { id: "offered", title: "Offered", color: "bg-purple-50/70 dark:bg-purple-950/30" },
-  { id: "hired", title: "Hired", color: "bg-emerald-50/70 dark:bg-emerald-950/30" },
+interface KanbanColumnDef {
+  id: Candidate["status"];
+  title: string;
+  color: string;
+  badgeBg: string;
+  badgeText: string;
+}
+
+const initialColumns: KanbanColumnDef[] = [
+  { id: "applied", title: "Applied", color: "bg-slate-50 dark:bg-slate-900/60", badgeBg: "bg-slate-200 dark:bg-slate-800", badgeText: "text-slate-700 dark:text-slate-300" },
+  { id: "screening", title: "Screening", color: "bg-blue-50/70 dark:bg-blue-950/30", badgeBg: "bg-blue-100 dark:bg-blue-900/50", badgeText: "text-blue-700 dark:text-blue-300" },
+  { id: "interview", title: "Interview", color: "bg-amber-50/70 dark:bg-amber-950/30", badgeBg: "bg-amber-100 dark:bg-amber-900/50", badgeText: "text-amber-700 dark:text-amber-300" },
+  { id: "offered", title: "Offered", color: "bg-purple-50/70 dark:bg-purple-950/30", badgeBg: "bg-purple-100 dark:bg-purple-900/50", badgeText: "text-purple-700 dark:text-purple-300" },
+  { id: "hired", title: "Hired", color: "bg-emerald-50/70 dark:bg-emerald-950/30", badgeBg: "bg-emerald-100 dark:bg-emerald-900/50", badgeText: "text-emerald-700 dark:text-emerald-300" },
 ];
 
 const initialCandidates: Candidate[] = [
@@ -36,14 +44,18 @@ const initialCandidates: Candidate[] = [
 export const KanbanATS: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [targetColumn, setTargetColumn] = useState<string>("applied");
+  const [targetColumn, setTargetColumn] = useState<Candidate["status"]>("applied");
+
+  // Drag and Drop States
+  const [draggedCandidateId, setDraggedCandidateId] = useState<number | null>(null);
+  const [dragOverColumnId, setDragOverColumnId] = useState<Candidate["status"] | null>(null);
 
   // Form State
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newExp, setNewExp] = useState("");
+  const [newExp, setNewExp] = useState("1-3 Tahun");
 
   // Toast
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -57,7 +69,67 @@ export const KanbanATS: React.FC = () => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const openAddModal = (columnId: string) => {
+  // Move candidate handler
+  const handleMoveCandidate = (candidateId: number, targetStatus: Candidate["status"]) => {
+    const candidate = candidates.find((c) => c.id === candidateId);
+    if (!candidate) return;
+
+    if (candidate.status === targetStatus) return; // Same stage, do nothing
+
+    const oldStatus = candidate.status;
+    const targetColDef = initialColumns.find((col) => col.id === targetStatus);
+    const targetTitle = targetColDef?.title || targetStatus;
+
+    setCandidates((prev) =>
+      prev.map((c) => (c.id === candidateId ? { ...c, status: targetStatus } : c))
+    );
+
+    addToast(
+      "success",
+      "Tahapan Diperbarui",
+      `✓ ${candidate.name} dipindahkan dari ${oldStatus.toUpperCase()} ke ${targetTitle.toUpperCase()}`
+    );
+  };
+
+  // Drag and Drop Event Handlers
+  const handleDragStart = (e: React.DragEvent, candidate: Candidate) => {
+    e.dataTransfer.setData("candidateId", candidate.id.toString());
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedCandidateId(candidate.id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedCandidateId(null);
+    setDragOverColumnId(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, columnId: Candidate["status"]) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverColumnId !== columnId) {
+      setDragOverColumnId(columnId);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only reset if we're actually leaving the column container
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverColumnId(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, columnId: Candidate["status"]) => {
+    e.preventDefault();
+    const candidateIdStr = e.dataTransfer.getData("candidateId");
+    if (candidateIdStr) {
+      const candidateId = Number(candidateIdStr);
+      handleMoveCandidate(candidateId, columnId);
+    }
+    setDraggedCandidateId(null);
+    setDragOverColumnId(null);
+  };
+
+  const openAddModal = (columnId: Candidate["status"]) => {
     setTargetColumn(columnId);
     setNewName("");
     setNewRole("");
@@ -86,7 +158,7 @@ export const KanbanATS: React.FC = () => {
       id: Date.now(),
       name: newName,
       role: newRole,
-      status: targetColumn as Candidate["status"],
+      status: targetColumn,
       score: "85/100",
       date: "Hari Ini",
       email: newEmail,
@@ -107,25 +179,36 @@ export const KanbanATS: React.FC = () => {
     <div className="flex flex-col h-full w-full max-w-full min-w-0 overflow-hidden">
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      {/* Mobile Swipe Hint */}
-      <div className="flex sm:hidden items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 font-medium mb-2 px-0.5 shrink-0">
-        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-        <span>Geser papan Kanban ke samping untuk melihat kolom tahapan pelamar</span>
+      {/* Helper Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3 px-1">
+        <div className="flex items-center gap-1.5 font-medium text-brand-600 dark:text-brand-400">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+          <span>💡 <strong>Drag & Drop:</strong> Tarik kartu pelamar untuk memindahkan tahap rekrutmen secara instan.</span>
+        </div>
+        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-mono">Total Kandidat: {candidates.length}</span>
       </div>
 
-      {/* Board Horizontal Container (Isolated horizontal scrolling only within the board) */}
-      <div className="flex gap-5 overflow-x-auto pb-4 h-full w-full max-w-full min-w-0 items-stretch select-none custom-scrollbar">
+      {/* Board Horizontal Container */}
+      <div className="flex gap-5 overflow-x-auto pb-4 h-full w-full max-w-full min-w-0 items-stretch custom-scrollbar">
         {initialColumns.map((column) => {
           const columnCandidates = candidates.filter((c) => c.status === column.id);
+          const isOver = dragOverColumnId === column.id;
 
           return (
             <div
               key={column.id}
-              className={`flex-shrink-0 w-80 sm:w-84 rounded-2xl p-4 flex flex-col h-full border border-gray-200/90 dark:border-gray-800 ${column.color} shadow-sm`}
+              onDragOver={(e) => handleDragOver(e, column.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, column.id)}
+              className={`flex-shrink-0 w-80 sm:w-84 rounded-2xl p-4 flex flex-col h-full border transition-all duration-200 shadow-sm ${column.color} ${
+                isOver
+                  ? "border-brand-500 ring-2 ring-brand-500/40 bg-brand-50/40 dark:bg-brand-950/40 scale-[1.01]"
+                  : "border-gray-200/90 dark:border-gray-800"
+              }`}
             >
-              {/* 1. FIXED COLUMN HEADER (Never scrolls away) */}
+              {/* 1. FIXED COLUMN HEADER */}
               <div className="shrink-0 flex justify-between items-center pb-3 mb-3 border-b border-gray-200/80 dark:border-gray-700/80">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
@@ -133,65 +216,101 @@ export const KanbanATS: React.FC = () => {
                     {column.title}
                   </h4>
                 </div>
-                <span className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-black px-2.5 py-0.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
+                <span className={`${column.badgeBg} ${column.badgeText} text-xs font-black px-2.5 py-0.5 rounded-full shadow-sm border border-gray-200/60 dark:border-gray-700/60`}>
                   {columnCandidates.length}
                 </span>
               </div>
 
-              {/* 2. SCROLLABLE CARDS AREA (Only this container scrolls vertically) */}
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-                {columnCandidates.map((candidate) => (
-                  <div
-                    key={candidate.id}
-                    className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-brand-400 dark:hover:border-brand-500 transition-all cursor-grab active:cursor-grabbing group"
-                  >
-                    <div className="flex justify-between items-start mb-1.5">
-                      <h5 className="font-bold text-gray-900 dark:text-white text-sm group-hover:text-brand-500 transition-colors">
-                        {candidate.name}
-                      </h5>
-                      <span className="text-[11px] font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md">
-                        {candidate.date}
-                      </span>
-                    </div>
+              {/* 2. SCROLLABLE CARDS AREA */}
+              <div className="flex-1 min-h-[220px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+                {columnCandidates.map((candidate) => {
+                  const isDragging = draggedCandidateId === candidate.id;
 
-                    <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold mb-2">
-                      {candidate.role}
-                    </p>
-
-                    <div className="text-[11px] text-gray-500 dark:text-gray-400 space-y-0.5 mb-3">
-                      <div>📧 {candidate.email}</div>
-                      <div>💼 Pengalaman: {candidate.experience}</div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 dark:border-gray-800 text-xs">
-                      <div className="flex items-center gap-1 font-semibold text-amber-500">
-                        <svg className="w-3.5 h-3.5 fill-amber-400" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span>{candidate.score}</span>
+                  return (
+                    <div
+                      key={candidate.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, candidate)}
+                      onDragEnd={handleDragEnd}
+                      className={`bg-white dark:bg-gray-900 p-4 rounded-xl border shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing group select-none ${
+                        isDragging
+                          ? "opacity-40 scale-95 border-dashed border-brand-500 shadow-none ring-2 ring-brand-400"
+                          : "border-gray-200 dark:border-gray-800 hover:shadow-md hover:border-brand-400 dark:hover:border-brand-500"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-1.5">
+                        <h5 className="font-bold text-gray-900 dark:text-white text-sm group-hover:text-brand-500 transition-colors">
+                          {candidate.name}
+                        </h5>
+                        <span className="text-[11px] font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md">
+                          {candidate.date}
+                        </span>
                       </div>
 
-                      <Link
-                        href={`/recruitment/candidate/${candidate.id}`}
-                        className="font-bold text-brand-500 hover:text-brand-600 dark:text-brand-400 flex items-center gap-1 hover:underline"
-                      >
-                        Review &rarr;
-                      </Link>
-                    </div>
-                  </div>
-                ))}
+                      <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold mb-2">
+                        {candidate.role}
+                      </p>
 
-                {columnCandidates.length === 0 && (
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400 space-y-0.5 mb-3">
+                        <div className="truncate">📧 {candidate.email}</div>
+                        <div>💼 Pengalaman: {candidate.experience}</div>
+                      </div>
+
+                      {/* Stage Switcher (Quick Access) & Score */}
+                      <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 dark:border-gray-800 text-xs gap-2">
+                        <div className="flex items-center gap-1 font-semibold text-amber-500">
+                          <svg className="w-3.5 h-3.5 fill-amber-400" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span>{candidate.score}</span>
+                        </div>
+
+                        {/* Quick Stage Select */}
+                        <div className="flex items-center gap-1">
+                          <select
+                            value={candidate.status}
+                            onChange={(e) => handleMoveCandidate(candidate.id, e.target.value as Candidate["status"])}
+                            className="text-[10px] font-semibold bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg px-2 py-1 outline-none focus:border-brand-500 cursor-pointer"
+                            title="Pindah Tahap Cepat"
+                          >
+                            {initialColumns.map((col) => (
+                              <option key={col.id} value={col.id}>
+                                {col.title}
+                              </option>
+                            ))}
+                          </select>
+
+                          <Link
+                            href={`/recruitment/candidate/${candidate.id}`}
+                            className="font-bold text-brand-500 hover:text-brand-600 dark:text-brand-400 p-1 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition"
+                            title="Lihat Detail Pelamar"
+                          >
+                            &rarr;
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Drop placeholder indicator when dragging over an empty or non-empty column */}
+                {isOver && (
+                  <div className="border-2 border-dashed border-brand-400 dark:border-brand-500/60 bg-brand-50/50 dark:bg-brand-500/10 rounded-xl h-24 flex items-center justify-center text-xs font-semibold text-brand-600 dark:text-brand-400 animate-pulse">
+                    📥 Lepaskan di sini untuk tahap {column.title}
+                  </div>
+                )}
+
+                {columnCandidates.length === 0 && !isOver && (
                   <div className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl text-gray-400 text-xs font-medium gap-2 p-4 text-center">
                     <svg className="w-6 h-6 text-gray-400/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
-                    <span>Belum ada kandidat di tahap ini.</span>
+                    <span>Belum ada kandidat di tahap ini. Tarik kandidat ke sini.</span>
                   </div>
                 )}
               </div>
 
-              {/* 3. FIXED COLUMN FOOTER (Never scrolls away) */}
+              {/* 3. FIXED COLUMN FOOTER */}
               <div className="shrink-0 pt-3 mt-2 border-t border-gray-200/60 dark:border-gray-800">
                 <button
                   type="button"
@@ -285,6 +404,19 @@ export const KanbanATS: React.FC = () => {
                     <option value="5+ Tahun">5+ Tahun</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Nomor Telepon / WhatsApp
+                </label>
+                <input
+                  type="text"
+                  placeholder="+62 812-3456-7890"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-gray-800">
