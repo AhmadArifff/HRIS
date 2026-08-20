@@ -58,6 +58,15 @@ Untuk menjaga agar *codebase* tetap bersih, *maintainable*, dan bebas *bug*, pen
 *   **Centralized Error Handling:** Seluruh *error* yang dilempar dari *Services* ditangkap oleh *middleware* tunggal agar respon kesalahan *server* atau *client* konsisten.
 *   **Security & Rate Limiting:** Mengingat tingginya *traffic* pada jam sibuk (absensi masal), setiap API *endpoint* wajib dilindungi oleh **Rate Limiter** (`express-rate-limit`) dan *security headers* (`Helmet`) untuk mencegah server lumpuh akibat *spam* atau serangan *DDoS*.
 
+### 1.4 Storage & File Management (Supabase Buckets)
+Sistem penyimpanan dokumen terpusat secara mutlak menggunakan layanan **Supabase Storage**. Seluruh berkas (foto, dokumen) dilarang disimpan di *server* lokal atau sistem *file* biasa untuk mencegah kehilangan data dan kebocoran memori. 
+
+Berikut adalah rincian *Buckets* yang diwajibkan untuk dibuat dan digunakan pada *Database Supabase*:
+1.  `avatars`: *Bucket* publik/private khusus untuk menyimpan Foto Profil Karyawan (diakses saat unggah di menu **Tambah Karyawan**) dan profil admin/HR. Format: JPG/PNG, Maks: 2MB.
+2.  `kanban-documents`: *Bucket* khusus untuk melampirkan berkas pada *Board/Task Kanban* internal (mendukung multi-format: PDF, DOCX/Word, XLSX/Excel, PPT, Gambar/JPG/PNG).
+3.  `leave-attachments`: *Bucket* penyimpanan bukti-bukti cuti (misal: Surat Keterangan Dokter, Dokumen Pendukung Sakit/Cuti) untuk menu **Pengajuan Cuti**. Format: PDF/JPG, Maks: 5MB.
+4.  `reimbursement-claims`: *Bucket* untuk menyimpan bukti struk/kuitansi biaya pengeluaran dari **Form Pengajuan Reimbursement/Klaim Biaya**. Format: PDF/JPG, Maks: 5MB.
+
 #### B. Frontend Engineering (/frontend)
 *   **UI/UX Pro Max Design Intelligence (HRISCorp.dev Integration):** Antarmuka memberikan *WOW factor* dengan standar *Enterprise*. Tampilan visual, tata letak (*layout*), dan komponen *dashboard* secara khusus mematuhi standar lisensi dan komponen **HRISCorp.dev**. Komponen diintegrasikan bersama *Tailwind CSS v4*, *Framer Motion*, dan *library* (seperti *ApexCharts* untuk analitik, *FullCalendar* untuk jadwal *shift*/cuti, *Flatpickr*, dan *React jvectormap* untuk peta distribusi karyawan) agar terlihat sangat premium.
 *   **Component Architecture (Smart vs Dumb):** Pemisahan *stateful components* (*Smart*, yang menyentuh data dan *Zustand*) dengan *stateless components* (*Dumb*, komponen UI mandiri dari *Shadcn* yang hanya merender *props*).
