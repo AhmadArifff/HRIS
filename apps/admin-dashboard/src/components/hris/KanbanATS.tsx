@@ -104,11 +104,19 @@ export const KanbanATS: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full max-w-full min-w-0 overflow-hidden">
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      {/* Board Horizontal Container */}
-      <div className="flex gap-5 overflow-x-auto pb-4 h-full items-stretch select-none">
+      {/* Mobile Swipe Hint */}
+      <div className="flex sm:hidden items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 font-medium mb-2 px-0.5 shrink-0">
+        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+        <span>Geser papan Kanban ke samping untuk melihat kolom tahapan pelamar</span>
+      </div>
+
+      {/* Board Horizontal Container (Isolated horizontal scrolling only within the board) */}
+      <div className="flex gap-5 overflow-x-auto pb-4 h-full w-full max-w-full min-w-0 items-stretch select-none custom-scrollbar">
         {initialColumns.map((column) => {
           const columnCandidates = candidates.filter((c) => c.status === column.id);
 

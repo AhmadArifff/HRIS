@@ -67,7 +67,6 @@
       "apps_admin_dashboard_src_components_common_themetogglebutton_themetogglebutton",
       "apps_admin_dashboard_src_components_common_themetogglertwo",
       "apps_admin_dashboard_src_components_common_themetogglertwo_themetogglertwo",
-      "apps_admin_dashboard_src_components_header_notificationdropdown_notificationdropdown",
       "apps_admin_dashboard_src_context_sidebarcontext",
       "apps_admin_dashboard_src_context_sidebarcontext_sidebarcontext",
       "apps_admin_dashboard_src_context_sidebarcontext_sidebarcontexttype",
@@ -97,12 +96,12 @@
       "apps_admin_dashboard_src_components_analytics_activeusers",
       "apps_admin_dashboard_src_components_analytics_activeusers_activeusers",
       "apps_admin_dashboard_src_components_analytics_activeusers_reactapexchart",
+      "apps_admin_dashboard_src_components_analytics_sessionsbydevice",
+      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_reactapexchart",
+      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_sessionsbydevice",
       "apps_admin_dashboard_src_components_analytics_topchannels",
       "apps_admin_dashboard_src_components_analytics_topchannels_channeldata",
       "apps_admin_dashboard_src_components_analytics_topchannels_topchannels",
-      "apps_admin_dashboard_src_components_analytics_toppages",
-      "apps_admin_dashboard_src_components_analytics_toppages_pagedata",
-      "apps_admin_dashboard_src_components_analytics_toppages_toppages",
       "apps_admin_dashboard_src_components_ecommerce_monthlysaleschart",
       "apps_admin_dashboard_src_components_ecommerce_monthlysaleschart_monthlysaleschart",
       "apps_admin_dashboard_src_components_ecommerce_monthlysaleschart_reactapexchart",
@@ -110,6 +109,7 @@
       "apps_admin_dashboard_src_components_ecommerce_monthlytarget_monthlytarget",
       "apps_admin_dashboard_src_components_ecommerce_monthlytarget_reactapexchart",
       "apps_admin_dashboard_src_components_header_notificationdropdown",
+      "apps_admin_dashboard_src_components_header_notificationdropdown_notificationdropdown",
       "apps_admin_dashboard_src_components_sales_salesbychannel",
       "apps_admin_dashboard_src_components_sales_salesbychannel_salesbychannel",
       "apps_admin_dashboard_src_components_sales_salesbycountry",
@@ -188,16 +188,19 @@
     "5": [
       "apps_admin_dashboard_src_components_analytics_analyticsmetrics",
       "apps_admin_dashboard_src_components_analytics_analyticsmetrics_analyticsmetrics",
-      "apps_admin_dashboard_src_components_crm_salescategory",
-      "apps_admin_dashboard_src_components_crm_salescategory_reactapexchart",
-      "apps_admin_dashboard_src_components_crm_salescategory_salescategory",
+      "apps_admin_dashboard_src_components_crm_estimatedrevenue",
+      "apps_admin_dashboard_src_components_crm_estimatedrevenue_estimatedrevenue",
+      "apps_admin_dashboard_src_components_crm_estimatedrevenue_reactapexchart",
+      "apps_admin_dashboard_src_components_crm_upcomingschedule",
+      "apps_admin_dashboard_src_components_crm_upcomingschedule_scheduledata",
+      "apps_admin_dashboard_src_components_crm_upcomingschedule_upcomingschedule",
       "apps_admin_dashboard_src_components_logistics_deliveryvehicles",
       "apps_admin_dashboard_src_components_logistics_deliveryvehicles_deliveryvehicles",
+      "apps_admin_dashboard_src_components_logistics_totalrevenue",
+      "apps_admin_dashboard_src_components_logistics_totalrevenue_reactapexchart",
+      "apps_admin_dashboard_src_components_logistics_totalrevenue_totalrevenue",
       "apps_admin_dashboard_src_components_logistics_trackingdelivery",
       "apps_admin_dashboard_src_components_logistics_trackingdelivery_trackingdelivery",
-      "apps_admin_dashboard_src_components_marketing_featuredcampaigns",
-      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_campaigndata",
-      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_featuredcampaigns",
       "apps_admin_dashboard_src_components_marketing_trafficstats",
       "apps_admin_dashboard_src_components_marketing_trafficstats_reactapexchart",
       "apps_admin_dashboard_src_components_marketing_trafficstats_trafficstats",
@@ -206,9 +209,6 @@
       "apps_admin_dashboard_src_components_saas_productperformance",
       "apps_admin_dashboard_src_components_saas_productperformance_productperformance",
       "apps_admin_dashboard_src_components_saas_productperformance_reactapexchart",
-      "apps_admin_dashboard_src_components_stocks_stocktickers",
-      "apps_admin_dashboard_src_components_stocks_stocktickers_stocktickers",
-      "apps_admin_dashboard_src_components_stocks_stocktickers_tickers",
       "apps_admin_dashboard_src_components_stocks_trendingstocks",
       "apps_admin_dashboard_src_components_stocks_trendingstocks_trendingstocks",
       "apps_admin_dashboard_src_icons_index"
@@ -735,14 +735,14 @@
       "apps_admin_dashboard_src_components_common_pagebreadcrumb",
       "apps_admin_dashboard_src_components_common_pagebreadcrumb_breadcrumbprops",
       "apps_admin_dashboard_src_components_common_pagebreadcrumb_pagebreadcrumb",
-      "apps_admin_dashboard_src_components_maps_mapslayout",
-      "apps_admin_dashboard_src_components_maps_mapslayout_mapslayout",
-      "apps_admin_dashboard_src_components_maps_maptwocard",
-      "apps_admin_dashboard_src_components_maps_maptwocard_maptwocard",
-      "apps_admin_dashboard_src_components_maps_mapviewcard",
-      "apps_admin_dashboard_src_components_maps_mapviewcard_mapviewcard",
-      "apps_admin_dashboard_src_components_maps_washingtondcregioncard",
-      "apps_admin_dashboard_src_components_maps_washingtondcregioncard_washingtondcregioncard"
+      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter",
+      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter_productsfilter",
+      "apps_admin_dashboard_src_components_ecommerce_products_productsheader",
+      "apps_admin_dashboard_src_components_ecommerce_products_productsheader_productsheader",
+      "apps_admin_dashboard_src_components_ecommerce_products_productslayout",
+      "apps_admin_dashboard_src_components_ecommerce_products_productslayout_productslayout",
+      "apps_admin_dashboard_src_components_ecommerce_products_productstable",
+      "apps_admin_dashboard_src_components_ecommerce_products_productstable_productstable"
     ],
     "36": [
       "apps_admin_dashboard_src_components_ecommerce_create_invoice_createinvoiceform",
@@ -904,14 +904,14 @@
       "apps_admin_dashboard_src_components_ecommerce_demographiccard_demographiccard"
     ],
     "50": [
-      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter",
-      "apps_admin_dashboard_src_components_ecommerce_products_productsfilter_productsfilter",
-      "apps_admin_dashboard_src_components_ecommerce_products_productsheader",
-      "apps_admin_dashboard_src_components_ecommerce_products_productsheader_productsheader",
-      "apps_admin_dashboard_src_components_ecommerce_products_productslayout",
-      "apps_admin_dashboard_src_components_ecommerce_products_productslayout_productslayout",
-      "apps_admin_dashboard_src_components_ecommerce_products_productstable",
-      "apps_admin_dashboard_src_components_ecommerce_products_productstable_productstable"
+      "apps_admin_dashboard_src_components_maps_mapslayout",
+      "apps_admin_dashboard_src_components_maps_mapslayout_mapslayout",
+      "apps_admin_dashboard_src_components_maps_maptwocard",
+      "apps_admin_dashboard_src_components_maps_maptwocard_maptwocard",
+      "apps_admin_dashboard_src_components_maps_mapviewcard",
+      "apps_admin_dashboard_src_components_maps_mapviewcard_mapviewcard",
+      "apps_admin_dashboard_src_components_maps_washingtondcregioncard",
+      "apps_admin_dashboard_src_components_maps_washingtondcregioncard_washingtondcregioncard"
     ],
     "51": [
       "apps_admin_dashboard_src_components_pricing_tables_pricingtableone",
@@ -1380,9 +1380,9 @@
       "apps_admin_dashboard_scratch_update_total_fs"
     ],
     "121": [
-      "apps_admin_dashboard_src_components_analytics_sessionsbydevice",
-      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_reactapexchart",
-      "apps_admin_dashboard_src_components_analytics_sessionsbydevice_sessionsbydevice"
+      "apps_admin_dashboard_src_components_analytics_toppages",
+      "apps_admin_dashboard_src_components_analytics_toppages_pagedata",
+      "apps_admin_dashboard_src_components_analytics_toppages_toppages"
     ],
     "122": [
       "apps_admin_dashboard_src_components_analytics_visitoranalyticschart",
@@ -1400,14 +1400,14 @@
       "apps_admin_dashboard_src_components_charts_line_linechartone_reactapexchart"
     ],
     "125": [
-      "apps_admin_dashboard_src_components_crm_estimatedrevenue",
-      "apps_admin_dashboard_src_components_crm_estimatedrevenue_estimatedrevenue",
-      "apps_admin_dashboard_src_components_crm_estimatedrevenue_reactapexchart"
-    ],
-    "126": [
       "apps_admin_dashboard_src_components_crm_recentorders",
       "apps_admin_dashboard_src_components_crm_recentorders_ordersdata",
       "apps_admin_dashboard_src_components_crm_recentorders_recentorders"
+    ],
+    "126": [
+      "apps_admin_dashboard_src_components_crm_salescategory",
+      "apps_admin_dashboard_src_components_crm_salescategory_reactapexchart",
+      "apps_admin_dashboard_src_components_crm_salescategory_salescategory"
     ],
     "127": [
       "apps_admin_dashboard_src_components_crm_statisticschart",
@@ -1415,94 +1415,94 @@
       "apps_admin_dashboard_src_components_crm_statisticschart_statisticschart"
     ],
     "128": [
-      "apps_admin_dashboard_src_components_crm_upcomingschedule",
-      "apps_admin_dashboard_src_components_crm_upcomingschedule_scheduledata",
-      "apps_admin_dashboard_src_components_crm_upcomingschedule_upcomingschedule"
-    ],
-    "129": [
       "apps_admin_dashboard_src_components_form_form",
       "apps_admin_dashboard_src_components_form_form_form",
       "apps_admin_dashboard_src_components_form_form_formprops"
     ],
-    "130": [
+    "129": [
       "apps_admin_dashboard_src_components_form_input_radiosm",
       "apps_admin_dashboard_src_components_form_input_radiosm_radioprops",
       "apps_admin_dashboard_src_components_form_input_radiosm_radiosm"
     ],
-    "131": [
+    "130": [
       "apps_admin_dashboard_src_components_form_input_textarea",
       "apps_admin_dashboard_src_components_form_input_textarea_textarea",
       "apps_admin_dashboard_src_components_form_input_textarea_textareaprops"
     ],
-    "132": [
+    "131": [
       "apps_admin_dashboard_src_components_logistics_deliveryactivities",
       "apps_admin_dashboard_src_components_logistics_deliveryactivities_activities",
       "apps_admin_dashboard_src_components_logistics_deliveryactivities_deliveryactivities"
     ],
-    "133": [
+    "132": [
       "apps_admin_dashboard_src_components_logistics_deliverystatistics",
       "apps_admin_dashboard_src_components_logistics_deliverystatistics_deliverystatistics",
       "apps_admin_dashboard_src_components_logistics_deliverystatistics_reactapexchart"
     ],
-    "134": [
-      "apps_admin_dashboard_src_components_logistics_totalrevenue",
-      "apps_admin_dashboard_src_components_logistics_totalrevenue_reactapexchart",
-      "apps_admin_dashboard_src_components_logistics_totalrevenue_totalrevenue"
+    "133": [
+      "apps_admin_dashboard_src_components_marketing_featuredcampaigns",
+      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_campaigndata",
+      "apps_admin_dashboard_src_components_marketing_featuredcampaigns_featuredcampaigns"
     ],
-    "135": [
+    "134": [
       "apps_admin_dashboard_src_components_marketing_impressiondatatraffic",
       "apps_admin_dashboard_src_components_marketing_impressiondatatraffic_impressiondatatraffic",
       "apps_admin_dashboard_src_components_marketing_impressiondatatraffic_reactapexchart"
     ],
-    "136": [
+    "135": [
       "apps_admin_dashboard_src_components_marketing_toptrafficsource",
       "apps_admin_dashboard_src_components_marketing_toptrafficsource_sourcedata",
       "apps_admin_dashboard_src_components_marketing_toptrafficsource_toptrafficsource"
     ],
-    "137": [
+    "136": [
       "apps_admin_dashboard_src_components_saas_churnrate",
       "apps_admin_dashboard_src_components_saas_churnrate_churnrate",
       "apps_admin_dashboard_src_components_saas_churnrate_reactapexchart"
     ],
-    "138": [
+    "137": [
       "apps_admin_dashboard_src_components_saas_conversionfunnel",
       "apps_admin_dashboard_src_components_saas_conversionfunnel_conversionfunnel",
       "apps_admin_dashboard_src_components_saas_conversionfunnel_reactapexchart"
     ],
-    "139": [
+    "138": [
       "apps_admin_dashboard_src_components_saas_recentinvoices",
       "apps_admin_dashboard_src_components_saas_recentinvoices_invoices",
       "apps_admin_dashboard_src_components_saas_recentinvoices_recentinvoices"
     ],
-    "140": [
+    "139": [
       "apps_admin_dashboard_src_components_saas_usergrowth",
       "apps_admin_dashboard_src_components_saas_usergrowth_reactapexchart",
       "apps_admin_dashboard_src_components_saas_usergrowth_usergrowth"
     ],
-    "141": [
+    "140": [
       "apps_admin_dashboard_src_components_sales_salesmetrics",
       "apps_admin_dashboard_src_components_sales_salesmetrics_chart",
       "apps_admin_dashboard_src_components_sales_salesmetrics_salesmetrics"
     ],
-    "142": [
+    "141": [
       "apps_admin_dashboard_src_components_stocks_dividend",
       "apps_admin_dashboard_src_components_stocks_dividend_dividend",
       "apps_admin_dashboard_src_components_stocks_dividend_reactapexchart"
     ],
-    "143": [
+    "142": [
       "apps_admin_dashboard_src_components_stocks_latesttransactions",
       "apps_admin_dashboard_src_components_stocks_latesttransactions_latesttransactions",
       "apps_admin_dashboard_src_components_stocks_latesttransactions_transactions"
     ],
-    "144": [
+    "143": [
       "apps_admin_dashboard_src_components_stocks_mywatchlist",
       "apps_admin_dashboard_src_components_stocks_mywatchlist_mywatchlist",
       "apps_admin_dashboard_src_components_stocks_mywatchlist_watchlist"
     ],
-    "145": [
+    "144": [
       "apps_admin_dashboard_src_components_stocks_portfolioperformance",
       "apps_admin_dashboard_src_components_stocks_portfolioperformance_portfolioperformance",
       "apps_admin_dashboard_src_components_stocks_portfolioperformance_reactapexchart"
+    ],
+    "145": [
+      "apps_admin_dashboard_src_components_stocks_stocktickers",
+      "apps_admin_dashboard_src_components_stocks_stocktickers_stocktickers",
+      "apps_admin_dashboard_src_components_stocks_stocktickers_tickers"
     ],
     "146": [
       "apps_admin_dashboard_src_components_tables_pagination",
@@ -1739,8 +1739,8 @@
   },
   "cohesion": {
     "0": 0.043478260869565216,
-    "1": 0.08333333333333333,
-    "2": 0.12688172043010754,
+    "1": 0.08232118758434548,
+    "2": 0.12096774193548387,
     "3": 0.17980295566502463,
     "4": 0.06896551724137931,
     "5": 0.07692307692307693,
@@ -1998,17 +1998,6 @@
   ],
   "surprises": [
     {
-      "source": "AdminLayout()",
-      "target": "useSidebar()",
-      "source_files": [
-        "apps/admin-dashboard/src/app/(admin)/layout.tsx",
-        "apps/admin-dashboard/src/context/SidebarContext.tsx"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "why": "peripheral node `AdminLayout()` unexpectedly reaches hub `useSidebar()`"
-    },
-    {
       "source": "Calendar()",
       "target": "useModal()",
       "source_files": [
@@ -2051,6 +2040,17 @@
       "confidence": "EXTRACTED",
       "relation": "calls",
       "why": "peripheral node `FullScreenModal()` unexpectedly reaches hub `useModal()`"
+    },
+    {
+      "source": "ModalBasedAlerts()",
+      "target": "useModal()",
+      "source_files": [
+        "apps/admin-dashboard/src/components/example/ModalExample/ModalBasedAlerts.tsx",
+        "apps/admin-dashboard/src/hooks/useModal.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "peripheral node `ModalBasedAlerts()` unexpectedly reaches hub `useModal()`"
     }
   ],
   "tokens": {
