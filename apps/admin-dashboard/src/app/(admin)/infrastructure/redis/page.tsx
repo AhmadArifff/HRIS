@@ -27,7 +27,7 @@ export default function RedisMonitorPage() {
       const res = await fetch("http://localhost:3002/api/infrastructure/redis");
       const result = await res.json();
       
-      if (result.isSuccess && result.data) {
+      if (result.success && result.data) {
         setStats(result.data);
         setLastRefreshed(new Date());
       } else {

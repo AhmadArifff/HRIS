@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { redis } from "../config/redis";
-import { Result } from "../utils/Result";
+import { Result, sendResult } from "../utils/Result";
 
 export const getRedisStats = async (req: Request, res: Response) => {
   try {
@@ -30,8 +30,10 @@ export const getRedisStats = async (req: Request, res: Response) => {
       raw_output: rawInfo
     };
 
-    return res.status(200).json(Result.success(stats, "Berhasil mengambil metrik Redis"));
+    const result = Result.ok(stats, "Berhasil mengambil metrik Redis");
+    return sendResult(res, 200, result);
   } catch (error: any) {
-    return res.status(500).json(Result.failure(error.message || "Gagal mengambil metrik Redis"));
+    const result = Result.fail(error.message || "Gagal mengambil metrik Redis");
+    return sendResult(res, 500, result);
   }
 };
