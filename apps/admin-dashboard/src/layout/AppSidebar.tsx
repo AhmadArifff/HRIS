@@ -101,8 +101,9 @@ const navItems: NavItem[] = [
         <path d="M7 9H7.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    name: "Infrastruktur",
+    name: "Infrastruktur & Master",
     subItems: [
+      { name: "Data Master", path: "/master" },
       { name: "Redis Monitor", path: "/infrastructure/redis" },
     ],
   },

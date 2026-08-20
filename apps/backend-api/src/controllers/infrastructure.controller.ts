@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { redis } from "../config/redis";
-import { Result, sendResult } from "../utils/Result";
+import { Result, sendResult } from "../utils/result";
 
 export const getRedisStats = async (req: Request, res: Response) => {
   try {

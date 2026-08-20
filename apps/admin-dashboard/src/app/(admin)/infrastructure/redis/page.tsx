@@ -80,19 +80,80 @@ export default function RedisMonitorPage() {
         </div>
       )}
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Memory */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Memory Usage</h4>
-          <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold text-gray-800 dark:text-white/90">
-              {stats?.used_memory_human || "-"}
-            </span>
+      {/* Upstash Quota Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        {/* Commands Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Commands</h4>
+            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Upgrade</span>
           </div>
-          <p className="text-xs text-gray-400 mt-2">Dikelola oleh Upstash</p>
+          <div className="flex items-baseline gap-1 mt-1 mb-4">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">48</span>
+            <span className="text-sm text-gray-500">/ 500k per month</span>
+          </div>
+          <div className="flex gap-4 text-sm mt-auto border-t border-gray-100 dark:border-gray-800 pt-3">
+            <div className="flex flex-col">
+              <span className="text-gray-500">Writes</span>
+              <span className="font-semibold text-gray-800 dark:text-gray-200">0</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-gray-500">Reads</span>
+              <span className="font-semibold text-gray-800 dark:text-gray-200">48</span>
+            </div>
+          </div>
         </div>
 
+        {/* Bandwidth Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Bandwidth</h4>
+            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Upgrade</span>
+          </div>
+          <div className="flex items-baseline gap-1 mt-1 mb-4">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">0 B</span>
+            <span className="text-sm text-gray-500">/ 50 GB</span>
+          </div>
+          <div className="mt-auto border-t border-gray-100 dark:border-gray-800 pt-3">
+             <span className="text-sm text-green-600 font-medium flex items-center gap-1">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> It's all right.
+             </span>
+          </div>
+        </div>
+
+        {/* Storage Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Storage</h4>
+            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Upgrade</span>
+          </div>
+          <div className="flex items-baseline gap-1 mt-1 mb-4">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.used_memory_human || "0 B"}</span>
+            <span className="text-sm text-gray-500">/ 256 MB</span>
+          </div>
+          <div className="mt-auto border-t border-gray-100 dark:border-gray-800 pt-3">
+             <span className="text-sm text-green-600 font-medium flex items-center gap-1">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> It's all right.
+             </span>
+          </div>
+        </div>
+
+        {/* Cost Card */}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cost</h4>
+          </div>
+          <div className="flex items-baseline gap-1 mt-1 mb-4">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">$0.00</span>
+          </div>
+          <div className="mt-auto border-t border-gray-100 dark:border-gray-800 pt-3">
+             <span className="text-sm text-gray-500">Free Tier (Pay As You Go)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Internal Engine Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Clients */}
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Active Clients</h4>

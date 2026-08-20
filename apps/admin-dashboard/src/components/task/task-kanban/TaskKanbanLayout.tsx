@@ -126,6 +126,12 @@ export const TaskKanbanLayout: React.FC = () => {
     setTasks((prev) => [item, ...prev]);
   };
 
+  const handleMoveTask = (taskId: string, newColumn: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, column: newColumn as any } : t))
+    );
+  };
+
   const todoTasks = tasks.filter((t) => t.column === "To Do");
   const inProgressTasks = tasks.filter((t) => t.column === "In Progress");
   const completedTasks = tasks.filter((t) => t.column === "Completed");
@@ -153,6 +159,7 @@ export const TaskKanbanLayout: React.FC = () => {
                 count={todoTasks.length}
                 tasks={todoTasks}
                 badgeColor="text-brand-500 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-400"
+                onMoveTask={handleMoveTask}
               />
             )}
 
@@ -162,6 +169,7 @@ export const TaskKanbanLayout: React.FC = () => {
                 count={inProgressTasks.length}
                 tasks={inProgressTasks}
                 badgeColor="text-warning-600 bg-warning-50 dark:bg-warning-500/15 dark:text-warning-500"
+                onMoveTask={handleMoveTask}
               />
             )}
 
@@ -171,6 +179,7 @@ export const TaskKanbanLayout: React.FC = () => {
                 count={completedTasks.length}
                 tasks={completedTasks}
                 badgeColor="text-success-600 bg-success-50 dark:bg-success-500/15 dark:text-success-500"
+                onMoveTask={handleMoveTask}
               />
             )}
           </div>

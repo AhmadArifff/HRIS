@@ -36,7 +36,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ task }) => {
   };
 
   return (
-    <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60 dark:hover:border-gray-700">
+    <div 
+      className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs transition hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60 dark:hover:border-gray-700 cursor-move"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("taskId", task.id);
+      }}
+    >
       {/* Title & Avatar Row */}
       <div className="flex items-start justify-between gap-3 mb-2">
         <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 leading-snug">

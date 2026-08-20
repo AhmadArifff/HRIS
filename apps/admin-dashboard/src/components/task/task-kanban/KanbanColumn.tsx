@@ -7,6 +7,7 @@ interface KanbanColumnProps {
   count: number;
   tasks: KanbanTaskData[];
   badgeColor?: string;
+  onMoveTask?: (taskId: string, newColumn: string) => void;
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -14,9 +15,26 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   count,
   tasks,
   badgeColor = "text-brand-500 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-400",
+  onMoveTask,
 }) => {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Necessary to allow dropping
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("taskId");
+    if (taskId && onMoveTask) {
+      onMoveTask(taskId, title);
+    }
+  };
+
   return (
-    <div className="flex flex-col rounded-2xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02] flex-1 min-w-[280px]">
+    <div 
+      className="flex flex-col rounded-2xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02] flex-1 min-w-[280px]"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       {/* Column Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -40,7 +58,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       </div>
 
       {/* Cards List */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 min-h-[150px]">
         {tasks.map((task) => (
           <KanbanCard key={task.id} task={task} />
         ))}

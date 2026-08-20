@@ -634,7 +634,13 @@ erDiagram
 
 ## 3. Breakdown Fitur & Fungsionalitas
 
-### 3.1 Manajemen Database (Wajib)
+### 3.1 Manajemen Data Master (Wajib)
+**Target Pengguna:** Administrator Sistem & HR
+*   **Dynamic Department & Position:** Antarmuka CRUD (Create, Read, Update, Delete) dinamis untuk menambah atau mengubah data Departemen dan Jabatan tanpa perlu campur tangan *developer* (Zero Hardcoded Master Data).
+*   **Master Status & Configuration:** Pengelolaan status sistem secara terpusat (misalnya tipe cuti, status karyawan, komponen *payroll*).
+*   **Role & Permissions (RBAC):** Pemetaan hak akses spesifik untuk setiap grup pengguna (Admin, HR, Manager, Staff) secara fleksibel melalui UI.
+
+### 3.2 Manajemen Karyawan (Wajib)
 **Target Pengguna:** Seluruh Perusahaan
 *   **Employee Master Data:** Penyimpanan terpusat profil lengkap karyawan (data pribadi, avatar/foto profil dengan Supabase Storage, kontak darurat, informasi bank).
 *   **Contract Management:** Pelacakan riwayat kontrak karyawan (PKWT, PKWTT, Freelance), notifikasi otomatis masa berakhir kontrak (H-30, H-14).
