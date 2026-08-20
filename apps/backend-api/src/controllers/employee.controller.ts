@@ -2,6 +2,31 @@ import { Request, Response } from "express";
 import { EmployeeService } from "../services/employee.service";
 import { Result, sendResult } from "../utils/Result";
 
+export const createEmployee = async (req: Request, res: Response) => {
+  try {
+    const {
+      firstName, lastName, email, phone, birthDate,
+      gender, departmentId, positionId, joinDate,
+      employeeCode, avatarUrl
+    } = req.body;
+
+    // Guard Clauses
+    if (!firstName || !lastName || !email || !departmentId || !positionId || !employeeCode) {
+      return sendResult(res, 400, Result.fail("Kolom wajib (Nama, Email, Departemen, Posisi, ID) harus diisi."));
+    }
+
+    const employee = await EmployeeService.createEmployee({
+      firstName, lastName, email, phone, birthDate,
+      gender, departmentId, positionId, joinDate,
+      employeeCode, avatarUrl
+    });
+
+    return sendResult(res, 201, Result.ok(employee, "Karyawan berhasil ditambahkan."));
+  } catch (error: any) {
+    return sendResult(res, 500, Result.fail(error.message || "Terjadi kesalahan saat menambahkan karyawan."));
+  }
+};
+
 export const getEmployees = async (req: Request, res: Response) => {
   try {
     const page = req.query.page ? parseInt(req.query.page as string) : 1;
