@@ -46,16 +46,16 @@ export const EmployeeTable: React.FC = () => {
       try {
         const res = await fetch("http://localhost:3002/api/employees");
         const result = await res.json();
-        if (result.success && result.data) {
-          const formatted = result.data.map((emp: any) => ({
+        if (result.success && result.data && Array.isArray(result.data.data)) {
+          const formatted = result.data.data.map((emp: any) => ({
             id: emp.id,
             emp_id: emp.employeeCode || `EMP-${emp.id}`,
             name: `${emp.firstName} ${emp.lastName}`.trim(),
-            position: emp.positionTitle,
-            department: emp.departmentName,
-            status: emp.deletedAt !== null ? "Terminated" : "Active", // simplistic mapping for demo
-            avatar: emp.avatarUrl || "/images/user/user-01.jpg",
-            email: emp.email,
+            position: emp.position?.name || "N/A",
+            department: emp.department?.name || "N/A",
+            status: emp.deletedAt !== null ? "Terminated" : "Active",
+            avatar: emp.user?.avatarUrl || "/images/user/user-01.jpg",
+            email: emp.user?.email || "",
             joinDate: new Date(emp.joinDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
           }));
           setData(formatted);
