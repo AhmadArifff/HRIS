@@ -7,7 +7,7 @@ import { errorHandler } from "./middlewares/errorHandler";
 import { globalLimiter } from "./middlewares/rateLimiter";
 import { checkHealth } from "./controllers/health.controller";
 import { getRedisStats } from "./controllers/infrastructure.controller";
-import { getEmployees } from "./controllers/employee.controller";
+import { getEmployees, createEmployee } from "./controllers/employee.controller";
 
 const app: Application = express();
 const PORT = process.env.PORT || 3002;
@@ -26,6 +26,7 @@ app.use("/api", globalLimiter);
 app.get("/api/health", checkHealth);
 app.get("/api/infrastructure/redis", getRedisStats);
 app.get("/api/employees", getEmployees);
+app.post("/api/employees", createEmployee);
 
 // 4. Fallback 404
 app.use((req, res) => {
