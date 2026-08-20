@@ -373,9 +373,9 @@ export const EmployeeTable: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
-              )}
-            </tbody>
+              ))
+            )}
+          </tbody>
           </table>
         </div>
       </div>
