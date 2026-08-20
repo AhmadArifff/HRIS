@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
@@ -25,6 +25,26 @@ export const EmployeeForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [positions, setPositions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        const depRes = await fetch("http://localhost:3002/api/departments");
+        const depJson = await depRes.json();
+        if (depJson.success) setDepartments(depJson.data);
+
+        const posRes = await fetch("http://localhost:3002/api/positions");
+        const posJson = await posRes.json();
+        if (posJson.success) setPositions(posJson.data);
+      } catch (err) {
+        console.error("Failed to fetch master data", err);
+      }
+    };
+    fetchMasterData();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -146,12 +166,24 @@ export const EmployeeForm = () => {
           </div>
           <div>
             <Label>Departemen <span className="text-error-500">*</span></Label>
-            {/* For now hardcoding UUIDs from seed would be fragile, let's just use text input or let user get UUIDs from DB manually. For production this should fetch from API */}
-            <Input type="text" name="departmentId" placeholder="Department UUID" value={formData.departmentId} onChange={handleChange} required />
+            <select name="departmentId" value={formData.departmentId} onChange={handleChange} required className="w-full h-11 px-4 py-2 text-sm text-gray-800 border border-gray-300 rounded-lg bg-transparent focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-400">
+              <option value="">Pilih Departemen</option>
+              {departments.map((dep) => (
+                <option key={dep.id} value={dep.id}>{dep.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <Label>Posisi / Jabatan <span className="text-error-500">*</span></Label>
-            <Input type="text" name="positionId" placeholder="Position UUID" value={formData.positionId} onChange={handleChange} required />
+            <select name="positionId" value={formData.positionId} onChange={handleChange} required className="w-full h-11 px-4 py-2 text-sm text-gray-800 border border-gray-300 rounded-lg bg-transparent focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-400">
+              <option value="">Pilih Posisi</option>
+              {positions
+                // Jika sudah pilih departemen, filter posisi yang sesuai (opsional tapi bagus UX-nya)
+                .filter(pos => !formData.departmentId || pos.departmentId === formData.departmentId)
+                .map((pos) => (
+                <option key={pos.id} value={pos.id}>{pos.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <Label>Tanggal Bergabung</Label>

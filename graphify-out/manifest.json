@@ -20,9 +20,9 @@
     "semantic_hash": "f215156c9ce3fcec2e18bee134152692"
   },
   "apps/admin-dashboard/package.json": {
-    "mtime": 1786173839.4593115,
-    "ast_hash": "4dce5c48642801a98fb81415d287d528",
-    "semantic_hash": "4dce5c48642801a98fb81415d287d528"
+    "mtime": 1787210637.4872677,
+    "ast_hash": "d902829424992b2d0487d28ebd069cf1",
+    "semantic_hash": "d902829424992b2d0487d28ebd069cf1"
   },
   "apps/admin-dashboard/postcss.config.js": {
     "mtime": 1777371739.0,
@@ -1085,9 +1085,9 @@
     "semantic_hash": "223c06ec633ed959beccf48575c2bc0b"
   },
   "apps/admin-dashboard/src/components/form/form-elements/DropZone.tsx": {
-    "mtime": 1787144361.961802,
-    "ast_hash": "79ce21a14865fe31a1023a042e919a1f",
-    "semantic_hash": "79ce21a14865fe31a1023a042e919a1f"
+    "mtime": 1787210637.4913063,
+    "ast_hash": "de769f26f431ade3e49b5a44d74f2aac",
+    "semantic_hash": "de769f26f431ade3e49b5a44d74f2aac"
   },
   "apps/admin-dashboard/src/components/form/form-elements/FileInputExample.tsx": {
     "mtime": 1777371739.0,
@@ -1185,9 +1185,9 @@
     "semantic_hash": "e7bed60651432701d0173049c56c657d"
   },
   "apps/admin-dashboard/src/components/hris/EmployeeForm.tsx": {
-    "mtime": 1787208874.8366978,
-    "ast_hash": "68aba841db09200c2a9bc77d233a44b0",
-    "semantic_hash": "68aba841db09200c2a9bc77d233a44b0"
+    "mtime": 1787210637.493321,
+    "ast_hash": "8a936ba5cde2eecdf9435d6ec5f6dff6",
+    "semantic_hash": "8a936ba5cde2eecdf9435d6ec5f6dff6"
   },
   "apps/admin-dashboard/src/components/hris/EmployeeProfile.tsx": {
     "mtime": 1787144361.9721587,
@@ -1195,9 +1195,9 @@
     "semantic_hash": "d953b4f1dd1a8cbb24b882f82acb4df2"
   },
   "apps/admin-dashboard/src/components/hris/EmployeeTable.tsx": {
-    "mtime": 1787207554.8781817,
-    "ast_hash": "65c451b6dc828b08d6d790807433c6f9",
-    "semantic_hash": "65c451b6dc828b08d6d790807433c6f9"
+    "mtime": 1787211915.023564,
+    "ast_hash": "515702ad4b6cf33050faab1b7c87d93f",
+    "semantic_hash": "515702ad4b6cf33050faab1b7c87d93f"
   },
   "apps/admin-dashboard/src/components/hris/HrisMetrics.tsx": {
     "mtime": 1786176923.791781,
@@ -3205,9 +3205,9 @@
     "semantic_hash": "6fe9abbfeca0f23f945005e880539961"
   },
   "apps/backend-api/src/server.ts": {
-    "mtime": 1787204342.0969667,
-    "ast_hash": "9d9a1162394c350e42a51cc5db20b8d1",
-    "semantic_hash": "9d9a1162394c350e42a51cc5db20b8d1"
+    "mtime": 1787210637.5020335,
+    "ast_hash": "8775cc83f304452b88a4a929b4b51d42",
+    "semantic_hash": "8775cc83f304452b88a4a929b4b51d42"
   },
   "apps/backend-api/src/utils/Result.ts": {
     "mtime": 1787200468.8548632,
@@ -3235,18 +3235,23 @@
     "semantic_hash": "24fd5d792f148f30512529ee356a22d6"
   },
   "apps/backend-api/src/controllers/employee.controller.ts": {
-    "mtime": 1787204342.094895,
-    "ast_hash": "9691b357840bf18fd24f593d5b1f198b",
-    "semantic_hash": "9691b357840bf18fd24f593d5b1f198b"
+    "mtime": 1787210637.4990692,
+    "ast_hash": "6ce25ec19c10d4216ef9a69cf336a349",
+    "semantic_hash": "6ce25ec19c10d4216ef9a69cf336a349"
   },
   "apps/backend-api/src/services/employee.service.ts": {
-    "mtime": 1787207554.8822021,
-    "ast_hash": "dbcec9bfc39469b6799d63f57aa6fb0c",
-    "semantic_hash": "dbcec9bfc39469b6799d63f57aa6fb0c"
+    "mtime": 1787210637.5080771,
+    "ast_hash": "5fee651c47edfe27fd70cebf3b4137d6",
+    "semantic_hash": "5fee651c47edfe27fd70cebf3b4137d6"
   },
   "packages/database/prisma/create-buckets.sql": {
     "mtime": 1787209805.850597,
     "ast_hash": "ea3aa51f26046427f8a432e3cf73c453",
     "semantic_hash": "ea3aa51f26046427f8a432e3cf73c453"
+  },
+  "apps/admin-dashboard/src/lib/supabase.ts": {
+    "mtime": 1787210637.4960632,
+    "ast_hash": "2243474c5fbd974589b178393f7bb4fc",
+    "semantic_hash": "2243474c5fbd974589b178393f7bb4fc"
   }
 }
