@@ -15,8 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Employee Portal | HRIS Enterprise",
-  description: "Portal Mandiri Karyawan (Self-Service Attendance, Leave, Payroll)",
+  title: "Employee Portal",
+  description: "HRIS Employee Self Service",
+  manifest: "/manifest.json",
+  themeColor: "#0ea5e9",
 };
 
 export default function RootLayout({

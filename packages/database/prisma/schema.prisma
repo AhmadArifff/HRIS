@@ -114,9 +114,10 @@ model Employee {
   address      String?   @db.Text
   departmentId String    @map("department_id")
   positionId   String    @map("position_id")
-  joinDate     DateTime  @map("join_date") @db.Date
-  statusId     String    @map("status_id")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  joinDate       DateTime  @map("join_date") @db.Date
+  statusId       String    @map("status_id")
+  faceDescriptor Json?     @map("face_descriptor")
+  createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
 
@@ -135,6 +136,10 @@ model Employee {
   offboardings       Offboarding[]
   reimbursements     Reimbursement[]
 
+  @@index([departmentId])
+  @@index([positionId])
+  @@index([statusId])
+  @@index([deletedAt])
   @@map("employees")
 }
 
@@ -201,6 +206,9 @@ model Attendance {
   shift    ShiftMaster  @relation(fields: [shiftId], references: [id])
   status   MasterStatus @relation(fields: [statusId], references: [id])
 
+  @@index([employeeId])
+  @@index([recordDate])
+  @@index([statusId])
   @@map("attendances")
 }
 
