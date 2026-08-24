@@ -823,15 +823,71 @@ erDiagram
 
 ---
 
-## 4. Keamanan & Role-Based Access Control (RBAC)
+## 4. Keamanan, Role-Based Access Control (RBAC) & Kredensial Akses Pengguna
 
-Sistem wajib menerapkan autentikasi keamanan yang berlapis:
-1.  **Strict Authentication:** Menggunakan **Better Auth** dengan token rotasi. API tidak dapat diakses tanpa token valid (menggunakan Guard Clauses).
-2.  **RBAC:**
-    *   **Admin/Superadmin:** Akses penuh konfigurasi sistem, Master Data, dan Audit Log.
-    *   **HR / Keuangan:** Akses ke Payroll, Rekrutmen, dan Data Kepegawaian. Tidak dapat mengganti konfigurasi sistem.
-    *   **Manager:** Akses persetujuan cuti bawahan dan evaluasi kinerja tim.
-    *   **Employee:** Akses ke data pribadi, slip gaji sendiri, pengajuan cuti, dan absensi harian.
+Sistem wajib menerapkan autentikasi keamanan yang berlapis serta tata kelola hak akses berbasis peran (RBAC):
+
+### 4.1 Arsitektur Autentikasi & Kebijakan Sesi
+1. **Strict Authentication:** Menggunakan **Better Auth** dengan token rotasi dan JSON Web Token (JWT). API tidak dapat diakses tanpa token valid (menggunakan Guard Clauses).
+2. **Session Lifetimes & Auto-Logout:**
+   - **Sesi Admin / HRD / Management:** 30 Menit masa aktif sesi sejak login (auto-invalidation jika idle).
+   - **Sesi Karyawan (ESS):** 15 Menit masa aktif sesi biometrik wajah (live countdown timer & auto-lock).
+3. **Multi-Factor / Biometric Face Authentication:** Portal Karyawan dilengkapi proteksi *Face Recognition Biometric Login Gate Screen* yang memvalidasi struktur titik retina dan kontur wajah sebelum akses ESS dibuka.
+
+### 4.2 Matriks Hak Akses Peran (RBAC Matrix)
+
+| Modul / Fitur HRIS | Super Admin | HR Manager / HRD | Finance / Payroll | Direct Manager | Employee (ESS) | Candidate (Publik) |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Konfigurasi Sistem & Master Data** | ✅ Full Access | ❌ Read Only | ❌ No Access | ❌ No Access | ❌ No Access | ❌ No Access |
+| **System Health & Redis Monitor** | ✅ Full Access | ❌ No Access | ❌ No Access | ❌ No Access | ❌ No Access | ❌ No Access |
+| **Audit Logs & Security Trail** | ✅ Full Access | 👁️ Read Only | ❌ No Access | ❌ No Access | ❌ No Access | ❌ No Access |
+| **Manajemen Karyawan & Kontrak** | ✅ Full Access | ✅ Full Access | 👁️ Read Only | 👁️ Team Only | 👁️ Self Only | ❌ No Access |
+| **Time & Attendance (Presensi)** | ✅ Full Access | ✅ Full Access | 👁️ Export Only | ✅ Approval Team | ✅ Clock In/Out | ❌ No Access |
+| **Manajemen Cuti & Izin** | ✅ Full Access | ✅ Full Access | 👁️ Read Only | ✅ Approval Team | ✅ Pengajuan | ❌ No Access |
+| **Payroll & Komponen Gaji** | ✅ Full Access | ✅ Full Access | ✅ Full Access | ❌ No Access | 👁️ Slip Sendiri | ❌ No Access |
+| **Rekrutmen & ATS Kanban Board** | ✅ Full Access | ✅ Full Access | ❌ No Access | 👁️ Interviewer | ❌ No Access | ✅ Submit Lamaran |
+| **Performance KPI 360 & Appraisal**| ✅ Full Access | ✅ Full Access | ❌ No Access | ✅ Evaluasi Tim | ✅ Self & Peer | ❌ No Access |
+| **Reimbursement & Klaim Biaya** | ✅ Full Access | ✅ Verifikasi | ✅ Approval/Disburse| ✅ Approval Team | ✅ Pengajuan Klaim | ❌ No Access |
+| **Offboarding & Asset Clearance** | ✅ Full Access | ✅ Full Access | 👁️ Final Settle | 👁️ Team Only | 👁️ Pengajuan | ❌ No Access |
+
+### 4.3 Daftar Akun & Kredensial Akses Pengguna (User Access & Demo Accounts)
+
+Untuk memfasilitasi kebutuhan demonstrasi, pengujian lingkungan pengembangan (*development*), dan *User Acceptance Testing (UAT)*, sistem menyediakan akun dengan kredensial akses standar sebagai berikut:
+
+#### A. Akses Admin Dashboard (`http://localhost:3000/signin`)
+*Portal manajemen terpusat untuk Administrator, Tim HRD, dan Eksekutif Perusahaan.*
+
+| Role / Jabatan | Email Pengguna | Kata Sandi (Default) | Masa Aktif Sesi | Lingkup Akses & Wewenang |
+|---|---|---|---|---|
+| **Super Administrator** | `admin@hriscorp.dev` | `admin123` *(atau sembarang)* | 30 Menit | Akses penuh seluruh sistem, Master Data, Audit Trail, Redis Monitoring, & DB Health. |
+| **HRD Administrator** | `hrd@hriscorp.dev` | `admin123` | 30 Menit | Manajemen Karyawan, Kontrak Kerja, Payroll Processing, Cuti & Presensi, Rekrutmen ATS. |
+| **HR Manager** | `siti.aminah@company.com` | `admin123` | 30 Menit | Approval Cuti, Verifikasi Dokumen, Evaluasi Kinerja Karyawan, Manajemen Tim HR. |
+| **Financial Analyst / Payroll** | `rina.kusuma@company.com` | `admin123` | 30 Menit | Pengaturan Komponen Gaji, Batch Payroll Disbursement, Approval Klaim Reimbursement. |
+
+#### B. Akses Portal Mandiri Karyawan / ESS (`http://localhost:3001` atau via Landing Page `:3000/landing`)
+*Portal mandiri karyawan yang diproteksi gerbang **Biometric Face Recognition Gate Screen**.*
+
+| NIK / ID Karyawan | Nama Karyawan | Email Terdaftar | Posisi / Departemen | Metode Login | Sesi Aktif | Akses Modul |
+|---|---|---|---|---|---|---|
+| **`EMP-001`** | **Budi Santoso** | `budi.santoso@company.com` | Software Engineer (IT) | 📷 Pindaian Wajah 3D | 15 Menit | ESS: Clock-In GPS, Cuti, Slip Gaji, Reimbursement, KPI 360. |
+| **`EMP-002`** | Siti Aminah | `siti.aminah@company.com` | HR Manager (Human Resources) | 📷 Pindaian Wajah 3D | 15 Menit | ESS & Akses Approval Manajerial HR. |
+| **`EMP-003`** | Agus Pratama | `agus.pratama@company.com` | Marketing Specialist (Marketing) | 📷 Pindaian Wajah 3D | 15 Menit | ESS: Presensi, Pengajuan Cuti, Laporan Reimbursement Marketing. |
+| **`EMP-004`** | Rina Kusuma | `rina.kusuma@company.com` | Financial Analyst (Finance) | 📷 Pindaian Wajah 3D | 15 Menit | ESS & Verifikasi Klaim Keuangan. |
+| **`EMP-005`** | Dedi Setiawan | `dedi.setiawan@company.com` | IT Support (IT) | 📷 Pindaian Wajah 3D | 15 Menit | ESS & Manajemen Aset IT Lapangan. |
+| **`EMP-006`** | Anita Larasati | `anita.larasati@company.com` | Product Designer (Design) | 📷 Pindaian Wajah 3D | 15 Menit | ESS: Presensi Harian, Timesheet Desain, Evaluasi Kinerja. |
+| **`EMP-007`** | Fajar Nugraha | `fajar.nugraha@company.com` | Backend Developer (IT) | 📷 Pindaian Wajah 3D | 15 Menit | ESS: Presensi, Timesheet Proyek, KPI Engineering. |
+| **`EMP-008`** | Dewi Lestari | `dewi.lestari@company.com` | Recruiter (Human Resources) | 📷 Pindaian Wajah 3D | 15 Menit | ESS & Penjadwalan Wawancara Pelamar. |
+| **`EMP-009`** | Eko Prasetyo | `eko.prasetyo@company.com` | Accountant (Finance) | 📷 Pindaian Wajah 3D | 15 Menit | ESS & Pelaporan Biaya Operasional. |
+| **`EMP-010`** | Maya Indah | `maya.indah@company.com` | Copywriter (Marketing) | 📷 Pindaian Wajah 3D | 15 Menit | ESS: Presensi & Timesheet Kampanye Marketing. |
+| **`EMP-011`** | Hendra Wijaya | `hendra.wijaya@company.com` | DevOps Lead (IT) | 📷 Pindaian Wajah 3D | 15 Menit | ESS: Presensi & On-Call Engineering Timesheet. |
+| **`EMP-012`** | Nadia Putri | `nadia.putri@company.com` | QA Engineer (IT) | 📷 Pindaian Wajah 3D | 15 Menit | ESS: Presensi & Quality Assurance Timesheet. |
+
+#### C. Akses Portal Karir & Publik (`http://localhost:3000/landing#careers`)
+*Portal publik untuk kandidat dan pelamar kerja umum.*
+
+| Kategori Pengguna | Jalur Akses | Metode Autentikasi | Hak Akses Fitur |
+|---|---|---|---|
+| **Kandidat / Pelamar Umum** | `http://localhost:3000/landing#careers` | Tanpa Login (Public) | Eksplorasi daftar lowongan aktif, filter departemen/lokasi, dan submit form lamaran kerja (*Quick Apply*) beserta unggah CV format PDF (maks. 5MB). |
 
 ---
 
