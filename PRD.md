@@ -25,6 +25,7 @@ Sistem HRIS ini dirancang menggunakan arsitektur modern berbasis microservices/m
 *   **Arsitektur Frontend:** Monorepo (Turborepo) untuk memisahkan portal secara independen (Admin Dashboard, Employee Portal, Vendor Portal).
 *   **Frontend (Web & Dashboard):** Next.js (App Router), React, Tailwind CSS v4, Zustand (State Management), Shadcn UI, dan Framer Motion. Dibangun berbasis standar *HRISCorp.dev Design System*, dilengkapi *library* pendukung seperti ApexCharts, FullCalendar, dan Flatpickr. Didukung fitur **i18n (Internationalization)** untuk multi-bahasa.
 *   **Backend (API):** Node.js dengan Express JS (TypeScript).
+*   **Biometric Face Recognition Engine:** Python DeepFace Framework (Wrapping SOTA Models: Facenet512, ArcFace, VGG-Face, GhostFaceNet; Detectors: RetinaFace, MediaPipe, OpenCV; didukung modul Anti-Spoofing bawaan) yang di-deploy via Docker & FastAPI Microservice, terintegrasi dengan **pgvector (PostgreSQL Vector Similarity Search)** di Supabase.
 *   **Database & Cache:** Supabase PostgreSQL sebagai *primary DB*, dan **Redis Cache** untuk mempercepat kueri *Master Data* berskala masif.
 *   **ORM:** Prisma ORM (Wajib menerapkan aturan `Soft Delete` dengan kolom `deleted_at` untuk semua model guna mencegah hilangnya riwayat data).
 *   **Authentication & Authorization:** Better Auth + JWT Token (Role-Based Access Control / RBAC ketat).
@@ -210,6 +211,23 @@ erDiagram
         string location_in_latlng
         string location_out_latlng
         string image_proof_url
+        float face_similarity_score "Calculated cosine distance/score"
+        boolean is_face_verified "True jika verifikasi wajah lolos"
+        boolean is_spoof_detected "True jika terdeteksi serangan foto/layar palsu"
+        string verification_method "face_deepface, manual_pin, gps_only"
+    }
+    FACE_BIOMETRIC_PROFILE {
+        uuid id PK
+        uuid employee_id FK
+        vector embedding "512-dimensional vector embedding (pgvector)"
+        string model_name "Facenet512, ArcFace, VGG-Face, GhostFaceNet"
+        string detector_backend "retinaface, mediapipe, opencv"
+        string distance_metric "cosine, euclidean_l2"
+        float confidence_threshold "Configurable similarity threshold"
+        boolean anti_spoofing_enabled "Silent-Face-Anti-Spoofing status"
+        string reference_image_url "Supabase secure-documents bucket"
+        boolean is_active
+        datetime registered_at
     }
     LEAVE_TYPE {
         uuid id PK
@@ -574,6 +592,7 @@ erDiagram
     EMPLOYEE ||--o{ EMPLOYEE_CONTRACT : "holds"
     
     EMPLOYEE ||--o{ ATTENDANCE : "records"
+    EMPLOYEE ||--o{ FACE_BIOMETRIC_PROFILE : "enrolls"
     EMPLOYEE ||--o{ LEAVE_REQUEST : "requests"
     LEAVE_TYPE ||--o{ LEAVE_REQUEST : "categorizes"
     
@@ -657,7 +676,8 @@ erDiagram
 
 ### 3.3 Time & Attendance (Wajib)
 **Target Pengguna:** Seluruh Karyawan
-*   **Digital Clock-In/Out:** Absensi real-time berbasis Web/Mobile PWA dengan deteksi koordinat GPS dan unggah foto (Anti-Spoofing).
+*   **Biometric Face Recognition Attendance (DeepFace Engine):** Presensi pintar nirsentuh berbasis pindaian wajah real-time. Memanfaatkan pipeline 5 tahap DeepFace (*Detect, Align, Normalize, Represent, Verify*) dengan model mutakhir (Facenet512, ArcFace, RetinaFace) dan modul *Anti-Spoofing* (Silent-Face-Anti-Spoofing) untuk mencegah pemalsuan foto cetak atau video layar ponsel. Vektor wajah dicocokkan via *Cosine Similarity* berkecepatan tinggi (< 1.5 detik) menggunakan *pgvector* di PostgreSQL.
+*   **Digital Clock-In/Out & Geofencing GPS:** Absensi real-time berbasis Web/Mobile PWA dengan validasi koordinat GPS radius kantor dan pencocokan biometrik wajah.
 *   **Shift & Schedule Sync:** Absensi secara *real-time* tersinkronisasi dengan jadwal master (*Shift Master*). Sistem mendeteksi otomatis jika jam *clock-in* melebihi batas waktu shift + toleransi (Late) atau jam *clock-out* di bawah jam pulang shift (Early Leave).
 *   **Shift Management:** Penjadwalan jam kerja fleksibel / shift dinamis yang ditarik dari *SHIFT_MASTER*.
 *   **Leave Management:** Pengajuan cuti digital (tahunan, sakit, izin) dengan alur approval bertingkat (Atasan langsung -> HR) via Notifikasi.
@@ -981,8 +1001,10 @@ Seksi ini mendefinisikan secara pasti seluruh elemen tombol, aksi pengguna, atur
 
 | Elemen Tombol / Action | Target Modul / Modal | Target RBAC | Frontend Guard Clause Logic | Backend API & State Transition | UX Feedback & Audit Log |
 |---|---|---|---|---|---|
-| **`Clock-In` (Absen Masuk)** | `/attendance` (Employee) | All Employees | Guard: Wajib mengambil foto selfie & lokasi GPS terdeteksi dalam geofence kantor. Menolak jika sudah clock-in hari ini. | `POST /api/attendance/clock-in` <br/> State: Jika jam &le; 08:00 &rarr; `HADIR`, jika > 08:00 &rarr; `TERLAMBAT` | Toast + Sound Beep Success, Tampilan status berubah hijau, Audit Log `CLOCK_IN`. |
-| **`Clock-Out` (Absen Keluar)** | `/attendance` (Employee) | All Employees | Guard: Menolak jika belum Clock-In atau sudah Clock-Out hari ini. | `POST /api/attendance/clock-out` <br/> State: Updating timestamp `clock_out` | Toast Success: "Terima kasih atas kerja keras hari ini!". |
+| **`Clock-In Wajah (Face Recognition)`** | Modal `/attendance` (Employee) | All Employees | Guard: Wajib streaming video webcam, wajah terdeteksi dalam reticle oval, GPS dalam geofence kantor, dan anti-spoofing lolos. Menolak jika sudah clock-in hari ini. | `POST /api/v1/biometrics/verify` + `POST /api/attendance/clock-in` <br/> State: Jika jam &le; toleransi shift &rarr; `HADIR`, jika lewat &rarr; `TERLAMBAT` | Modal 3D Book-Open, Oval Reticle berubah Hijau, Toast Top-Right: *"✓ Wajah Terverifikasi: Clock-In Berhasil!"*, Sound Beep Success, Audit Log `CLOCK_IN_FACE`. |
+| **`Clock-Out Wajah (Face Recognition)`** | Modal `/attendance` (Employee) | All Employees | Guard: Menolak jika belum Clock-In atau sudah Clock-Out. Verifikasi wajah real-time via DeepFace pipeline. | `POST /api/v1/biometrics/verify` + `POST /api/attendance/clock-out` <br/> State: Updating `clock_out` & `early_leave_minutes` | Toast Top-Right: *"✓ Clock-Out Berhasil. Selamat Beristirahat!"*, Audit Log `CLOCK_OUT_FACE`. |
+| **`Daftarkan Wajah Baru (Enrollment)`** | `/profile` & `/employee/edit/[id]` | Admin, HR, Employee | Guard: Menolak jika frame buram (*blur check failed*) atau wajah tertutup masker/aksesoris gelap. Wajib ekstrak vektor 512-d. | `POST /api/v1/biometrics/register` <br/> State: Menyimpan embedding `pgvector` & link foto di Supabase | Modal 3D, Toast Top-Right: *"✓ Profil Wajah Biometrik Berhasil Didaftarkan"*, Audit Log `REGISTER_FACE_PROFILE`. |
+| **`Peringatan Anti-Spoof (Alert)`** | Modal Scanner | All Employees | Guard: Jika `anti_spoofing` bernilai `False` (terdeteksi layar HP/foto kertas), tolak clock-in seketika (*early return*). | `POST /api/v1/biometrics/anti-spoofing` <br/> State: Flag `is_spoof_detected = true` | Oval Reticle berkedip Merah, Toast Error Top-Right: *"⚠️ Deteksi Wajah Palsu! Gunakan kamera langsung."*, Audit Log `SPOOF_ATTACK_BLOCKED`. |
 | **`Export Rekap CSV`** | `/attendance` (Admin) | HR, Manager | Guard: Wajib memilih rentang tanggal awal dan akhir. | `GET /api/attendance/export?start_date=X&end_date=Y` | Trigger download file CSV/Excel `Recap_Absensi.csv`. |
 
 ---
@@ -1103,5 +1125,285 @@ Sistem HRISCorp.dev secara penuh mendukung deployment produksi pada cloud platfo
    - `GET /api/payroll/components` & `POST /api/payroll/components`: Konfigurasi komponen tunjangan dan potongan gaji.
    - `GET /api/dashboard/stats`: Agregasi metrik analitik dashboard langsung dari tabel database PostgreSQL.
    - `GET /api/infrastructure/redis`: Pemantauan metrik kuota perintah, bandwidth, dan storage Upstash Redis secara live.
+
+---
+
+## 9. Perancangan Sistem Biometrik Face Recognition untuk Presensi (DeepFace Framework)
+
+Seksi ini merinci cetak biru (*blueprint*) arsitektur pengenalan wajah (*Face Recognition*) untuk sistem presensi (*Time & Attendance*) HRIS Enterprise (HRISCorp.dev) menggunakan framework mutakhir **DeepFace**. Seluruh perancangan di bawah ini disusun secara terpadu melalui empat pilar disiplin: **Product Management (/pm)**, **Backend Engineering (/backend)**, **Frontend Engineering (/frontend)**, dan **Quality Assurance (/qa)**.
+
+---
+
+### 9.1 Perancangan Product Management (/pm)
+
+#### 9.1.1 Latar Belakang & Nilai Bisnis (Business Value)
+*   **Pemberantasan Buddy Punching:** Praktik titip absen atau penggunaan foto selfie statis (foto cetak maupun rekaman video di ponsel lain) berhasil dieliminasi 100% menggunakan pindaian biometrik berteknologi *Anti-Spoofing* dan deteksi *Liveness*.
+*   **Akurasi Superior:** DeepFace mengintegrasikan model-model *State-of-the-Art* (SOTA) seperti Facenet512, ArcFace, dan VGG-Face dengan tingkat akurasi benchmark melampaui **97.53%** (melebihi kapabilitas visual manusia).
+*   **Target Metrik Keberhasilan Biometrik (KPIs):**
+    *   **False Acceptance Rate (FAR):** < `0.001%` (Maksimal 1 dari 100.000 percobaan).
+    *   **False Rejection Rate (FRR):** < `1.00%` pada kondisi pencahayaan normal.
+    *   **End-to-End Latency:** < `1.5 detik` per transaksi clock-in/out (mulai dari capture kamera hingga respon status terbit).
+    *   **Tingkat Adopsi Karyawan:** `98%` karyawan mandiri berhasil presensi tanpa kendala dalam 7 hari pertama peluncuran.
+
+#### 9.1.2 User Personas & User Journeys
+1.  **Karyawan (Mobile PWA & Kiosk):** Membuka menu Absensi &rarr; Mengarahkan wajah ke reticle kamera &rarr; Sistem mendeteksi liveness dan mencocokkan wajah secara instan &rarr; Status kehadiran terverifikasi hijau.
+2.  **HR & Personalia:** Melakukan pendaftaran biometrik (*Face Enrollment*) satu kali saat orientasi &rarr; Memantau riwayat audit log absensi & skor kemiripan (*similarity score*) &rarr; Menerima alert jika ada indikasi serangan foto palsu (*spoof attempt*).
+3.  **Administrator Sistem / IT:** Memantau metrik performa microservice DeepFace & pgvector &rarr; Mengonfigurasi ambang batas toleransi (*similarity threshold*) dan pemilihan model backbone di database.
+
+#### 9.1.3 User Stories & Kriteria Penerimaan (Acceptance Criteria)
+
+*   **Story 1: Pendaftaran Profil Wajah (Face Enrollment)**
+    *   *Sebagai* Karyawan atau HR Administrator,
+    *   *Saya ingin* mendaftarkan foto wajah resmi karyawan ke sistem secara terpandu,
+    *   *Agar* sistem memiliki basis vektor acuan biometrik resmi untuk validasi absensi harian.
+    *   **Acceptance Criteria (Given-When-Then):**
+        *   *Given* Karyawan belum memiliki profil biometrik aktif di `FACE_BIOMETRIC_PROFILE`.
+        *   *When* Karyawan membuka formulir enrollment dan mengambil foto selfie jernih menghadap kamera.
+        *   *Then* Sistem mendeteksi tepat 1 wajah menggunakan RetinaFace, mengekstrak 512-dimensional embedding via Facenet512, menyimpan referensi foto ke Supabase Storage `secure-documents`, dan mengaktifkan profil biometrik.
+
+*   **Story 2: Presensi Harian Masuk/Pulang (Clock-In / Clock-Out Verification)**
+    *   *Sebagai* Karyawan,
+    *   *Saya ingin* melakukan absensi masuk dan pulang cukup dengan menghadapkan wajah ke kamera ponsel,
+    *   *Agar* kehadiran saya tercatat cepat, akurat, dan nirsentuh tanpa repot input kode/kata sandi.
+    *   **Acceptance Criteria (Given-When-Then):**
+        *   *Given* Karyawan berada dalam radius geofence GPS kantor dan membuka modal absensi.
+        *   *When* Karyawan menekan tombol "Verifikasi Wajah & Clock-In".
+        *   *Then* Sistem mengecek liveness anti-spoofing (`is_real == true`), menghitung jarak kosinus terhadap embedding terdaftar (`distance <= 0.40`), dan mencatat entri `ATTENDANCE` dengan status `is_face_verified = true`.
+
+*   **Story 3: Penolakan Serangan Foto/Video Palsu (Spoofing Alert)**
+    *   *Sebagai* Manajemen HR,
+    *   *Saya ingin* sistem secara otomatis menolak percobaan absensi yang menggunakan foto cetak atau rekaman layar HP,
+    *   *Agar* tidak ada manipulasi absensi yang lolos.
+    *   **Acceptance Criteria (Given-When-Then):**
+        *   *Given* Seseorang mengarahkan foto cetak atau layar tablet ke kamera scanner.
+        *   *When* DeepFace mengeksekusi pipeline anti-spoofing.
+        *   *Then* Sistem mendeteksi `is_real == false`, menolak transaksi secara seketika (*early return*), menampilkan peringatan *"⚠️ Wajah Palsu Terdeteksi"*, dan mencatat audit log `SPOOF_ATTACK_BLOCKED`.
+
+#### 9.1.4 Kebijakan Zero Hardcoded Master Data pada Modul Biometrik
+Seluruh konfigurasi teknis algoritma AI **DILARANG KERAS DI-HARDCODE** di kode sumber. Seluruh variabel dikonfigurasi melalui tabel `MASTER_STATUS` atau tabel dinamis `BIOMETRIC_CONFIG`:
+*   Pilihan Model Backbone: `Facenet512`, `ArcFace`, `VGG-Face`, `GhostFaceNet`, `SFace`, `Buffalo_L`.
+*   Pilihan Detector Backend: `retinaface`, `mediapipe`, `opencv`, `yolov8`, `yunet`.
+*   Metrik Jarak Kemiripan: `cosine`, `euclidean`, `euclidean_l2`, `angular`.
+*   Threshold Toleransi Kemiripan (Misal default Cosine: `0.40` untuk Facenet512).
+*   Enforcement Anti-Spoofing: `true` / `false`.
+*   Admin HR dapat mengalihkan model atau mengkalibrasi nilai threshold langsung dari panel admin di runtime tanpa perlu rebuild/redeploy codebase.
+
+#### 9.1.5 Kepatuhan Privasi Data Biometrik (UU PDP No. 27/2022 & GDPR)
+*   **Enkripsi Vektor Non-Reversibel:** Database hanya menyimpan representasi matematika vektor 512 dimensi (*vector embedding*), bukan gambar mentah wajah karyawan. Vektor ini tidak dapat direkonstruksi balik menjadi citra visual wajah asli.
+*   **Penyimpanan Gambar Referensi Terenkripsi:** Foto referensi tersimpan di bucket khusus `secure-documents` dengan akses berbatas waktu (*Signed URL TTL 15 menit*).
+*   **Informed Consent:** Karyawan menandatangani persetujuan digital pemrosesan biometrik saat onboarding.
+
+---
+
+### 9.2 Perancangan Backend Engineering (/backend)
+
+#### 9.2.1 Arsitektur Microservice Python DeepFace (Docker & FastAPI)
+Komputasi berat machine learning (TensorFlow / Keras / PyTorch / OpenCV) dipisahkan menjadi microservice independen guna menjaga ketangguhan API Gateway Express.js:
+*   **Nama Layanan:** `hris-biometrics-service` (Port: `5005`)
+*   **Teknologi:** Python 3.11, FastAPI, DeepFace, Gunicorn + Uvicorn Workers, OpenCV, PyTorch / TensorFlow.
+*   **Pola Komunikasi:** Express Gateway (`/api/v1/biometrics/*`) melakukan panggilan REST internal berkecepatan tinggi ke Python Microservice dengan otentikasi internal HMAC/JWT token.
+
+```mermaid
+graph LR
+    Client[Client Browser / Mobile PWA] -->|HTTPS + JWT| ExpressGateway[Express.js API Gateway]
+    ExpressGateway -->|Internal REST| BiometricService[Python DeepFace Microservice :5005]
+    BiometricService -->|5-Stage Pipeline| DeepFaceEngine[DeepFace Core Engine]
+    DeepFaceEngine -->|Stage 1: Detect| Detector[RetinaFace / MediaPipe / YuNet]
+    DeepFaceEngine -->|Stage 2: Align| Aligner[Facial Landmarks Alignment]
+    DeepFaceEngine -->|Stage 3: Normalize| Normalizer[Pixel & Histogram Normalization]
+    DeepFaceEngine -->|Stage 4: Represent| Embedder[Facenet512 / ArcFace Vector Engine]
+    DeepFaceEngine -->|Stage 5: Anti-Spoof| AntiSpoofer[Silent-Face-Anti-Spoofing Module]
+    ExpressGateway -->|Similarity Query| SupabasePgVector[(Supabase PostgreSQL + pgvector)]
+    ExpressGateway -->|Upload Selfie| SupabaseStorage[Supabase Storage: attendance-proofs]
+```
+
+#### 9.2.2 Pipeline 5 Tahap DeepFace (5-Stage Modern Face Recognition Pipeline)
+Setiap transaksi verifikasi wajah mengeksekusi pipeline 5 tahap otomatis:
+1.  **Stage 1: Detect (Deteksi Wajah)**
+    *   Model Default: `RetinaFace` (Akurasi deteksi tertinggi, meningkatkan akurasi pengenalan hingga 42%) dengan opsi alternatif cepat `MediaPipe` atau `YuNet`.
+    *   Mengisolasi koordinat batas wajah (*bounding box*) dari frame video resolusi 1280x720.
+2.  **Stage 2: Align (Penjajaran Wajah)**
+    *   Mendeteksi 5 titik referensi fasial (kedua mata, ujung hidung, kedua sudut bibir).
+    *   Melakukan transformasi rotasi afin agar posisi wajah berada tegak lurus (meningkatkan akurasi hingga 6%).
+3.  **Stage 3: Normalize (Normalisasi Citra)**
+    *   Menyesuaikan resolusi citra crop sesuai input layer model (160x160 piksel untuk Facenet, 112x112 untuk ArcFace).
+    *   Normalisasi kontras dan rentang intensitas cahaya agar kebal terhadap bayangan ruangan.
+4.  **Stage 4: Represent (Ekstraksi Vektor Embeddings)**
+    *   Mengonversi fitur fisiologis wajah menjadi vektor multidimensi berukuran 512 elemen (`Facenet512`).
+    *   Fungsi internal: `DeepFace.represent(img_path, model_name="Facenet512", detector_backend="retinaface", align=True)`.
+5.  **Stage 5: Verify & Anti-Spoofing (Pencocokan & Liveness)**
+    *   **Analisis Anti-Spoofing:** Mengeksekusi `DeepFace.extract_faces(..., anti_spoofing=True)`. Menolak jika mendeteksi pola moiré layar digital atau pantulan kertas.
+    *   **Pencocokan Kemiripan:** Menghitung jarak kosinus (*Cosine Distance*) antara embedding selfie saat ini dengan embedding referensi:
+        $$\text{Cosine Distance} = 1 - \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \|\mathbf{v}\|_2}$$
+    *   Jika $\text{Cosine Distance} \le 0.40$, verifikasi berstatus **VALID**.
+
+#### 9.2.3 Integrasi Database Supabase PostgreSQL & pgvector
+Penyimpanan dan pencarian kemiripan vektor dilakukan langsung di tingkat database menggunakan ekstensi `pgvector`:
+```sql
+-- 1. Mengaktifkan ekstensi vektor
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 2. Tabel Profil Biometrik Wajah Karyawan
+CREATE TABLE face_biometric_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    embedding vector(512) NOT NULL,
+    model_name VARCHAR(50) NOT NULL DEFAULT 'Facenet512',
+    detector_backend VARCHAR(50) NOT NULL DEFAULT 'retinaface',
+    distance_metric VARCHAR(30) NOT NULL DEFAULT 'cosine',
+    confidence_threshold FLOAT NOT NULL DEFAULT 0.40,
+    anti_spoofing_enabled BOOLEAN NOT NULL DEFAULT true,
+    reference_image_url TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    registered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+-- 3. HNSW Index untuk Pencarian Kemiripan Vektor Skala Masif (< 15ms)
+CREATE INDEX idx_face_embedding_hnsw 
+ON face_biometric_profiles 
+USING hnsw (embedding vector_cosine_ops)
+WITH (m = 16, ef_construction = 64);
+```
+
+#### 9.2.4 Spesifikasi Endpoint REST API
+1.  **`POST /api/v1/biometrics/register` (Pendaftaran Wajah Baru)**
+    *   **Payload:** `{ employee_id: string, image_base64: string }`
+    *   **Guard Clauses:**
+        *   Early return `400 Bad Request` jika base64 kosong atau ukuran > 5MB.
+        *   Early return `422 Unprocessable` jika tidak ada wajah terdeteksi atau terdeteksi > 1 wajah.
+        *   Early return `403 Forbidden` jika anti-spoofing gagal (`is_real == false`).
+    *   **Result Pattern Response:**
+        ```json
+        {
+          "isSuccess": true,
+          "data": {
+            "profile_id": "8f3b2e1a-...",
+            "model_name": "Facenet512",
+            "registered_at": "2026-09-04T08:00:00Z"
+          },
+          "message": "Profil biometrik wajah berhasil didaftarkan"
+        }
+        ```
+
+2.  **`POST /api/v1/biometrics/verify-clockin` (Presensi Masuk Berbasis Wajah)**
+    *   **Payload:** `{ employee_id: string, selfie_base64: string, latitude: float, longitude: float }`
+    *   **Guard Clauses:**
+        *   Early return `400 Bad Request` jika koordinat GPS di luar radius geofence kantor.
+        *   Early return `403 Forbidden` jika anti-spoofing mendeteksi manipulasi foto/layar digital.
+        *   Early return `401 Unauthorized` jika cosine distance > threshold (wajah tidak cocok).
+    *   **State Transition:** Membuat entri `ATTENDANCE` dengan status `HADIR` atau `TERLAMBAT`, `is_face_verified = true`, `face_similarity_score = distance`.
+    *   **Result Pattern Response:**
+        ```json
+        {
+          "isSuccess": true,
+          "data": {
+            "attendance_id": "c4d5e6f7-...",
+            "distance": 0.18,
+            "similarity_score": 0.82,
+            "is_late": false,
+            "clock_in": "2026-09-04T07:55:12Z"
+          },
+          "message": "Presensi wajah berhasil diverifikasi"
+        }
+        ```
+
+#### 9.2.5 Pola Clean Architecture, Result Pattern, & Centralized Exception Handling
+*   **Controller:** `BiometricAttendanceController` menangani request HTTP, parsing payload, dan sanitasi DTO.
+*   **Service:** `BiometricVerificationService` mengkoordinasikan inferensi DeepFace, pengecekan geofencing GPS, dan aturan shift kerja.
+*   **Repository:** `BiometricProfileRepository` mengeksekusi kueri `pgvector` dan transaksi PostgreSQL via Prisma ORM.
+*   **Centralized Global Exception Handler:** Menangkap seluruh domain exception (`FaceNotFoundException`, `SpoofDetectedException`, `GeofenceViolationException`) dan merespon dalam envelope standar `{ isSuccess: false, error: { code, message } }` tanpa membocorkan internal stack trace server.
+
+---
+
+### 9.3 Perancangan Frontend Engineering (/frontend)
+
+#### 9.3.1 Komponen Face Scanner UX & WebCam Stream
+*   **Komponen Inti:** `EmployeeFaceAuthModal.tsx` dan `BiometricAttendanceScanner.tsx` di `apps/employee-portal`.
+*   **Integrasi Hardware PWA:** Mengakses kamera depan pengguna via WebRTC MediaDevices API:
+    ```typescript
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user",
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 }
+      }
+    });
+    ```
+*   **Flicker-Free Stream Management:** Memasang video feed ke elemen `<video>` melalui React `useCallback` ref (`attachVideoRef`) untuk menjamin preview kamera selalu tampil instan tanpa jeda blank/hitam.
+
+#### 9.3.2 Reticle Panduan Interaktif & Indikator Liveness
+Layar scanner dilengkapi overlay grafis interaktif (*SVG Reticle Overlay*) untuk memandu posisi wajah karyawan:
+*   **Oval Guide Frame:** Garis kontur oval proporsional di tengah layar dengan indikator visual dinamis:
+    *   🟡 **Kuning (Scanning):** *"Posisikan wajah Anda tepat di dalam bingkai oval"*.
+    *   🔵 **Biru Berdenyut (Liveness Check):** *"Wajah terdeteksi. Silakan berkedip atau tersenyum alami"*.
+    *   🟢 **Hijau (Verified):** *"Wajah asli terverifikasi! Memproses pencatatan kehadiran..."*.
+    *   🔴 **Merah (Rejected / Spoof):** *"Wajah tidak cocok atau pencahayaan kurang. Silakan coba kembali"*.
+
+#### 9.3.3 Client-Side Pre-Validation & Guard Clauses
+Untuk menghemat kuota internet dan meringankan beban inferensi server:
+1.  **Analisis Iluminasi (Brightness Check):** Menghitung histogram kecerahan di canvas lokal. Jika < 40 lux atau > 220 lux, tampilkan notifikasi *"Pencahayaan ruangan kurang/terlalu silau"*.
+2.  **Deteksi Gambar Goyang / Buram (Blur Detection):** Mengecek variansi operator Laplacian di canvas. Jika nilai blur melebihi ambang toleransi, sistem menahan tombol capture dan meminta pengguna tidak bergerak.
+3.  **Face Centering Guard:** Memastikan posisi wajah berada di area tengah (*center 70% viewport*) agar tidak ada bagian wajah yang terpotong.
+
+#### 9.3.4 Standar UI/UX Pro Max, Animasi 3D, & Notifikasi
+*   **Larangan Dialog Bawaan Browser:** Dilarang menggunakan `alert()` / `confirm()`.
+*   **Animasi Transisi 3D Book:** Modal scanner wajah muncul dengan efek **3D Book-Open** (`bookOpenIn 450ms`) dan tertutup dengan efek **3D Book-Close** (`bookCloseOut 350ms`).
+*   **Top-Right Floating Toast:** Umpan balik verifikasi menggunakan kartu toast mengambang di pojok kanan atas dengan **Animated Countdown Progress Bar Strip** (`toastProgressStrip 4000ms`).
+*   **State Management (Zustand):** Menggunakan store `useFaceAttendanceStore` untuk memantau status transisi:
+    `status: 'IDLE' | 'CAMERA_STARTING' | 'FACE_DETECTED' | 'VERIFYING' | 'SUCCESS' | 'ERROR'`.
+*   **Graceful Fallback UI:** Jika izin kamera diblokir pengguna, tampilkan infografis ramah cara mengizinkan kamera di browser dan opsi *"Minta Verifikasi Manual ke HRD"*.
+
+---
+
+### 9.4 Perancangan Quality Assurance (/qa)
+
+#### 9.4.1 Test Pyramid Biometrik DeepFace
+1.  **Unit Testing (Vitest & PyTest):**
+    *   Validasi kalkulasi Cosine Distance, Euclidean L2, dan fungsi normalisasi matriks vektor.
+    *   Validasi DTO request payload (menolak file corrupt, ekstensi bukan gambar, atau base64 kosong).
+2.  **Integration Testing (FastAPI & Supertest Express):**
+    *   Pengujian endpoint `/api/v1/biometrics/register` dan `/verify-clockin` dengan mock dataset embedding.
+    *   Pengujian performa kueri pgvector (`<->` cosine distance operator) dengan 10.000 vektor sintetis.
+    *   Pengujian rotasi token sesi biometrik berbatas waktu 15 menit.
+3.  **End-to-End Automation Testing (Playwright):**
+    *   Simulasi pengujian otomatis menggunakan Playwright dengan virtual webcam mock:
+        ```typescript
+        const browser = await chromium.launch({
+          args: [
+            '--use-fake-device-for-media-stream',
+            '--use-fake-ui-for-media-stream',
+            '--use-file-for-fake-video-capture=tests/fixtures/sample_face.y4m'
+          ]
+        });
+        ```
+    *   Memvalidasi seluruh alur: Halaman `/attendance` &rarr; Buka Modal &rarr; Pindai Wajah &rarr; Verifikasi Berhasil &rarr; Badge status berubah Hadir.
+
+#### 9.4.2 Matriks Pengujian Serangan Keamanan (Anti-Spoofing & Security Audit)
+QA wajib melaksanakan audit biometrik terhadap skenario serangan manipulasi kehadiran:
+
+| Skenario Serangan (*Attack Vector*) | Prosedur Pengujian | Hasil yang Diharapkan (*Expected Result*) | Severity |
+|---|---|---|---|
+| **Printed Photo Attack** | Menempelkan cetakan foto wajah karyawan di kertas HVS / glossy di depan kamera. | Anti-spoofing mendeteksi tekstur kertas, `is_real: false`, Clock-in ditolak seketika. | 🔴 CRITICAL |
+| **Digital Screen Replay** | Menampilkan video rekaman wajah karyawan dari layar smartphone/tablet OLED 4K. | DeepFace mendeteksi refleksi cahaya layar dan frekuensi refresh rate (*moiré effect*), Clock-in ditolak. | 🔴 CRITICAL |
+| **3D Mask / Eye Cutout** | Menggunakan topeng cetak 3D dengan lubang mata agar pengguna dapat berkedip. | Analisis kedalaman kontur fasial mendeteksi anomali tepi mata/hidung, verifikasi ditolak. | 🔴 CRITICAL |
+| **Twin / Look-Alike Test** | Menguji kemiripan antara dua individu yang bersaudara kembar identik. | Ambang batas threshold Facenet512 (0.40) membedakan perbedaan mikro geometri biometrik. | 🟠 HIGH |
+| **Occlusion Test (Mask/Cap)** | Mengenakan masker medis atau topi/kacamata hitam tebal yang menutupi landmark. | Tahap alignment mendeteksi landmark tidak lengkap, sistem memunculkan instruksi visual untuk melepas aksesoris. | 🟡 MEDIUM |
+
+#### 9.4.3 Performance & Load Testing (k6 / JMeter)
+*   **Skenario Uji Beban:** 1.000 karyawan melakukan clock-in biometrik secara bersamaan dalam jendela waktu sibuk 15 menit (pukul 07:45 - 08:00 WIB).
+*   **Service Level Agreement (SLA):**
+    *   *Average Latency:* < `1.2 detik` (termasuk inferensi DeepFace dan pencarian `pgvector`).
+    *   *Peak Latency (p99):* < `2.5 detik`.
+    *   *Error Rate:* `0%` (tanpa ada request yang timeout atau crash).
+    *   *Throughput:* Minimal 100 requests per detik (RPS) dengan konfigurasi autoscaling pod microservice.
+    *   *Zero Memory Leak:* Verifikasi bahwa proses worker Python/TensorFlow secara konsisten me-release alokasi memory GPU/RAM setelah inferensi selesai.
+
+#### 9.4.4 Zero Hardcode Compliance Audit
+QA menguji kemampuan runtime dynamic configuration:
+*   Mengubah model backbone dari `Facenet512` ke `ArcFace` dan mengubah threshold dari `0.40` ke `0.35` pada tabel konfigurasi admin.
+*   Memverifikasi bahwa transaksi clock-in berikutnya langsung menggunakan konfigurasi model baru secara instan tanpa perlu restart server atau redeploy kode.
+
 
 
