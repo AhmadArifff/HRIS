@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { redis } from "../config/redis";
-import { Result, sendResult } from "../utils/result";
+import { Result, sendResult } from "../utils/Result";
 
 // Helper: format bytes to human readable
 function formatBytes(bytes: number): string {

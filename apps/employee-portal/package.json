@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 3001",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -14,8 +14,8 @@
     "@vladmandic/face-api": "^1.7.15",
     "lucide-react": "^1.33.0",
     "next": "15.5.23",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

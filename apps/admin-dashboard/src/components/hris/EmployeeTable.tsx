@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Badge from "../ui/badge/Badge";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
+import { API_BASE_URL } from "@/lib/api";
 
 const EmployeeAvatar: React.FC<{ src?: string; name: string; size?: "sm" | "md" | "lg" }> = ({ src, name, size = "md" }) => {
   const [imgError, setImgError] = useState(false);
@@ -73,7 +74,7 @@ export const EmployeeTable: React.FC = () => {
     const fetchEmployees = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:3002/api/employees");
+        const res = await fetch(`${API_BASE_URL}/api/employees`);
         const result = await res.json();
         if (result.success && result.data && Array.isArray(result.data.data)) {
           const formatted = result.data.data.map((emp: any) => ({

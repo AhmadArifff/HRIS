@@ -7,4 +7,5 @@ build
 .env.*
 !.env.example
 .vercel
+.turbo
 *.log

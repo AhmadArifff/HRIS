@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HrisMetrics } from "@/components/hris/HrisMetrics";
+import { DashboardSummaryCards } from "@/components/hris/DashboardSummaryCards";
 import React from "react";
 
 export const metadata: Metadata = {
@@ -15,40 +16,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Ringkasan Cepat */}
-      <div className="col-span-12 lg:col-span-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Kehadiran Hari Ini</h4>
-          <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold text-gray-800 dark:text-white/90">42</span>
-            <span className="text-sm text-gray-500 mb-1">/ 45 karyawan</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mt-3 dark:bg-gray-700">
-            <div className="bg-success-500 h-2 rounded-full" style={{ width: "93%" }}></div>
-          </div>
-        </div>
-      </div>
-
-      <div className="col-span-12 lg:col-span-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Pengajuan Cuti Pending</h4>
-          <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold text-orange-500">5</span>
-            <span className="text-sm text-gray-500 mb-1">perlu diproses</span>
-          </div>
-          <p className="text-xs text-gray-400 mt-3">3 Cuti Tahunan · 2 Cuti Sakit</p>
-        </div>
-      </div>
-
-      <div className="col-span-12 lg:col-span-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Lowongan Aktif</h4>
-          <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold text-brand-500">3</span>
-            <span className="text-sm text-gray-500 mb-1">posisi terbuka</span>
-          </div>
-          <p className="text-xs text-gray-400 mt-3">156 total pelamar masuk</p>
-        </div>
-      </div>
+      <DashboardSummaryCards />
 
       {/* Aktivitas Terbaru */}
       <div className="col-span-12">

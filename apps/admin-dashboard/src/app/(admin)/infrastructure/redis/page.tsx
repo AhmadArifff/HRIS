@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import { API_BASE_URL } from "@/lib/api";
 
 interface UpstashQuota {
   commands: {
@@ -81,7 +82,7 @@ export default function RedisMonitorPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3002/api/infrastructure/redis");
+      const res = await fetch(`${API_BASE_URL}/api/infrastructure/redis`);
       const result = await res.json();
       
       if (result.success && result.data) {

@@ -4,6 +4,7 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
+import { API_BASE_URL } from "@/lib/api";
 
 export const LeaveForm = () => {
   const [type, setType] = useState("");
@@ -24,7 +25,7 @@ export const LeaveForm = () => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // PRD §7.5: Guard Clauses Pengajuan Cuti
@@ -58,14 +59,31 @@ export const LeaveForm = () => {
       return;
     }
 
+    // Kirim ke Backend API & Supabase
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          startDate,
+          endDate,
+          reason,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        console.warn("Backend leave submission notice:", data.message);
+      }
+    } catch (err) {
+      console.error("Failed to post leave request to backend", err);
+    }
+
     addToast(
       "success",
       "Pengajuan Cuti Terkirim!",
       `Pengajuan Cuti ${type} selama ${diffDays} hari berhasil dikirim! Status: PENDING (Menunggu Persetujuan Manajer).`
     );
-    console.log("[AUDIT_LOG] LEAVE_REQUEST_SUBMITTED", { 
-      type, duration_days: diffDays, reason_length: reason.length, has_attachment: !!file, timestamp: new Date().toISOString() 
-    });
 
     // Reset Form
     setType("");

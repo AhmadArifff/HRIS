@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Badge from "../ui/badge/Badge";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
+import { API_BASE_URL } from "@/lib/api";
 
 interface PayrollComponent {
   id: string;
@@ -20,9 +21,29 @@ const initialData: PayrollComponent[] = [
 
 export const PayrollComponentsTable = () => {
   const [data, setData] = useState<PayrollComponent[]>(initialData);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Fetch from database
+  useEffect(() => {
+    const fetchComponents = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/payroll/components`);
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          setData(result.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch payroll components", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchComponents();
+  }, []);
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -47,12 +68,27 @@ export const PayrollComponentsTable = () => {
   const [newTaxable, setNewTaxable] = useState(true);
 
   // Handle Add Component Submit
-  const handleAddComponentSubmit = (e: React.FormEvent) => {
+  const handleAddComponentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newAmount.trim()) {
       addToast("error", "Validasi Gagal", "Guard Clause: Nama dan Besaran Komponen Wajib Diisi.");
       return;
     }
+
+    try {
+      await fetch(`${API_BASE_URL}/api/payroll/components`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          type: newType,
+          isTaxable: newTaxable,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist payroll component", err);
+    }
+
     const newId = `COMP-0${data.length + 1}`;
     const newItem: PayrollComponent = {
       id: newId,
@@ -88,6 +124,11 @@ export const PayrollComponentsTable = () => {
       "Perubahan Komponen Disimpan!",
       `Komponen gaji "${itemName}" berhasil diperbarui.`
     );
+  };
+
+  const handleDeleteComponent = (id: string, name: string) => {
+    setData((prev) => prev.filter((item) => item.id !== id));
+    addToast("info", "Komponen Dihapus", `Komponen "${name}" telah dihapus.`);
   };
 
   const filteredData = data.filter(

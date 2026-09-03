@@ -1,10 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
+import { API_BASE_URL } from "@/lib/api";
 
 interface Candidate {
-  id: number;
+  id: number | string;
   name: string;
   role: string;
   status: "applied" | "screening" | "interview" | "offered" | "hired";
@@ -46,8 +47,24 @@ export const KanbanATS: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [targetColumn, setTargetColumn] = useState<Candidate["status"]>("applied");
 
+  // Fetch live applicants from database
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/applicants`);
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          setCandidates(result.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch live applicants", err);
+      }
+    };
+    fetchCandidates();
+  }, []);
+
   // Drag and Drop States
-  const [draggedCandidateId, setDraggedCandidateId] = useState<number | null>(null);
+  const [draggedCandidateId, setDraggedCandidateId] = useState<number | string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<Candidate["status"] | null>(null);
 
   // Form State
@@ -70,8 +87,8 @@ export const KanbanATS: React.FC = () => {
   };
 
   // Move candidate handler
-  const handleMoveCandidate = (candidateId: number, targetStatus: Candidate["status"]) => {
-    const candidate = candidates.find((c) => c.id === candidateId);
+  const handleMoveCandidate = async (candidateId: number | string, targetStatus: Candidate["status"]) => {
+    const candidate = candidates.find((c) => String(c.id) === String(candidateId));
     if (!candidate) return;
 
     if (candidate.status === targetStatus) return; // Same stage, do nothing
@@ -81,8 +98,19 @@ export const KanbanATS: React.FC = () => {
     const targetTitle = targetColDef?.title || targetStatus;
 
     setCandidates((prev) =>
-      prev.map((c) => (c.id === candidateId ? { ...c, status: targetStatus } : c))
+      prev.map((c) => (String(c.id) === String(candidateId) ? { ...c, status: targetStatus } : c))
     );
+
+    // Call API to sync stage in Supabase
+    try {
+      await fetch(`${API_BASE_URL}/api/applicants/${candidateId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: targetStatus }),
+      });
+    } catch (err) {
+      console.error("Failed to sync candidate stage with backend", err);
+    }
 
     addToast(
       "success",
@@ -122,8 +150,7 @@ export const KanbanATS: React.FC = () => {
     e.preventDefault();
     const candidateIdStr = e.dataTransfer.getData("candidateId");
     if (candidateIdStr) {
-      const candidateId = Number(candidateIdStr);
-      handleMoveCandidate(candidateId, columnId);
+      handleMoveCandidate(candidateIdStr, columnId);
     }
     setDraggedCandidateId(null);
     setDragOverColumnId(null);
@@ -139,7 +166,7 @@ export const KanbanATS: React.FC = () => {
     setShowAddModal(true);
   };
 
-  const handleAddCandidate = (e: React.FormEvent) => {
+  const handleAddCandidate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) {
       addToast("error", "Validasi Gagal", "Guard Clause: Nama lengkap kandidat wajib diisi.");
@@ -152,6 +179,21 @@ export const KanbanATS: React.FC = () => {
     if (!newEmail.trim() || !newEmail.includes("@")) {
       addToast("error", "Validasi Gagal", "Guard Clause: Email wajib berformat valid.");
       return;
+    }
+
+    try {
+      await fetch(`${API_BASE_URL}/api/applicants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          email: newEmail,
+          phone: newPhone || "+62 812-0000-0000",
+          resumeUrl: "https://example.com/resumes/default.pdf",
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to save candidate to backend", err);
     }
 
     const newCandidate: Candidate = {
