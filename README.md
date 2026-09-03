@@ -29,10 +29,10 @@ Aplikasi ini dibangun di atas arsitektur **Monorepo (Turborepo)** berkinerja tin
 - **Employee Onboarding & Contract Management:** Pelacakan masa berlaku kontrak (PKWT/PKWTT) dan pengingat otomatis sebelum masa kontrak berakhir.
 - **Offboarding & Asset Clearance:** Workflow penyerahan kembali aset perusahaan dan verifikasi tanda tangan digital saat *resignation*.
 
-### ⏱️ 2. Presensi Geofencing GPS & Shift Roster
-- **GPS Geofencing & Selfie Verification:** Validasi lokasi absensi karyawan dalam radius kantor yang ditentukan disertai bukti foto selfie.
-- **Multi-Shift Roster & Shift Exchange:** Pengaturan jadwal kerja fleksibel (Shift Pagi, Siang, Malam) serta fitur pengajuan tukar shift antar karyawan.
-- **Overtime & Leave Management:** Pengajuan dan persetujuan lembur & cuti bertingkat (Manager -> HRD).
+### ⏱️ 2. Presensi Biometrik Wajah (DeepFace) & Geofencing GPS
+- **Biometric Face Recognition (DeepFace Engine):** Presensi nirsentuh cerdas berbasis pindaian wajah real-time dengan akurasi > 97.53%. Memanfaatkan model SOTA (Facenet512, ArcFace, RetinaFace) dan modul *Anti-Spoofing* (Silent-Face-Anti-Spoofing) untuk mencegah pemalsuan foto cetak atau rekaman layar video ponsel.
+- **GPS Geofencing & Multi-Shift Sync:** Validasi koordinat GPS dalam radius kantor serta deteksi otomatis status *Hadir* atau *Terlambat* berdasarkan jadwal shift karyawan.
+- **Overtime & Leave Management:** Pengajuan dan persetujuan lembur & cuti bertingkat (Manager -> HRD) via notifikasi otomatis.
 
 ### 💰 3. Automated Payroll & Financial Reimbursement
 - **Engine Kalkulasi Gaji Otomatis:** Perhitungan komponen gaji pokok, tunjangan, insentif, serta pemotongan otomatis (*Auto-Deduction*) akibat keterlambatan presensi.
@@ -61,7 +61,9 @@ Aplikasi ini dibangun di atas arsitektur **Monorepo (Turborepo)** berkinerja tin
 
 ### Backend & Infrastructure (Planned Integration)
 - **API Server:** Node.js Express (TypeScript) dengan Clean Architecture
-- **Database & Cache:** Supabase PostgreSQL, Prisma ORM (Wajib *Soft Delete* `deleted_at`), Redis Cache
+- **Biometric AI Microservice:** Python DeepFace Framework (FastAPI, Facenet512, ArcFace, RetinaFace, Silent-Face-Anti-Spoofing)
+- **Database & Vector Search:** Supabase PostgreSQL dengan ekstensi `pgvector` untuk pencarian vektor kemiripan kosinus 512 dimensi
+- **ORM & Cache:** Prisma ORM (Wajib *Soft Delete* `deleted_at`), Redis Cache
 - **Auth & Security:** Better Auth + JWT Token (Role-Based Access Control / RBAC)
 - **Storage Strategy:** Supabase Storage Buckets (`public-assets`, `secure-documents`, `attendance-proofs`, `finance-attachments`)
 - **Knowledge Graph:** Graphify (Automatic AST & Semantic Knowledge Graph Analysis)
