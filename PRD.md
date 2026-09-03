@@ -1080,3 +1080,28 @@ Sistem HRISCorp.dev mendukung pengalaman aplikasi *Native-Like* lintas perangkat
 | **Push Notifications** | Web Push API + Service Worker Notifications | Notifikasi instan persetujuan cuti, pengingat jam shift, dan slip gaji langsung ke HP karyawan. |
 | **Hardware Biometrics** | MediaDevices Camera API + Geolocation API | Absen foto wajah dan validasi Geofencing GPS langsung dari browser/PWA native. |
 
+---
+
+### 8.5 Spesifikasi Arsitektur Deployment Vercel Monorepo & Integrasi Database Supabase
+
+Sistem HRISCorp.dev secara penuh mendukung deployment produksi pada cloud platform **100% Vercel Monorepo** yang terintegrasi langsung dengan database **Supabase Cloud PostgreSQL** dan **Upstash Redis**:
+
+1. **Struktur 3 Project Deployment Vercel**:
+   - **Project 1 (`apps/backend-api`)**: Express Serverless API dengan Prisma ORM Client & Upstash Redis. Dikonfigurasi dengan `vercel.json` dan entrypoint `api/index.ts`.
+   - **Project 2 (`apps/admin-dashboard`)**: Next.js 16 App Router Enterprise Admin Portal dengan Supabase Storage untuk berkas foto profil dan resume.
+   - **Project 3 (`apps/employee-portal`)**: Next.js 15 PWA Employee Self-Service dengan autentikasi AI Biometrik pindaian wajah 3D.
+2. **Koneksi Database Supabase Cloud**:
+   - `DATABASE_URL`: Transaction Pooler (Port 6543) dengan parameter `?pgbouncer=true` untuk menjamin stabilitas koneksi fungsi serverless Next.js dan Express.
+   - `DIRECT_URL`: Direct Connection (Port 5432) untuk eksekusi skema migrasi dan push Prisma.
+   - `NEXT_PUBLIC_SUPABASE_URL` & `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Digunakan untuk client-side uploads langsung ke Supabase Storage (Bucket: `employee-avatars` dan `applicant-resumes`).
+3. **Endpoint REST API Terintegrasi Database**:
+   - `GET /api/employees` & `POST /api/employees`: Manajemen data karyawan real-time dengan avatar Supabase Storage.
+   - `GET /api/departments` & `GET /api/positions`: Master Data organisasi dinamis (CRUD penuh).
+   - `GET /api/attendance` & `POST /api/attendance/clock-in`: Rekap presensi dan absen biometrik wajah.
+   - `GET /api/leave`, `POST /api/leave`, `PUT /api/leave/:id/status`: Alur lengkap pengajuan dan persetujuan cuti.
+   - `GET /api/applicants`, `POST /api/applicants`, `PUT /api/applicants/:id/status`: Alur rekrutmen ATS Kanban interaktif.
+   - `GET /api/payroll/components` & `POST /api/payroll/components`: Konfigurasi komponen tunjangan dan potongan gaji.
+   - `GET /api/dashboard/stats`: Agregasi metrik analitik dashboard langsung dari tabel database PostgreSQL.
+   - `GET /api/infrastructure/redis`: Pemantauan metrik kuota perintah, bandwidth, dan storage Upstash Redis secara live.
+
+

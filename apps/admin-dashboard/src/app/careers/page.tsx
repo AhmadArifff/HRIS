@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function CareersPage() {
   const [formData, setFormData] = useState({
@@ -67,7 +68,7 @@ export default function CareersPage() {
 
       const resumeUrl = publicUrlData.publicUrl;
 
-      const res = await fetch("http://localhost:3002/api/applicants", {
+      const res = await fetch(`${API_BASE_URL}/api/applicants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

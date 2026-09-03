@@ -7,6 +7,7 @@ import DropzoneComponent from "@/components/form/form-elements/DropZone";
 import Select from "@/components/form/Select"; // Assuming there is a generic select, if not I will use normal select
 
 import { supabase } from "@/lib/supabase";
+import { API_BASE_URL } from "@/lib/api";
 
 export const EmployeeForm = () => {
   const [formData, setFormData] = useState({
@@ -32,11 +33,11 @@ export const EmployeeForm = () => {
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const depRes = await fetch("http://localhost:3002/api/departments");
+        const depRes = await fetch(`${API_BASE_URL}/api/departments`);
         const depJson = await depRes.json();
         if (depJson.success) setDepartments(depJson.data);
 
-        const posRes = await fetch("http://localhost:3002/api/positions");
+        const posRes = await fetch(`${API_BASE_URL}/api/positions`);
         const posJson = await posRes.json();
         if (posJson.success) setPositions(posJson.data);
       } catch (err) {
@@ -83,7 +84,7 @@ export const EmployeeForm = () => {
       }
 
       // 2. Submit to API
-      const res = await fetch("http://localhost:3002/api/employees", {
+      const res = await fetch(`${API_BASE_URL}/api/employees`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

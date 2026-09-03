@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "@hris/database";
-import { Result, sendResult } from "../utils/result";
+import { Result, sendResult } from "../utils/Result";
 
 export const getDepartments = async (req: Request, res: Response) => {
   try {

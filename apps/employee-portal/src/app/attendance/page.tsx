@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import * as faceapi from "@vladmandic/face-api";
+import { API_BASE_URL } from "@/lib/api";
 import { Camera, MapPin, CheckCircle2, Clock } from "lucide-react";
 
 export default function AttendancePage() {
@@ -111,7 +112,7 @@ export default function AttendancePage() {
     setClockInStatus("loading");
 
     try {
-      const res = await fetch("http://localhost:3002/api/attendance/clock-in", {
+      const res = await fetch(`${API_BASE_URL}/api/attendance/clock-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -127,8 +128,8 @@ export default function AttendancePage() {
       } else {
         throw new Error(data.message);
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || "Terjadi kesalahan server");
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "Terjadi kesalahan server");
       setClockInStatus("error");
     }
   };

@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Badge from "../ui/badge/Badge";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
+import { API_BASE_URL } from "@/lib/api";
 
 export interface AttendanceRecord {
   id: string;
@@ -30,11 +31,31 @@ const mockAttendanceData: AttendanceRecord[] = [
 ];
 
 export const AttendanceTable: React.FC = () => {
+  const [records, setRecords] = useState<AttendanceRecord[]>(mockAttendanceData);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof AttendanceRecord>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  useEffect(() => {
+    const fetchAttendances = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/attendance`);
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          setRecords(result.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch live attendances", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAttendances();
+  }, []);
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -70,7 +91,7 @@ export const AttendanceTable: React.FC = () => {
     }, 1000);
   };
 
-  const filteredRecords = mockAttendanceData.filter(
+  const filteredRecords = records.filter(
     (rec) =>
       rec.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rec.id.toLowerCase().includes(searchTerm.toLowerCase()) ||

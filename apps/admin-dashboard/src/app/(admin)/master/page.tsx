@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Layers, Briefcase, Search, X } from "lucide-react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function MasterDataPage() {
   const [activeTab, setActiveTab] = useState<"departments" | "positions">("departments");
@@ -26,8 +27,8 @@ export default function MasterDataPage() {
     setLoading(true);
     try {
       const [deptRes, posRes] = await Promise.all([
-        fetch("http://localhost:3002/api/departments"),
-        fetch("http://localhost:3002/api/positions")
+        fetch(`${API_BASE_URL}/api/departments`),
+        fetch(`${API_BASE_URL}/api/positions`)
       ]);
       const deptData = await deptRes.json();
       const posData = await posRes.json();
@@ -63,7 +64,7 @@ export default function MasterDataPage() {
     try {
       const endpoint = activeTab === "departments" ? "/api/departments" : "/api/positions";
       const method = modalMode === "add" ? "POST" : "PUT";
-      const url = `http://localhost:3002${endpoint}${modalMode === "edit" ? `/${formData.id}` : ""}`;
+      const url = `${API_BASE_URL}${endpoint}${modalMode === "edit" ? `/${formData.id}` : ""}`;
 
       const res = await fetch(url, {
         method,
@@ -90,7 +91,7 @@ export default function MasterDataPage() {
     
     try {
       const endpoint = activeTab === "departments" ? "/api/departments" : "/api/positions";
-      const res = await fetch(`http://localhost:3002${endpoint}/${id}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}/${id}`, {
         method: "DELETE"
       });
       

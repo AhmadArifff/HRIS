@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Badge from "../ui/badge/Badge";
 import Button from "../ui/button/Button";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
+import { API_BASE_URL } from "@/lib/api";
 
 export interface LeaveRecord {
   id: string;
@@ -24,11 +25,31 @@ const mockLeaveData: LeaveRecord[] = [
 
 export const LeaveTable: React.FC = () => {
   const [data, setData] = useState<LeaveRecord[]>(mockLeaveData);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<keyof LeaveRecord>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const fetchLeaves = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/leave`);
+      const result = await res.json();
+      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        setData(result.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch live leave requests", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeaves();
+  }, []);
 
   // Toast State
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -47,9 +68,18 @@ export const LeaveTable: React.FC = () => {
   const [rejectReason, setRejectReason] = useState("");
 
   // PRD §7.3: Approval Cuti - Setuju
-  const handleApprove = (id: string, name: string) => {
+  const handleApprove = async (id: string, name: string) => {
     setData((prev) => prev.map((item) => item.id === id ? { ...item, status: "Approved" } : item));
-    console.log("[AUDIT_LOG] LEAVE_APPROVED", { leave_id: id, approver: "Admin", timestamp: new Date().toISOString() });
+    
+    try {
+      await fetch(`${API_BASE_URL}/api/leave/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Approved" }),
+      });
+    } catch (err) {
+      console.error("Failed to sync leave approval with backend", err);
+    }
     
     addToast(
       "success",
@@ -64,7 +94,7 @@ export const LeaveTable: React.FC = () => {
     setRejectReason("");
   };
 
-  const handleConfirmReject = (e: React.FormEvent) => {
+  const handleConfirmReject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rejectingRecord) return;
 
@@ -78,7 +108,16 @@ export const LeaveTable: React.FC = () => {
     const reasonText = rejectReason;
 
     setData((prev) => prev.map((item) => item.id === recId ? { ...item, status: "Rejected" } : item));
-    console.log("[AUDIT_LOG] LEAVE_REJECTED", { leave_id: recId, reason: reasonText, approver: "Admin", timestamp: new Date().toISOString() });
+
+    try {
+      await fetch(`${API_BASE_URL}/api/leave/${recId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Rejected", reason: reasonText }),
+      });
+    } catch (err) {
+      console.error("Failed to sync leave rejection with backend", err);
+    }
 
     setRejectingRecord(null);
     setRejectReason("");
