@@ -1435,6 +1435,17 @@ model Attendance {
 *   Seluruh dialog verifikasi menggunakan **Modal 3D Book-Open & Book-Close** (`bookOpenIn 450ms` dan `bookCloseOut 350ms`).
 *   Seluruh umpan balik sukses/gagal menggunakan **Top-Right Floating Toast Notification** dengan **Animated Progress Bar Countdown Strip** yang menyusut ke 0%.
 
+#### 9.3.4 Manajemen Profil Biometrik & Audit di Admin Dashboard
+*   **Halaman Profil 360 Karyawan (`/employee/[id]`):**
+    *   Panel status biometrik terintegrasi (`ArcFace 512-dim`, `YuNet Detector ~15ms`, `FQA Quality Score`).
+    *   Tautan langsung registrasi wajah mandiri untuk disalin dan dibagikan kepada karyawan.
+    *   Aksi reset profil biometrik wajah terotorisasi dengan modal konfirmasi protektif (`DELETE /api/biometrics/:employeeId`).
+*   **Tabel Pemantauan Absensi Real-Time (`/attendance`):**
+    *   Kolom audit biometrik menampilkan badge status verifikasi:
+        *   `✓ ArcFace Pass` disertai skor kemiripan / Cosine Distance.
+        *   `⚠️ Spoof Alert` jika terdeteksi manipulasi layar atau citra palsu.
+        *   `Manual / Standar` untuk absensi non-biometrik.
+
 ---
 
 ### 9.4 Perancangan Quality Assurance (/qa)
@@ -1461,5 +1472,10 @@ QA menguji pengalihan model biometrik dari panel admin:
 *   Admin mengubah threshold dari `0.40` menjadi `0.35`.
 *   Request clock-in berikutnya seketika mengadopsi threshold baru tanpa restart server.
 
-
-
+#### 9.4.4 Rangkaian Uji Otomatis (Automated Test Suite)
+*   **Python Pytest Suite (`apps/biometric-service/tests`):**
+    *   Validasi ortogonalitas dan simetri Cosine Distance ($d(u, u) = 0.0$, $d(u, v) \in [0, 2]$).
+    *   Diskriminasi ketajaman variansi Laplacian pada citra kabur vs tajam.
+    *   Kalkulasi pencahayaan ruang warna LAB dan normalisasi kontras adaptif CLAHE.
+    *   Kontrak skema respon FQA dan health check service FastAPI.
+*   **Monorepo Turbo Build Validation:** Seluruh 5 package (`@hris/database`, `backend-api`, `admin-dashboard`, `employee-portal`, `@hris/biometric-service`) lolos kompilasi tanpa type error.

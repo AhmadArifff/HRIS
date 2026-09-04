@@ -17,17 +17,21 @@ export interface AttendanceRecord {
   earlyLeaveMinutes: number;
   status: "Hadir" | "Terlambat" | "Mangkir" | "Izin";
   location: string;
+  isFaceVerified?: boolean;
+  faceSimilarityScore?: number | null;
+  isSpoofDetected?: boolean;
+  verificationMethod?: string;
 }
 
 const mockAttendanceData: AttendanceRecord[] = [
-  { id: "EMP-001", name: "Budi Santoso", department: "IT", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "07:55", clockOut: "17:05", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Pusat" },
-  { id: "EMP-002", name: "Siti Aminah", department: "Human Resources", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "08:25", clockOut: "--:--", lateDurationMinutes: 25, earlyLeaveMinutes: 0, status: "Terlambat", location: "Kantor Pusat" },
-  { id: "EMP-003", name: "Andi Saputra", department: "Marketing", shiftName: "Shift Siang", shiftHours: "13:00 - 21:00", date: "2026-08-08", clockIn: "12:50", clockOut: "21:05", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Remote (WFH)" },
-  { id: "EMP-004", name: "Rina Gunawan", department: "Finance", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "--:--", clockOut: "--:--", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Mangkir", location: "-" },
-  { id: "EMP-005", name: "Dedi Setiawan", department: "IT", shiftName: "Shift Malam", shiftHours: "21:00 - 06:00", date: "2026-08-08", clockIn: "21:00", clockOut: "06:00", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Cabang" },
-  { id: "EMP-006", name: "Anita Larasati", department: "Design", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "08:40", clockOut: "16:30", lateDurationMinutes: 40, earlyLeaveMinutes: 30, status: "Terlambat", location: "Kantor Pusat" },
-  { id: "EMP-007", name: "Fajar Nugraha", department: "IT", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "--:--", clockOut: "--:--", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Izin", location: "-" },
-  { id: "EMP-008", name: "Dewi Lestari", department: "Human Resources", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "07:50", clockOut: "17:00", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Pusat" },
+  { id: "EMP-001", name: "Budi Santoso", department: "IT", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "07:55", clockOut: "17:05", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.06, verificationMethod: "ArcFace" },
+  { id: "EMP-002", name: "Siti Aminah", department: "Human Resources", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "08:25", clockOut: "--:--", lateDurationMinutes: 25, earlyLeaveMinutes: 0, status: "Terlambat", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.11, verificationMethod: "ArcFace" },
+  { id: "EMP-003", name: "Andi Saputra", department: "Marketing", shiftName: "Shift Siang", shiftHours: "13:00 - 21:00", date: "2026-08-08", clockIn: "12:50", clockOut: "21:05", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Remote (WFH)", isFaceVerified: true, faceSimilarityScore: 0.08, verificationMethod: "ArcFace" },
+  { id: "EMP-004", name: "Rina Gunawan", department: "Finance", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "--:--", clockOut: "--:--", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Mangkir", location: "-", isFaceVerified: false },
+  { id: "EMP-005", name: "Dedi Setiawan", department: "IT", shiftName: "Shift Malam", shiftHours: "21:00 - 06:00", date: "2026-08-08", clockIn: "21:00", clockOut: "06:00", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Cabang", isFaceVerified: true, faceSimilarityScore: 0.04, verificationMethod: "ArcFace" },
+  { id: "EMP-006", name: "Anita Larasati", department: "Design", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "08:40", clockOut: "16:30", lateDurationMinutes: 40, earlyLeaveMinutes: 30, status: "Terlambat", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.09, verificationMethod: "ArcFace" },
+  { id: "EMP-007", name: "Fajar Nugraha", department: "IT", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "--:--", clockOut: "--:--", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Izin", location: "-", isFaceVerified: false },
+  { id: "EMP-008", name: "Dewi Lestari", department: "Human Resources", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "07:50", clockOut: "17:00", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.05, verificationMethod: "ArcFace" },
 ];
 
 export const AttendanceTable: React.FC = () => {
@@ -225,6 +229,7 @@ export const AttendanceTable: React.FC = () => {
                   <th onClick={() => handleSort("status")} className="px-6 py-4 cursor-pointer hover:text-brand-500">
                     Status {sortField === "status" ? (sortOrder === "asc" ? "↑" : "↓") : "↕"}
                   </th>
+                  <th className="px-6 py-4">Verifikasi Biometrik (PRD §9)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -287,6 +292,29 @@ export const AttendanceTable: React.FC = () => {
                       >
                         {record.status}
                       </Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      {record.isFaceVerified ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            {record.verificationMethod || "ArcFace"} Pass
+                          </span>
+                          {record.faceSimilarityScore !== null && record.faceSimilarityScore !== undefined && (
+                            <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
+                              Dist: {(record.faceSimilarityScore || 0).toFixed(2)} (Sim {Math.max(0, Math.round((1 - (record.faceSimilarityScore || 0)) * 100))}%)
+                            </span>
+                          )}
+                        </div>
+                      ) : record.isSpoofDetected ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded">
+                          ⚠️ Spoof Alert
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center text-xs text-gray-400">
+                          Manual / Standar
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -73,6 +73,10 @@ export const getAttendances = async (req: Request, res: Response): Promise<void>
         earlyLeaveMinutes: item.earlyLeaveMinutes || 0,
         status: item.isLate ? "Terlambat" : (clockInDate ? "Hadir" : "Mangkir"),
         location: item.locationInLatlng ? "Kantor Pusat" : "Remote (WFH)",
+        isFaceVerified: item.isFaceVerified ?? false,
+        faceSimilarityScore: item.faceSimilarityScore ?? null,
+        isSpoofDetected: item.isSpoofDetected ?? false,
+        verificationMethod: item.verificationMethod || (item.isFaceVerified ? "ArcFace" : "Manual"),
       };
     });
 

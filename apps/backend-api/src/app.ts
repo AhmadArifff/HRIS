@@ -7,7 +7,7 @@ import { errorHandler } from "./middlewares/errorHandler";
 import { globalLimiter } from "./middlewares/rateLimiter";
 import { checkHealth } from "./controllers/health.controller";
 import { getRedisStats } from "./controllers/infrastructure.controller";
-import { getEmployees, createEmployee } from "./controllers/employee.controller";
+import { getEmployees, getEmployeeById, createEmployee } from "./controllers/employee.controller";
 import {
   getDepartments,
   createDepartment,
@@ -48,6 +48,7 @@ app.delete("/api/biometrics/:employeeId", resetBiometricProfile);
 
 // Employees
 app.get("/api/employees", getEmployees);
+app.get("/api/employees/:id", getEmployeeById);
 app.post("/api/employees", createEmployee);
 
 // Master Data

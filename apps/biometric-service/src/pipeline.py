@@ -119,25 +119,26 @@ def compute_cosine_distance(emb1: List[float], emb2: List[float]) -> float:
     cos_sim = dot / (norm_u * norm_v)
     return float(1.0 - cos_sim)
 
-def check_anti_spoofing(img_cv: np.ndarray) -> Dict[str, Any]:
+def check_anti_spoofing(img_cv: np.ndarray, use_deepface: bool = False) -> Dict[str, Any]:
     """Analyze high-frequency Fourier spectrum and anti-spoofing heuristic to detect screens/paper."""
-    try:
-        from deepface import DeepFace
-        # DeepFace built-in anti-spoofing
-        face_objs = DeepFace.extract_faces(
-            img_path=img_cv,
-            detector_backend="opencv",
-            enforce_detection=False,
-            anti_spoofing=True
-        )
-        if face_objs and len(face_objs) > 0:
-            is_real = bool(face_objs[0].get("is_real", True))
-            score = float(face_objs[0].get("antispoof_score", 0.95))
-            return {"is_real": is_real, "score": score}
-    except Exception:
-        pass
+    if use_deepface:
+        try:
+            from deepface import DeepFace
+            # DeepFace built-in anti-spoofing
+            face_objs = DeepFace.extract_faces(
+                img_path=img_cv,
+                detector_backend="opencv",
+                enforce_detection=False,
+                anti_spoofing=True
+            )
+            if face_objs and len(face_objs) > 0:
+                is_real = bool(face_objs[0].get("is_real", True))
+                score = float(face_objs[0].get("antispoof_score", 0.95))
+                return {"is_real": is_real, "score": score}
+        except Exception:
+            pass
 
-    # Frequency Domain Fallback: Moiré pattern analysis via 2D FFT
+    # Frequency Domain Moiré pattern analysis via 2D FFT (<2ms latency)
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     f = np.fft.fft2(gray)
     fshift = np.fft.fftshift(f)

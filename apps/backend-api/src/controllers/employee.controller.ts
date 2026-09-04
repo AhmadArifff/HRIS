@@ -48,3 +48,21 @@ export const getEmployees = async (req: Request, res: Response) => {
     return sendResult(res, 500, result);
   }
 };
+
+export const getEmployeeById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return sendResult(res, 400, Result.fail("ID Karyawan wajib disertakan"));
+    }
+
+    const employee = await EmployeeService.getEmployeeById(id);
+    if (!employee) {
+      return sendResult(res, 404, Result.fail("Karyawan tidak ditemukan"));
+    }
+
+    return sendResult(res, 200, Result.ok(employee, "Detail karyawan berhasil diambil"));
+  } catch (error: any) {
+    return sendResult(res, 500, Result.fail(error.message || "Gagal mengambil data karyawan"));
+  }
+};

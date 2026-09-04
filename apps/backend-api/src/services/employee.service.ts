@@ -153,4 +153,49 @@ export class EmployeeService {
       },
     };
   }
+
+  public static async getEmployeeById(id: string) {
+    const emp = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { id },
+          { employeeCode: id },
+        ],
+        deletedAt: null,
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            avatarUrl: true,
+            role: { select: { name: true } },
+          },
+        },
+        department: { select: { id: true, name: true } },
+        position: { select: { id: true, name: true } },
+        status: { select: { id: true, value: true } },
+        biometricProfiles: {
+          where: { isActive: true, deletedAt: null },
+          orderBy: { registeredAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!emp) return null;
+
+    return {
+      ...emp,
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      email: emp.user?.email || "",
+      avatarUrl: emp.user?.avatarUrl || "/images/user/user-01.jpg",
+      role: emp.user?.role?.name || "Staff",
+      departmentName: emp.department?.name || "N/A",
+      positionTitle: emp.position?.name || "N/A",
+      statusName: emp.status?.value || "Active",
+      isFaceEnrolled: emp.biometricProfiles.length > 0 || !!emp.faceDescriptor,
+      activeBiometric: emp.biometricProfiles[0] || null,
+    };
+  }
 }

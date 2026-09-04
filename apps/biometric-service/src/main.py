@@ -6,17 +6,30 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
-from pipeline import (
-    DEFAULT_MODEL,
-    DEFAULT_DETECTOR,
-    DEFAULT_THRESHOLD,
-    base64_to_cv2,
-    extract_face_embedding,
-    compute_cosine_distance,
-    check_anti_spoofing,
-    process_enrollment_frames,
-    assess_face_quality,
-)
+try:
+    from src.pipeline import (
+        DEFAULT_MODEL,
+        DEFAULT_DETECTOR,
+        DEFAULT_THRESHOLD,
+        base64_to_cv2,
+        extract_face_embedding,
+        compute_cosine_distance,
+        check_anti_spoofing,
+        process_enrollment_frames,
+        assess_face_quality,
+    )
+except ImportError:
+    from pipeline import (
+        DEFAULT_MODEL,
+        DEFAULT_DETECTOR,
+        DEFAULT_THRESHOLD,
+        base64_to_cv2,
+        extract_face_embedding,
+        compute_cosine_distance,
+        check_anti_spoofing,
+        process_enrollment_frames,
+        assess_face_quality,
+    )
 
 app = FastAPI(
     title="HRIS Enterprise Biometrics Service (DeepFace Engine)",
