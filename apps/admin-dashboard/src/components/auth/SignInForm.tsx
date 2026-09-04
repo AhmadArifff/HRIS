@@ -8,10 +8,12 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { EmployeeFaceAuthModal } from "@/components/auth/EmployeeFaceAuthModal";
 
 export default function SignInForm() {
   const router = useRouter();
   const [roleTab, setRoleTab] = useState<"admin" | "employee">("admin");
+  const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
   
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -377,79 +379,61 @@ export default function SignInForm() {
           {/* TAB 2: EMPLOYEE FACE CHECK-IN LOGIN */}
           {roleTab === "employee" && (
             <div className="space-y-6">
-              <div className="p-4 rounded-xl bg-brand-50/60 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 text-center">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 via-brand-500/5 to-teal-500/10 border border-emerald-500/30 text-center">
                 <div className="inline-flex items-center gap-1.5 mb-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                  <span className="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
-                    🔒 Login Biometrik Wajah Karyawan
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                    🔒 Login Biometrik Wajah Karyawan (In-Place)
                   </span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-300">
-                  Untuk keamanan riil, Karyawan masuk dengan **Verifikasi Biometrik Foto Wajah**. Token sesi aktif **15 Menit** (auto logout jika idle).
+                  Autentikasi wajah langsung melalui <strong>Modal Pemindai In-Place</strong> tanpa berpindah halaman. Memvalidasi posisi wajah manusia secara akurat dengan masa aktif token <strong>15 Menit</strong>.
                 </p>
               </div>
 
-              {/* Kamera Scan Container UI */}
-              <div className="w-full h-64 bg-slate-950 rounded-2xl border-4 border-dashed border-brand-500/50 flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
-                {isScanningFace ? (
-                  <div className="flex flex-col items-center justify-center space-y-3 z-20">
-                    <div className="w-16 h-16 rounded-full border-4 border-brand-500 border-t-transparent animate-spin"></div>
-                    <span className="text-xs font-mono font-semibold text-brand-400 animate-pulse">
-                      Pindaian Biometrik Wajah & Penerbitan Token 15-Min Berlangsung...
-                    </span>
-                  </div>
-                ) : faceVerified ? (
-                  <div className="flex flex-col items-center justify-center space-y-2 z-20 text-center p-4">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xl font-bold">
-                      ✓
-                    </div>
-                    <span className="text-sm font-bold text-emerald-400">Identitas Wajah Terverifikasi!</span>
-                    <span className="text-xs text-slate-300 font-mono">Budi Santoso (EMP-001)</span>
-                    <span className="text-[10px] text-emerald-300 font-mono">Token Sesi: 15-Minute Inactivity Expiration</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center space-y-3 z-10 text-center p-4">
-                    <div className="w-24 h-32 border-2 border-brand-500/70 rounded-2xl relative flex items-center justify-center">
-                      <div className="w-full h-0.5 bg-brand-400/80 absolute animate-bounce"></div>
-                    </div>
-                    <span className="text-xs text-slate-400 font-medium">
-                      Posisikan Wajah Anda di Depan Kamera
-                    </span>
-                  </div>
-                )}
-                
-                {/* Background Camera Overlay Effect */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-500/10 via-transparent to-transparent opacity-50"></div>
+              {/* In-Place Scanner Card Preview */}
+              <div className="w-full p-6 bg-slate-950 rounded-2xl border-2 border-dashed border-emerald-500/40 flex flex-col items-center justify-center relative overflow-hidden shadow-inner text-center">
+                <div className="w-24 h-32 border-2 border-emerald-400/70 rounded-full relative flex items-center justify-center mb-4 bg-emerald-950/20">
+                  <div className="w-full h-0.5 bg-emerald-400 absolute animate-pulse shadow-[0_0_8px_#10b981]"></div>
+                  <span className="text-[10px] text-emerald-300 font-mono font-bold uppercase tracking-widest">
+                    Live Reticle
+                  </span>
+                </div>
+
+                <h4 className="text-sm font-bold text-white mb-1">
+                  Pemindai Wajah & Validasi Objek Manusia
+                </h4>
+                <p className="text-xs text-slate-400 max-w-xs mb-4">
+                  Kamera akan terbuka dalam modal di atas layar ini dengan pengecekan ketajaman & orientasi wajah frontal.
+                </p>
+
+                <div className="inline-flex items-center gap-2 text-[11px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 mb-1">
+                  <span>✓ Deteksi Frontal Center</span>
+                  <span>•</span>
+                  <span>✓ Anti-Spoofing</span>
+                  <span>•</span>
+                  <span>✓ Presensi Otomatis</span>
+                </div>
               </div>
 
               <button
                 type="button"
-                onClick={handleEmployeeFaceLogin}
-                disabled={isScanningFace}
-                className="w-full py-3.5 px-6 text-sm font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 active:scale-[0.99] rounded-2xl transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-3.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group"
+                onClick={() => setIsFaceModalOpen(true)}
+                className="w-full py-3.5 px-6 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.99] rounded-2xl transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-3.5 cursor-pointer group"
               >
-                {isScanningFace ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-                    <span className="text-sm font-semibold">Memverifikasi Biometrik Wajah...</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <div className="text-left flex-1">
-                      <span className="block text-sm font-extrabold leading-tight">Verifikasi Foto Wajah</span>
-                      <span className="block text-[11px] text-brand-200 font-medium leading-none mt-1">Sesi Biometrik Aktif 15 Menit</span>
-                    </div>
-                    <svg className="w-4 h-4 text-white/70 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </>
-                )}
+                <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div className="text-left flex-1">
+                  <span className="block text-sm font-extrabold leading-tight">Buka Pemindai Wajah (In-Place Modal)</span>
+                  <span className="block text-[11px] text-emerald-100 font-medium leading-none mt-1">Klik untuk mengaktifkan kamera WebRTC & validasi biometrik</span>
+                </div>
+                <svg className="w-4 h-4 text-white/70 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
           )}
@@ -503,6 +487,12 @@ export default function SignInForm() {
           </div>
         </div>
       )}
+
+      {/* Employee In-Place Face Auth Modal */}
+      <EmployeeFaceAuthModal
+        isOpen={isFaceModalOpen}
+        onClose={() => setIsFaceModalOpen(false)}
+      />
     </div>
   );
 }

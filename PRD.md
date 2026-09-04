@@ -1777,3 +1777,132 @@ Supabase Database Linter rule '0013_rls_disabled_in_public' is completely RESOLV
 ```
 
 Dengan protokol ini, setiap kali database dimuat ulang atau proyek di-clone di perangkat kerja baru, keamanan data terjamin 100% dan lolos standar linter Supabase tanpa intervensi manual yang rentan salah.
+
+---
+
+## 11. Perancangan Arsitektur Biometrik Terpadu: In-Place Login Modal, Validasi Deteksi Objek Manusia, dan Auto-Enrollment Foto Profil Karyawan
+
+### 11.1 Klarifikasi Konseptual & Alur Terpadu Biometrik (Single Source of Truth Validation)
+Biometrik pengenalan wajah pada sistem HRISCorp.dev bertindak sebagai **Mekanisme Otorisasi & Validasi Identitas Terpadu**. Untuk menghilangkan kebingungan antara absensi harian dan login wajah:
+
+1. **Prinsip Validasi Tunggal (Single Validation Truth):**
+   *   Data biometrik bukanlah proses yang berdiri sendiri atau terpisah dari akun karyawan. Vektor representasi wajah 512-dimensi (*ArcFace Embedding*) diikat langsung ke entitas karyawan (`employees.id` & `face_biometric_profiles.employee_id`).
+   *   Autentikasi biometrik berfungsi ganda (*Unified Action*): memverifikasi kepemilikan akun secara fisik sekaligus mencatat kehadiran kerja harian (*Clock In*) dalam 1 kali pindaian saja (*One-Shot Unified Attendance*).
+2. **Eliminasi Pengalihan Halaman (Zero Page-Hop Policy):**
+   *   Dilarang mengalihkan pengguna ke halaman kamera khusus 1-halaman penuh yang terisolasi dan membingungkan.
+   *   Seluruh interaksi pemindaian kamera karyawan pada halaman masuk (*Sign In*) wajib menggunakan **Modal Dialog Terapung Di Tempat (In-Place Floating Modal)** agar pengguna tetap berada dalam konteks navigasi yang jelas.
+
+---
+
+### 11.2 In-Place Face Recognition Modal pada Halaman Signin (`/signin`)
+Pada antarmuka autentikasi (`http://localhost:3000/signin`), ketika pengguna berpindah ke tab **"📷 Login Wajah (Sesi 15 Menit)"**:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Karyawan
+    participant SigninPage as Halaman Sign In (/signin)
+    participant FaceModal as EmployeeFaceAuthModal (In-Place)
+    participant WebRTC as Sensor Kamera WebRTC
+    participant Backend as Backend API (:3002)
+    participant ArcFace as Biometric Engine (:8000)
+    participant Supabase as Supabase Database
+
+    Karyawan->>SigninPage: Pilih Tab "Login Wajah" & Klik "Pindai Wajah"
+    SigninPage->>FaceModal: Buka Modal Kamera 3D (In-Place)
+    FaceModal->>WebRTC: Request navigator.mediaDevices.getUserMedia()
+    WebRTC-->>FaceModal: Stream Video Real-Time Aktif
+    FaceModal->>FaceModal: Validasi Deteksi Objek Manusia (Oval Reticle + FQA)
+    Karyawan->>FaceModal: Klik "Pindai & Verifikasi Wajah"
+    FaceModal->>Backend: POST /api/biometrics/verify-login (Base64 Snapshot)
+    Backend->>ArcFace: POST /extract (512-d Embedding)
+    ArcFace-->>Backend: Vector + Quality Score
+    Backend->>Supabase: Query Vector Distance (Cosine <= 0.40)
+    Supabase-->>Backend: Match Found: EMP-001 (Budi Santoso)
+    Backend->>Backend: Auto Clock-In Hari Ini & Terbitkan Token Sesi 15-Min
+    Backend-->>FaceModal: Status 200 OK + Data Karyawan + Sesi Token
+    FaceModal->>SigninPage: Toast Sukses + Alihkan ke Employee Portal (:3001)
+```
+
+#### Spesifikasi Antarmuka In-Place Modal:
+*   **Komponen:** [`EmployeeFaceAuthModal.tsx`](file:///c:/Users/ASUS/Documents/Web%20Dev/improving/HRIS/apps/admin-dashboard/src/components/auth/EmployeeFaceAuthModal.tsx) dengan transisi mulus *3D Book-Open* (`bookOpenIn 450ms`).
+*   **Viewport Video:** Rasio 16:9 / 4:3 beresolusi optimal ($1280 \times 720$) dengan *mirrored display* (seperti cermin).
+*   **Reticle Oval Dinamis:** Bingkai oval panduan posisi kepala dengan indikator warna real-time:
+    *   `Merah Berkedip`: Wajah belum terdeteksi, berada di luar bingkai oval, atau terlalu miring.
+    *   `Kuning / Oranye`: Wajah terdeteksi namun frame buram (*motion blur*) atau pencahayaan kurang.
+    *   `Cyan / Hijau Emerald`: Wajah manusia terdeteksi stabil, tegak lurus frontal, dan tajam (siap dipindai).
+*   **Tombol Aksi Tunggal:** *"⚡ Pindai & Verifikasi Wajah (Masuk Portal)"*.
+
+---
+
+### 11.3 Standar Validasi Deteksi Objek Manusia & FQA (Face Quality Assessment)
+Sebelum citra snapshot dikirimkan ke mesin ekstraksi biometrik di backend, antarmuka kamera menjalankan protokol validasi pra-pemrosesan di sisi browser (*Client-Side Pre-Validation*):
+
+1. **Deteksi Keberadaan Wajah Manusia (Human Face Localization):**
+   *   Menggunakan algoritma deteksi wajah ringan berbasis model visual / analisis kontur wajah real-time.
+   *   Memastikan objek di depan kamera adalah **wajah manusia hidup**, bukan latar belakang kosong, hewan, atau objek mati.
+2. **Standar Penilaian Kualitas Citra (Face Quality Assessment - FQA):**
+   *   **Ukuran Proporsional Wajah:** Area wajah mencakup $50\% - 75\%$ dari tinggi bingkai reticle oval. Wajah yang terlalu jauh ($< 40\%$) atau terlalu dekat ($> 85\%$) akan diberi instruksi penyesuaian jarak.
+   *   **Analisis Ketajaman (Laplacian Blur Pre-Check):** Mengukur nilai variansi operator Laplacian pada canvas lokal ($Var(L) \ge 100$). Jika kamera bergoyang atau pengguna bergerak cepat, tombol pindaian dikunci sementara hingga citra stabil.
+   *   **Pencahayaan Adaptif (Luminance Pre-Check):** Rata-rata kecerahan kanal $Y$ pada ruang warna YUV harus berada dalam rentang $80 - 220$ (skala $0 - 255$). Jika terdeteksi *backlight* berlebih atau pencahayaan gelap, banner panduan memunculkan peringatan *"Cahaya terlalu redup atau backlight ekstrim"*.
+   *   **Orientasi Tegak Frontal:** Sudut kemiringan yaw/pitch $< 15^\circ$ (mata dan hidung berada pada garis simetris reticle).
+
+---
+
+### 11.4 Alur Pendaftaran Karyawan Terpadu (Unified Admin Enrollment & Avatar Generation)
+
+> **Analisis Masalah Sebelumnya:**
+> Pada menu **Tambah Karyawan** di Admin Dashboard, formulir hanya menyediakan *input dropzone* untuk mengunggah file pas foto statis tanpa pendaftaran biometrik wajah. Akibatnya, karyawan baru tidak memiliki profil biometrik di database Supabase dan tidak dapat menggunakan fitur login wajah maupun absensi biometrik sebelum melakukan registrasi manual terpisah.
+
+#### Solusi Arsitektur: Dual-Action Capture pada [`EmployeeForm.tsx`](file:///c:/Users/ASUS/Documents/Web%20Dev/improving/HRIS/apps/admin-dashboard/src/components/hris/EmployeeForm.tsx)
+Formulir pendaftaran data karyawan baru di Admin Panel dirancang ulang untuk menggabungkan proses pengambilan foto profil sekaligus pendaftaran biometrik dalam 1 langkah terstruktur:
+
+```mermaid
+graph TD
+    Admin[Admin / HRD di Form Tambah Karyawan] -->|Pilih Opsi Foto| Choice{Metode Input Foto}
+    
+    Choice -->|Opsi 1: Kamera Selfie Center| Cam[Buka Modul Kamera Selfie Terpadu]
+    Choice -->|Opsi 2: Unggah Berkas Biasa| Upload[Pilih File Gambar JPG/PNG]
+    
+    Cam --> CenterSelfie[Ambil Snapshot Wajah Center Frontal]
+    CenterSelfie --> FQAValid{Validasi Kualitas Wajah?}
+    FQAValid -->|Tidak Lolos| Cam
+    FQAValid -->|Lolos Validasi| Save[Klik Simpan Karyawan Baru]
+    Upload --> Save
+    
+    Save --> Flow1[1. Upload Foto ke Supabase Storage 'avatars/']
+    Save --> Flow2[2. Simpan Data Pegawai ke Tabel 'employees' di DB]
+    Save --> Flow3[3. Ekstraksi ArcFace 512-d & Simpan ke 'face_biometric_profiles']
+    
+    Flow1 --> Ready[Karyawan Siap: Memiliki Avatar Profil & Biometrik Wajah Aktif Seketika!]
+    Flow2 --> Ready
+    Flow3 --> Ready
+```
+
+#### Aturan & Spesifikasi Teknis:
+1. **Selfie Center Frontal sebagai Sumber Tunggal (Single Source):**
+   *   Foto profil diambil dari posisi **Selfie Center Tegak** (menghadap tepat ke kamera tanpa menengok kiri, kanan, atas, atau bawah).
+   *   Foto selfie center ini memiliki tingkat representasi visual paling optimal untuk digunakan sebagai foto profil resmi perusahaan.
+2. **Penyimpanan Otomatis ke Supabase Storage (`avatars`):**
+   *   Snapshot selfie center yang ditangkap dari kamera dikonversi secara transparan menjadi berkas gambar (*Blob/File*) dan diunggah ke *Bucket Supabase* `avatars/`.
+   *   URL publik yang dihasilkan otomatis diisikan ke kolom `employees.avatar_url`.
+3. **Auto-Enrollment Biometrik Simultan:**
+   *   Data citra selfie secara bersamaan dikirimkan ke endpoint Backend API `POST /api/employees` (didukung field `faceImageBase64`).
+   *   Backend API memanggil modul ekstraksi DeepFace ArcFace ($512$-dimensi) dan secara otomatis membuat rekaman aktif di tabel `public.face_biometric_profiles`.
+   *   Vektor embedding langsung disinkronkan ke cache memori Redis (`biometric:emb:<employeeId>`).
+4. **Hasil Langsung (*Instant Usability*):**
+   *   Begitu formulir selesai disimpan, karyawan tersebut langsung berstatus **`isFaceEnrolled = true`**.
+   *   Karyawan dapat seketika login menggunakan wajah di gerbang login dan mencatat presensi tanpa perlu melalui pendaftaran ulang mandiri.
+
+---
+
+### 11.5 Matriks Kesiapan & Verifikasi Fitur (Readiness Checklist)
+
+| Komponen Fitur | Alur Sebelumnya | Standar Baru (Seksi 11) | Status Implementasi |
+| :--- | :--- | :--- | :--- |
+| **Login Wajah di `/signin`** | Pindah halaman ke portal kamera terpisah | **Modal In-Place 3D** langsung di layar signin ([`EmployeeFaceAuthModal.tsx`](file:///apps/admin-dashboard/src/components/auth/EmployeeFaceAuthModal.tsx)) | ✅ Terimplementasi & Terverifikasi |
+| **Validasi Objek Manusia** | Simulasi timeout tanpa pengecekan frame | **FQA & Oval Reticle Check** real-time (Luminance & Sharpness loop) | ✅ Terimplementasi & Terverifikasi |
+| **Form Tambah Karyawan** | Hanya upload file gambar biasa | **Kamera Selfie Center Terpadu** (Avatar + Biometrik) ([`EmployeeForm.tsx`](file:///apps/admin-dashboard/src/components/hris/EmployeeForm.tsx)) | ✅ Terimplementasi & Terverifikasi |
+| **Foto Profil Karyawan** | Diunggah manual terpisah dari biometrik | **Otomatis dari Selfie Center** tersimpan di Supabase Storage `avatars/` | ✅ Terimplementasi & Terverifikasi |
+| **Status Biometrik Karyawan Baru** | Belum terdaftar (harus enroll manual) | **Langsung Aktif & Terdaftar** di `face_biometric_profiles` via `POST /api/employees` | ✅ Terimplementasi & Terverifikasi |
+| **Integrasi Database Supabase** | Terputus pasca reset | Terhubung kembali, 21 tabel RLS Enabled, auto-sync embedding ArcFace 512-d | ✅ Terimplementasi & Terverifikasi |
