@@ -7,6 +7,60 @@ import DropzoneComponent from "@/components/form/form-elements/DropZone";
 import { supabase } from "@/lib/supabase";
 import { API_BASE_URL } from "@/lib/api";
 
+interface KycPose {
+  id: "center" | "right" | "left" | "up" | "down";
+  title: string;
+  shortLabel: string;
+  instruction: string;
+  sub: string;
+  icon: string;
+  isProfileAvatar?: boolean;
+}
+
+const KYC_POSES: KycPose[] = [
+  {
+    id: "center",
+    title: "Pose 1: Center Frontal (Tegak Lurus)",
+    shortLabel: "1. Center",
+    instruction: "Posisikan wajah tegak lurus menatap tepat ke lensa kamera",
+    sub: "⭐ Wajah frontal ini otomatis disimpan sebagai Foto Profil resmi karyawan",
+    icon: "🎯",
+    isProfileAvatar: true,
+  },
+  {
+    id: "right",
+    title: "Pose 2: Menoleh ke Kanan (~25°)",
+    shortLabel: "2. Kanan",
+    instruction: "Tengokkan wajah perlahan ke arah kanan Anda",
+    sub: "Perekaman topologi pelipis, telinga, dan rahang kanan",
+    icon: "➡️",
+  },
+  {
+    id: "left",
+    title: "Pose 3: Menoleh ke Kiri (~25°)",
+    shortLabel: "3. Kiri",
+    instruction: "Tengokkan wajah perlahan ke arah kiri Anda",
+    sub: "Perekaman topologi pelipis, telinga, dan rahang kiri",
+    icon: "⬅️",
+  },
+  {
+    id: "up",
+    title: "Pose 4: Mendongak ke Atas (~15°)",
+    shortLabel: "4. Atas",
+    instruction: "Dongakkan dagu dan kepala sedikit ke atas",
+    sub: "Perekaman garis rahang bawah (mandible) & kontur dagu",
+    icon: "⬆️",
+  },
+  {
+    id: "down",
+    title: "Pose 5: Menunduk ke Bawah (~15°)",
+    shortLabel: "5. Bawah",
+    instruction: "Tundukkan kepala dan pandangan sedikit ke bawah",
+    sub: "Perekaman tulang alis, kening, dan punggung hidung",
+    icon: "⬇️",
+  },
+];
+
 export const EmployeeForm = () => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -21,21 +75,34 @@ export const EmployeeForm = () => {
     gender: "male",
   });
 
-  // Photo & Biometric Mode State (PRD §11.4)
-  const [photoMode, setPhotoMode] = useState<"camera" | "upload">("camera");
+  // Photo & Biometric Mode State (PRD §11.4 & §12)
+  const [photoMode, setPhotoMode] = useState<"kyc_camera" | "upload">("kyc_camera");
   const [file, setFile] = useState<File | null>(null);
-  const [capturedSelfie, setCapturedSelfie] = useState<string | null>(null);
 
-  // Camera & FQA State
+  // Multi-Angle KYC 5-Pose State
+  const [activePoseStep, setActivePoseStep] = useState<number>(0);
+  const [capturedPoses, setCapturedPoses] = useState<{
+    center?: string;
+    right?: string;
+    left?: string;
+    up?: string;
+    down?: string;
+  }>({});
+  const [isKycComplete, setIsKycComplete] = useState<boolean>(false);
+  const [flashFeedback, setFlashFeedback] = useState<boolean>(false);
+
+  // Camera, FQA & Anti-Occlusion (Hand/Chin Noise Detection) State
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const [fqaStatus, setFqaStatus] = useState<{
     isValid: boolean;
+    isOccluded: boolean;
     label: string;
     sharpness: number;
     brightness: number;
   }>({
     isValid: false,
+    isOccluded: false,
     label: "Menyesuaikan Posisi Wajah...",
     sharpness: 0,
     brightness: 0,
@@ -79,9 +146,9 @@ export const EmployeeForm = () => {
     }
   }, []);
 
-  // Manage Camera on Mode / Captured change
+  // Manage Camera on Mode / Completion Change
   useEffect(() => {
-    if (photoMode === "camera" && !capturedSelfie) {
+    if (photoMode === "kyc_camera" && !isKycComplete) {
       startCamera();
     } else {
       stopCamera();
@@ -90,11 +157,11 @@ export const EmployeeForm = () => {
     return () => {
       stopCamera();
     };
-  }, [photoMode, capturedSelfie]);
+  }, [photoMode, isKycComplete, activePoseStep]);
 
-  // Real-time FQA Loop
+  // Real-Time FQA & Anti-Occlusion (Hand-on-Chin / Noise Detection) Loop (PRD §12.3)
   useEffect(() => {
-    if (!cameraActive || capturedSelfie || photoMode !== "camera") {
+    if (!cameraActive || isKycComplete || photoMode !== "kyc_camera") {
       if (fqaIntervalRef.current) clearInterval(fqaIntervalRef.current);
       return;
     }
@@ -112,6 +179,7 @@ export const EmployeeForm = () => {
         const imgData = ctx.getImageData(0, 0, 160, 120);
         const data = imgData.data;
 
+        // 1. Brightness & Overall Sharpness
         let totalBrightness = 0;
         let edgeGradient = 0;
 
@@ -129,32 +197,92 @@ export const EmployeeForm = () => {
         const avgBrightness = Math.round(totalBrightness / pixelCount);
         const avgSharpness = Math.round(edgeGradient / pixelCount);
 
-        const isGoodBrightness = avgBrightness >= 50 && avgBrightness <= 230;
-        const isSharp = avgSharpness >= 12;
-        const isValid = isGoodBrightness && isSharp;
+        // 2. Anti-Occlusion & Hand-on-Chin Detection (PRD §12.3)
+        // Sub-sample Lower Zone (chin, jawline, mouth area: Y from 65% to 95%, X from 25% to 75%)
+        let chinEdgeCount = 0;
+        let chinPixelCount = 0;
+        let leftJawIntensity = 0;
+        let rightJawIntensity = 0;
+        let leftJawCount = 0;
+        let rightJawCount = 0;
+        let bottomSkinEntryCount = 0;
 
-        let label = "✓ Wajah Frontal Center Pas & Siap Diambil";
-        if (!isGoodBrightness) {
+        for (let y = 75; y < 115; y++) {
+          for (let x = 40; x < 120; x++) {
+            const idx = (y * 160 + x) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+            chinPixelCount++;
+
+            // Detect horizontal hand/knuckle edge lines in chin zone
+            if (idx + 160 * 4 < data.length) {
+              const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
+              if (Math.abs(gray - downGray) > 28) {
+                chinEdgeCount++;
+              }
+            }
+
+            // Check Left vs Right asymmetry (Hand resting under one side of chin/cheek)
+            if (x < 80) {
+              leftJawIntensity += gray;
+              leftJawCount++;
+            } else {
+              rightJawIntensity += gray;
+              rightJawCount++;
+            }
+
+            // Check skin-tone pixels coming up from bottom border (wrist/hand intrusion)
+            if (y > 105) {
+              const isSkinTone = r > 80 && g > 45 && b > 30 && r > g && r > b;
+              if (isSkinTone) bottomSkinEntryCount++;
+            }
+          }
+        }
+
+        const chinEdgeDensity = chinPixelCount > 0 ? (chinEdgeCount / chinPixelCount) : 0;
+        const avgLeftJaw = leftJawCount > 0 ? leftJawIntensity / leftJawCount : 0;
+        const avgRightJaw = rightJawCount > 0 ? rightJawIntensity / rightJawCount : 0;
+        const jawAsymmetry = Math.abs(avgLeftJaw - avgRightJaw);
+
+        // Hand on chin / fist detection heuristic:
+        // High edge density on chin OR high jaw asymmetry with hand intrusion from bottom
+        const hasHandOcclusion =
+          (chinEdgeDensity > 0.38) ||
+          (jawAsymmetry > 40 && bottomSkinEntryCount > 80) ||
+          (chinEdgeDensity > 0.28 && bottomSkinEntryCount > 150);
+
+        const isGoodBrightness = avgBrightness >= 50 && avgBrightness <= 230;
+        const isSharp = avgSharpness >= 11;
+        const isValid = isGoodBrightness && isSharp && !hasHandOcclusion;
+
+        let label = `✓ Wajah Bersih & Tajam (Siap Foto: ${KYC_POSES[activePoseStep]?.shortLabel})`;
+        if (hasHandOcclusion) {
+          label = "⚠️ Terdeteksi tangan / halangan menutupi dagu & wajah! Harap jauhkan tangan.";
+        } else if (!isGoodBrightness) {
           label = avgBrightness < 50 ? "⚠️ Cahaya terlalu redup" : "⚠️ Backlight terlalu terang";
         } else if (!isSharp) {
-          label = "⚠️ Tahan kepala tegak stabil (jangan goyang)";
+          label = "⚠️ Kamera bergoyang, tahan posisi stabil sejenak";
         }
 
         setFqaStatus({
           isValid,
+          isOccluded: hasHandOcclusion,
           label,
           sharpness: avgSharpness,
           brightness: avgBrightness,
         });
       } catch (fqaErr) {
-        // Silent canvas read catch
+        // Silent catch during unmount
       }
-    }, 400);
+    }, 350);
 
     return () => {
       if (fqaIntervalRef.current) clearInterval(fqaIntervalRef.current);
     };
-  }, [cameraActive, capturedSelfie, photoMode]);
+  }, [cameraActive, isKycComplete, photoMode, activePoseStep]);
 
   const startCamera = async () => {
     try {
@@ -174,9 +302,10 @@ export const EmployeeForm = () => {
       setCameraActive(false);
       setFqaStatus({
         isValid: true,
-        label: "✓ Mode Simulator Kamera Aktif (Siap Selfie)",
+        isOccluded: false,
+        label: `✓ Simulator Kamera KYC Aktif (${KYC_POSES[activePoseStep]?.shortLabel})`,
         sharpness: 90,
-        brightness: 120,
+        brightness: 125,
       });
     }
   };
@@ -193,50 +322,77 @@ export const EmployeeForm = () => {
     setCameraActive(false);
   };
 
-  const handleTakeSelfie = () => {
+  // Capture Current KYC Pose
+  const handleCaptureCurrentPose = () => {
+    const currentPose = KYC_POSES[activePoseStep];
+    let snapshotDataUrl = "";
+
     if (videoElementRef.current && videoElementRef.current.readyState >= 2) {
       const canvas = document.createElement("canvas");
       canvas.width = videoElementRef.current.videoWidth || 640;
       canvas.height = videoElementRef.current.videoHeight || 480;
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        // Mirrored snapshot matching selfie camera view
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(videoElementRef.current, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-        setCapturedSelfie(dataUrl);
-        stopCamera();
-        return;
+        snapshotDataUrl = canvas.toDataURL("image/jpeg", 0.92);
       }
     }
 
-    // Fallback Sample Portrait if camera unavailable
-    const canvas = document.createElement("canvas");
-    canvas.width = 400;
-    canvas.height = 400;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(0, 0, 400, 400);
-      ctx.fillStyle = "#10b981";
-      ctx.beginPath();
-      ctx.arc(200, 160, 70, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(200, 360, 130, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 16px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("Selfie Center Biometrik", 200, 370);
-      setCapturedSelfie(canvas.toDataURL("image/jpeg", 0.9));
+    // Fallback Portrait if webcam simulator
+    if (!snapshotDataUrl) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(0, 0, 400, 400);
+        ctx.fillStyle = "#10b981";
+        ctx.beginPath();
+        ctx.arc(200, 160, 65, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(200, 360, 120, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 15px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`KYC Pose: ${currentPose.shortLabel}`, 200, 365);
+        snapshotDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      }
+    }
+
+    // Trigger visual shutter flash feedback
+    setFlashFeedback(true);
+    setTimeout(() => setFlashFeedback(false), 200);
+
+    const updatedPoses = {
+      ...capturedPoses,
+      [currentPose.id]: snapshotDataUrl,
+    };
+    setCapturedPoses(updatedPoses);
+
+    // If more poses remaining, advance to next pose
+    if (activePoseStep < KYC_POSES.length - 1) {
+      setActivePoseStep((prev) => prev + 1);
+    } else {
+      // All 5 poses complete!
+      setIsKycComplete(true);
       stopCamera();
     }
   };
 
-  const handleRetake = () => {
-    setCapturedSelfie(null);
+  const handleRetakeSinglePose = (poseIndex: number) => {
+    setActivePoseStep(poseIndex);
+    setIsKycComplete(false);
+  };
+
+  const handleResetAllPoses = () => {
+    setCapturedPoses({});
+    setActivePoseStep(0);
+    setIsKycComplete(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -255,17 +411,19 @@ export const EmployeeForm = () => {
 
     try {
       let avatarUrl = "";
-      let faceImageBase64: string | undefined = undefined;
+      let faceImagesBase64: string[] = [];
 
-      // 1. Prioritas Opsi 1: Selfie Center dari Kamera Biometrik (PRD §11.4)
-      if (photoMode === "camera" && capturedSelfie) {
-        faceImageBase64 = capturedSelfie;
+      // 1. Mode KYC Bank 5-Pose (PRD §12)
+      if (photoMode === "kyc_camera") {
+        if (!capturedPoses.center) {
+          throw new Error("Langkah 1 (Pose Center) wajib diambil untuk foto profil resmi.");
+        }
 
+        // Upload Pose 1 (Center Frontal) to Supabase Storage as official employee avatar
         try {
-          // Konversi Base64 DataURL ke Blob untuk Supabase Storage
-          const resBlob = await fetch(capturedSelfie);
+          const resBlob = await fetch(capturedPoses.center);
           const blob = await resBlob.blob();
-          const fileName = `selfie-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+          const fileName = `avatar-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
           const filePath = `avatars/${fileName}`;
 
           const { error: uploadError } = await supabase.storage
@@ -278,15 +436,26 @@ export const EmployeeForm = () => {
               .getPublicUrl(filePath);
             avatarUrl = publicUrlData.publicUrl;
           } else {
-            console.warn("Supabase Storage avatar upload warning:", uploadError);
+            console.warn("Supabase Storage avatar upload notice:", uploadError);
             avatarUrl = `/images/user/user-01.jpg`;
           }
         } catch (storageErr) {
-          console.warn("Storage upload exception, fallback to local user avatar:", storageErr);
+          console.warn("Storage upload fallback:", storageErr);
           avatarUrl = `/images/user/user-01.jpg`;
         }
+
+        // Collect all 5 KYC pose images for multi-angle centroid embedding
+        const orderedFrames = [
+          capturedPoses.center,
+          capturedPoses.right,
+          capturedPoses.left,
+          capturedPoses.up,
+          capturedPoses.down,
+        ].filter(Boolean) as string[];
+
+        faceImagesBase64 = orderedFrames;
       }
-      // 2. Opsi 2: Unggah Berkas Biasa
+      // 2. Mode Unggah Berkas Biasa
       else if (photoMode === "upload" && file) {
         try {
           const fileExt = file.name.split(".").pop();
@@ -306,13 +475,12 @@ export const EmployeeForm = () => {
             avatarUrl = `/images/user/user-01.jpg`;
           }
 
-          // Konversi file ke Base64 untuk ekstraksi biometrik simultan
           const fileBase64 = await new Promise<string>((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
             reader.readAsDataURL(file);
           });
-          faceImageBase64 = fileBase64;
+          faceImagesBase64 = [fileBase64];
         } catch (uploadErr) {
           console.warn("Upload fallback:", uploadErr);
           avatarUrl = `/images/user/user-01.jpg`;
@@ -328,7 +496,8 @@ export const EmployeeForm = () => {
         body: JSON.stringify({
           ...formData,
           avatarUrl: avatarUrl || "/images/user/user-01.jpg",
-          faceImageBase64,
+          faceImagesBase64,
+          faceImageBase64: capturedPoses.center || faceImagesBase64[0],
         }),
       });
 
@@ -338,7 +507,7 @@ export const EmployeeForm = () => {
       }
 
       setSuccess(
-        `✓ Karyawan ${formData.firstName} ${formData.lastName} (${formData.employeeCode}) berhasil ditambahkan! Foto profil resmi tersimpan di Supabase Storage dan profil biometrik wajah 512-d otomatis aktif.`
+        `✓ Karyawan ${formData.firstName} ${formData.lastName} (${formData.employeeCode}) berhasil didaftarkan! Foto Pose Center tersimpan sebagai Foto Profil resmi di Supabase Storage, dan model biometrik 5-Pose (ArcFace 512-d) telah aktif seketika.`
       );
 
       // Reset form
@@ -354,7 +523,9 @@ export const EmployeeForm = () => {
         employeeCode: "",
         gender: "male",
       });
-      setCapturedSelfie(null);
+      setCapturedPoses({});
+      setIsKycComplete(false);
+      setActivePoseStep(0);
       setFile(null);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan saat menyimpan data karyawan.");
@@ -363,20 +534,22 @@ export const EmployeeForm = () => {
     }
   };
 
+  const currentPose = KYC_POSES[activePoseStep];
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-6 border-b border-gray-100 dark:border-gray-800 gap-2">
         <div>
           <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">
-            Pendaftaran Karyawan & Biometrik Wajah Terpadu
+            Pendaftaran Karyawan & Biometrik KYC Multi-Angle (5 Pose)
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Satu langkah terpadu: Ambil foto selfie center untuk Foto Profil sekaligus ekstraksi pendaftaran biometrik (PRD §11.4).
+            Standar e-KYC Perbankan: 5 pose (Center, Kanan, Kiri, Atas, Bawah) dengan filter anti-halangan tangan (PRD §12).
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 self-start sm:self-auto">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          Auto-Enroll Biometrik 512-d
+          KYC Bank 5-Pose Centroid
         </span>
       </div>
 
@@ -395,15 +568,15 @@ export const EmployeeForm = () => {
       )}
 
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-        {/* BAGIAN 1: FOTO PROFIL & BIOMETRIK TERPADU */}
+        {/* BAGIAN 1: MODUL KYC 5-POSE & FOTO PROFIL TERPADU */}
         <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <div>
               <Label className="text-sm font-bold text-gray-800 dark:text-white">
-                Foto Profil & Pendaftaran Wajah Biometrik <span className="text-error-500">*</span>
+                Foto Profil Resmi & Pendaftaran Biometrik KYC <span className="text-error-500">*</span>
               </Label>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Pilih metode input foto. Disarankan menggunakan <strong>Selfie Center</strong> agar wajah tersinkronisasi otomatis dengan mesin absensi & login wajah.
+                Perekaman 5 sudut menghasilkan model biometrik wajah 3D paling presisi dan bebas dari kegagalan saat presensi harian.
               </p>
             </div>
 
@@ -411,14 +584,14 @@ export const EmployeeForm = () => {
             <div className="flex p-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 self-start sm:self-auto">
               <button
                 type="button"
-                onClick={() => setPhotoMode("camera")}
+                onClick={() => setPhotoMode("kyc_camera")}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                  photoMode === "camera"
+                  photoMode === "kyc_camera"
                     ? "bg-emerald-600 text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
                 }`}
               >
-                📸 Ambil Selfie Center (Kamera)
+                📸 Kamera Biometrik KYC (5 Pose)
               </button>
               <button
                 type="button"
@@ -434,126 +607,279 @@ export const EmployeeForm = () => {
             </div>
           </div>
 
-          {/* OPSI 1: KAMERA SELFIE BIOMETRIK */}
-          {photoMode === "camera" && (
-            <div>
-              {!capturedSelfie ? (
+          {/* OPSI 1: KAMERA BIOMETRIK KYC 5-POSE */}
+          {photoMode === "kyc_camera" && (
+            <div className="space-y-4">
+              {/* Stepper Progress Bar (Langkah 1 s/d 5) */}
+              <div className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
+                    <span>Langkah {activePoseStep + 1} dari 5:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{currentPose.title}</span>
+                  </span>
+                  <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
+                    {Object.keys(capturedPoses).length}/5 Selesai
+                  </span>
+                </div>
+
+                {/* 5-Step Indicators */}
+                <div className="grid grid-cols-5 gap-1.5">
+                  {KYC_POSES.map((pose, idx) => {
+                    const isCaptured = !!capturedPoses[pose.id];
+                    const isCurrent = idx === activePoseStep && !isKycComplete;
+                    return (
+                      <button
+                        key={pose.id}
+                        type="button"
+                        onClick={() => {
+                          setActivePoseStep(idx);
+                          setIsKycComplete(false);
+                        }}
+                        className={`py-2 px-1 rounded-lg text-[11px] font-semibold flex flex-col items-center justify-center transition border ${
+                          isCaptured
+                            ? "bg-emerald-500 text-white border-emerald-600 shadow-sm"
+                            : isCurrent
+                            ? "bg-emerald-100 text-emerald-900 border-emerald-500 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "bg-gray-100 text-gray-500 border-transparent dark:bg-gray-700 dark:text-gray-400"
+                        }`}
+                      >
+                        <span className="text-xs">{isCaptured ? "✓" : pose.icon}</span>
+                        <span className="truncate w-full text-center text-[10px] mt-0.5">{pose.shortLabel}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {!isKycComplete ? (
                 <div className="space-y-3">
-                  {/* FQA Real-time Status Bar */}
-                  <div className="flex items-center justify-between text-[11px] px-3 py-2 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 font-mono">
+                  {/* Anti-Occlusion & FQA Status Bar */}
+                  <div
+                    className={`flex items-center justify-between text-[11px] px-3.5 py-2.5 rounded-xl border font-mono transition-colors ${
+                      fqaStatus.isOccluded
+                        ? "bg-red-950/80 text-red-300 border-red-800 animate-pulse"
+                        : fqaStatus.isValid
+                        ? "bg-slate-900 text-slate-300 border-slate-800"
+                        : "bg-amber-950/60 text-amber-300 border-amber-800"
+                    }`}
+                  >
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${fqaStatus.isValid ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`}></span>
-                      <span className={fqaStatus.isValid ? "text-emerald-400 font-semibold" : "text-amber-300 font-medium"}>
-                        {fqaStatus.label}
-                      </span>
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          fqaStatus.isOccluded
+                            ? "bg-red-500 animate-ping"
+                            : fqaStatus.isValid
+                            ? "bg-emerald-400 animate-pulse"
+                            : "bg-amber-400"
+                        }`}
+                      ></span>
+                      <span className="font-semibold text-xs">{fqaStatus.label}</span>
                     </div>
+
                     <div className="text-[10px] text-slate-400 flex items-center gap-3">
                       <span>Ketajaman: <strong className="text-white">{fqaStatus.sharpness}</strong></span>
-                      <span>Kecerahan: <strong className="text-white">{fqaStatus.brightness}</strong></span>
+                      <span>Cahaya: <strong className="text-white">{fqaStatus.brightness}</strong></span>
                     </div>
                   </div>
 
-                  {/* Camera Viewport with Center Oval Guide */}
-                  <div className="w-full h-72 sm:h-80 bg-slate-950 rounded-2xl border-2 border-slate-800 relative overflow-hidden flex items-center justify-center shadow-inner">
+                  {/* Camera Viewport with Directional Cue & Anti-Occlusion Reticle */}
+                  <div className="w-full h-80 sm:h-96 bg-slate-950 rounded-2xl border-2 border-slate-800 relative overflow-hidden flex items-center justify-center shadow-inner">
                     <video
                       ref={attachCameraRef}
                       autoPlay
                       playsInline
                       muted
-                      className={`w-full h-full object-cover scale-x-[-1] ${cameraActive && !cameraError ? "block" : "hidden"}`}
+                      className={`w-full h-full object-cover scale-x-[-1] ${
+                        cameraActive && !cameraError ? "block" : "hidden"
+                      }`}
                     />
 
-                    {/* Fallback Simulator if physical webcam blocked */}
+                    {/* Camera Shutter Flash Effect */}
+                    {flashFeedback && (
+                      <div className="absolute inset-0 bg-white/80 z-40 transition-opacity duration-200"></div>
+                    )}
+
+                    {/* Fallback Simulator Viewport */}
                     {(!cameraActive || cameraError) && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-slate-900">
                         <div className="w-28 h-36 border-2 border-dashed border-emerald-400/80 rounded-full flex items-center justify-center mb-2">
-                          <span className="text-xs font-mono text-emerald-400 font-bold uppercase">Frontal Center</span>
+                          <span className="text-xs font-mono text-emerald-400 font-bold uppercase">{currentPose.shortLabel}</span>
                         </div>
-                        <span className="text-xs text-slate-300 font-medium">Simulator Kamera Biometrik Aktif</span>
-                        <span className="text-[11px] text-slate-500">Klik tombol di bawah untuk mengambil snapshot foto default</span>
+                        <span className="text-xs text-slate-300 font-medium">Simulator Kamera KYC Aktif</span>
+                        <span className="text-[11px] text-slate-500">Klik tombol di bawah untuk mengambil snapshot pose ini</span>
                       </div>
                     )}
 
-                    {/* Dynamic Oval Reticle Guide */}
+                    {/* Anti-Occlusion Warning Overlay (When Hand on Chin Detected) */}
+                    {fqaStatus.isOccluded && (
+                      <div className="absolute inset-x-4 top-4 z-30 p-3 bg-red-900/90 backdrop-blur-md rounded-xl border border-red-500/60 text-white flex items-center gap-2.5 shadow-lg animate-bounce">
+                        <span className="text-xl">✋</span>
+                        <div className="text-left text-xs font-semibold">
+                          <span className="block font-bold text-red-200">Terdeteksi Halangan / Tangan Menopang Dagu!</span>
+                          <span>Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dynamic Oval Reticle with Hand Boundary Guidelines */}
                     <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
                       <div
-                        className={`w-40 h-52 sm:w-44 sm:h-56 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-center transition-colors duration-300 ${
-                          fqaStatus.isValid ? "border-emerald-400 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "border-amber-400/70"
+                        className={`w-44 h-56 sm:w-48 sm:h-64 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-center transition-all duration-300 relative ${
+                          fqaStatus.isOccluded
+                            ? "border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                            : fqaStatus.isValid
+                            ? "border-emerald-400 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+                            : "border-amber-400/70"
                         }`}
                       >
-                        <span className={`text-[10px] font-mono tracking-wider uppercase mt-auto mb-3 font-bold ${
-                          fqaStatus.isValid ? "text-emerald-400" : "text-amber-300"
-                        }`}>
-                          {fqaStatus.isValid ? "✓ Posisi Pas (Center)" : "Area Wajah"}
+                        {/* Directional Cue Indicator inside Reticle */}
+                        <div className="my-auto flex flex-col items-center justify-center text-center px-4">
+                          <span className="text-3xl mb-1 filter drop-shadow">{currentPose.icon}</span>
+                          <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${
+                            fqaStatus.isOccluded ? "text-red-400" : fqaStatus.isValid ? "text-emerald-300" : "text-amber-300"
+                          }`}>
+                            {currentPose.shortLabel}
+                          </span>
+                        </div>
+
+                        {/* Lower Jawline Safe Zone Marker */}
+                        <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-3"></div>
+                        <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mb-2">
+                          Area Dagu Bersih
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Instruction Banner */}
-                  <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 rounded-xl text-xs text-blue-900 dark:text-blue-300 flex items-start gap-2">
-                    <span className="text-base leading-none">💡</span>
+                  {/* Instructional Pose Tip Banner */}
+                  <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl text-xs text-blue-950 dark:text-blue-200 flex items-start gap-2.5">
+                    <span className="text-lg leading-none">💡</span>
                     <div>
-                      <strong>Panduan Selfie Frontal Center:</strong> Posisikan wajah tepat di tengah bingkai oval menghadap lurus ke kamera. Jangan menengok ke kiri, kanan, atas, maupun bawah agar ekstraksi ArcFace 512-d optimal.
+                      <strong className="font-bold text-blue-900 dark:text-blue-100">{currentPose.instruction}.</strong>
+                      <p className="mt-0.5 text-blue-800/80 dark:text-blue-300/80">{currentPose.sub}</p>
                     </div>
                   </div>
 
-                  {/* Capture Button */}
-                  <div className="flex justify-center pt-1">
+                  {/* Capture Button with Anti-Occlusion Guard */}
+                  <div className="flex items-center justify-between pt-1">
                     <button
                       type="button"
-                      onClick={handleTakeSelfie}
-                      className="py-3 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white text-xs font-extrabold rounded-xl transition shadow-md shadow-emerald-600/30 flex items-center gap-2 cursor-pointer"
+                      onClick={() => setActivePoseStep((prev) => Math.max(0, prev - 1))}
+                      disabled={activePoseStep === 0}
+                      className="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      ← Pose Sebelumnya
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCaptureCurrentPose}
+                      disabled={fqaStatus.isOccluded}
+                      className={`py-3 px-7 text-xs font-extrabold rounded-xl transition shadow-lg flex items-center gap-2 cursor-pointer ${
+                        fqaStatus.isOccluded
+                          ? "bg-red-600 text-white opacity-50 cursor-not-allowed shadow-none"
+                          : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white shadow-emerald-600/30"
+                      }`}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span>📸 Ambil Foto Selfie Center</span>
+                      <span>
+                        {fqaStatus.isOccluded
+                          ? "✋ Jauhkan Tangan dari Dagu untuk Mengambil"
+                          : `📸 Ambil Foto (${currentPose.shortLabel})`}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActivePoseStep((prev) => Math.min(KYC_POSES.length - 1, prev + 1))}
+                      disabled={activePoseStep === KYC_POSES.length - 1 || !capturedPoses[currentPose.id]}
+                      className="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Pose Berikutnya →
                     </button>
                   </div>
                 </div>
               ) : (
-                /* Captured Selfie Preview */
-                <div className="flex flex-col sm:flex-row items-center gap-5 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-emerald-300 dark:border-emerald-800">
-                  <div className="relative w-36 h-36 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-md shrink-0">
-                    <img
-                      src={capturedSelfie}
-                      alt="Captured Selfie Preview"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-1 right-1 bg-emerald-500 text-white p-1 rounded-full text-xs">
-                      ✓
-                    </span>
+                /* REVIEW 5-POSE GALLERY (STANDAR e-KYC PERBANKAN) */
+                <div className="space-y-4 p-5 bg-white dark:bg-gray-800/80 rounded-2xl border border-emerald-300 dark:border-emerald-800 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-gray-100 dark:border-gray-700 gap-2">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 mb-1">
+                        ✓ 5/5 Pose Biometrik Lengkap (e-KYC Bank Grade)
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-800 dark:text-white">
+                        Seluruh Sudut Wajah Berhasil Ditangkap Tanpa Halangan
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Foto <strong>Pose 1 (Center)</strong> otomatis menjadi Foto Profil resmi di Supabase Storage, dan kelima pose akan diekstraksi menjadi embedding centroid 512-dimensi.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleResetAllPoses}
+                      className="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition self-start sm:self-auto"
+                    >
+                      🗑️ Ulangi Semua Pose
+                    </button>
                   </div>
 
-                  <div className="flex-1 text-center sm:text-left space-y-2">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
-                      ✓ Foto Selfie Center Terpilih
-                    </div>
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-white">
-                      Foto Profil & Model Biometrik Siap Didaftarkan
-                    </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Foto ini akan otomatis diunggah ke Supabase Storage (<code>avatars/</code>) sebagai foto profil dan diekstraksi menjadi embedding biometrik 512-dimensi.
-                    </p>
+                  {/* 5-Card Thumbnail Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    {KYC_POSES.map((pose, idx) => {
+                      const snapshot = capturedPoses[pose.id];
+                      return (
+                        <div
+                          key={pose.id}
+                          className={`flex flex-col items-center p-2 rounded-xl border relative transition ${
+                            pose.isProfileAvatar
+                              ? "border-2 border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm"
+                              : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                          }`}
+                        >
+                          {pose.isProfileAvatar && (
+                            <span className="absolute -top-2 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-600 text-white shadow">
+                              ⭐ Profil Avatar
+                            </span>
+                          )}
 
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={handleRetake}
-                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-lg transition"
-                      >
-                        🔄 Ambil Ulang Foto Selfie
-                      </button>
-                    </div>
+                          <div className="w-full h-32 rounded-lg overflow-hidden bg-slate-950 border border-gray-200 dark:border-gray-700 relative mb-2">
+                            {snapshot ? (
+                              <img src={snapshot} alt={pose.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full text-slate-500 text-xs">
+                                Belum ada
+                              </div>
+                            )}
+                            <span className="absolute bottom-1 right-1 bg-emerald-500 text-white rounded-full p-0.5 text-[10px]">
+                              ✓
+                            </span>
+                          </div>
+
+                          <span className="text-[11px] font-bold text-gray-800 dark:text-white truncate w-full text-center">
+                            {pose.shortLabel}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRetakeSinglePose(idx)}
+                            className="mt-1 text-[10px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-semibold"
+                          >
+                            🔄 Ambil Ulang
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* OPSI 2: UNGGAH BERKAS PAS FOTO */}
+          {/* OPSI 2: UNGGAH BERKAS PAS FOTO BIASA */}
           {photoMode === "upload" && (
             <div>
               <DropzoneComponent onFileSelect={setFile} />
@@ -667,7 +993,7 @@ export const EmployeeForm = () => {
             disabled={loading}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5"
           >
-            {loading ? "Menyimpan & Mendaftarkan Biometrik..." : "Simpan Karyawan Baru"}
+            {loading ? "Menyimpan & Mendaftarkan Biometrik KYC..." : "Simpan Karyawan Baru"}
           </Button>
         </div>
       </form>

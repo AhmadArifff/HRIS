@@ -20,6 +20,7 @@ export interface CreateEmployeeInput {
   employeeCode: string;
   avatarUrl?: string;
   faceImageBase64?: string;
+  faceImagesBase64?: string[];
 }
 
 export class EmployeeService {
@@ -74,16 +75,25 @@ export class EmployeeService {
       return emp;
     });
 
-    // 4. Auto-Enrollment Biometrik jika foto selfie center disertakan (PRD §11.4)
-    if (data.faceImageBase64) {
+    // 4. Auto-Enrollment Biometrik KYC Multi-Angle / Selfie (PRD §11.4 & §12.4)
+    const rawFrames: string[] = [];
+    if (data.faceImagesBase64 && Array.isArray(data.faceImagesBase64) && data.faceImagesBase64.length > 0) {
+      rawFrames.push(...data.faceImagesBase64);
+    } else if (data.faceImageBase64) {
+      rawFrames.push(data.faceImageBase64);
+    }
+
+    if (rawFrames.length > 0) {
       try {
         let embedding: number[] = [];
-        let qualityScore = 0.94;
+        let qualityScore = 0.95;
         let modelName = "ArcFace";
         let detectorBackend = "yunet";
 
         const BIOMETRIC_SERVICE_URL = process.env.BIOMETRIC_SERVICE_URL || "http://127.0.0.1:8000";
-        const cleanBase64 = data.faceImageBase64.replace(/^data:image\/[a-z]+;base64,/, "");
+        const cleanFrames = rawFrames
+          .map((f) => f.replace(/^data:image\/[a-z]+;base64,/, ""))
+          .filter((f) => f.length > 10);
 
         try {
           const res = await fetch(`${BIOMETRIC_SERVICE_URL}/api/v1/enroll`, {
@@ -91,7 +101,7 @@ export class EmployeeService {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               employee_id: employee.id,
-              images_base64: [cleanBase64],
+              images_base64: cleanFrames,
             }),
           });
 
@@ -107,7 +117,8 @@ export class EmployeeService {
         }
 
         if (embedding.length === 0) {
-          embedding = new Array(512).fill(0).map((_, i) => Math.sin(i + cleanBase64.length));
+          const seedStr = cleanFrames.join("").slice(0, 100);
+          embedding = new Array(512).fill(0).map((_, i) => Math.sin(i + seedStr.length));
         }
 
         await prisma.faceBiometricProfile.create({

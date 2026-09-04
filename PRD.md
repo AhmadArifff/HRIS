@@ -1906,3 +1906,57 @@ graph TD
 | **Foto Profil Karyawan** | Diunggah manual terpisah dari biometrik | **Otomatis dari Selfie Center** tersimpan di Supabase Storage `avatars/` | ✅ Terimplementasi & Terverifikasi |
 | **Status Biometrik Karyawan Baru** | Belum terdaftar (harus enroll manual) | **Langsung Aktif & Terdaftar** di `face_biometric_profiles` via `POST /api/employees` | ✅ Terimplementasi & Terverifikasi |
 | **Integrasi Database Supabase** | Terputus pasca reset | Terhubung kembali, 21 tabel RLS Enabled, auto-sync embedding ArcFace 512-d | ✅ Terimplementasi & Terverifikasi |
+
+---
+
+## 12. Standar Pendaftaran Biometrik KYC Multi-Angle (5 Poses) & Protokol Anti-Occlusion (Deteksi Tangan & Noise Objek)
+
+### 12.1 Latar Belakang & Kebutuhan Regulasi Biometrik Kelas Perbankan
+Pengambilan citra biometrik tunggal (1x snapshot) rentan mengalami bias pencahayaan dan hilangnya informasi topologi wajah saat karyawan berada pada sudut rotasi kepala yang berbeda saat presensi harian. Selain itu, kebiasaan pengguna menopang dagu dengan tangan (*hand-on-chin*) atau adanya halangan benda asing pada wajah menimbulkan derau (*noise occlusion*) yang merusak ekstraksi landmark biometrik.
+
+Untuk mengatasi hal tersebut, modul pendaftaran wajah pada formulir Tambah Karyawan mengadopsi standar **e-KYC Perbankan Terpadu (Electronic Know Your Customer)** dengan 5 sudut pose terpandu serta penyaringan halangan tangan (*Anti-Occlusion Filter*).
+
+---
+
+### 12.2 Taksonomi 5 Sudut Pose KYC Multi-Angle
+
+Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
+
+| Langkah | Nama Pose | Sudut Rotasi Kepala | Tujuan Ekstraksi Biometrik | Penetapan Foto Profil Resmi |
+| :--- | :--- | :--- | :--- | :--- |
+| **Pose 1** | **Center (Frontal)** | Pitch $0^\circ$, Yaw $0^\circ$, Roll $0^\circ$ | Ekstraksi simetri mata, hidung, philtrum, dan bibir. | ⭐ **Ya (Official Avatar)**: Diunggah ke Supabase Storage `avatars/` dan disimpan ke `employees.avatar_url`. |
+| **Pose 2** | **Hadap Kanan** | Yaw $+20^\circ \dots +30^\circ$ | Perekaman pelipis kanan, kontur telinga kanan, dan garis pipi kanan. | Tidak (Khusus ekstraksi biometrik). |
+| **Pose 3** | **Hadap Kiri** | Yaw $-20^\circ \dots -30^\circ$ | Perekaman pelipis kiri, kontur telinga kiri, dan garis pipi kiri. | Tidak (Khusus ekstraksi biometrik). |
+| **Pose 4** | **Mendongak ke Atas** | Pitch $+15^\circ \dots +20^\circ$ | Perekaman garis rahang bawah (*mandible*), dagu, dan struktur leher atas. | Tidak (Khusus ekstraksi biometrik). |
+| **Pose 5** | **Menunduk ke Bawah** | Pitch $-15^\circ \dots -20^\circ$ | Perekaman tulang alis (*brow ridge*), kening, dan puncak hidung. | Tidak (Khusus ekstraksi biometrik). |
+
+---
+
+### 12.3 Algoritma Deteksi Halangan Tangan & Derau Objek (Anti-Occlusion Heuristic)
+
+Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifikasi pra-pemrosesan di sisi klien (*Client-Side Pre-Capture Guard*):
+
+1. **Segmentasi Area Kritis Wajah Bawah (Chin & Jawline Zone):**
+   - Reticle oval dibagi menjadi 3 sub-area: *Upper Third* (dahi & mata), *Middle Third* (hidung & pipi), dan *Lower Third* (mulut, rahang, dan dagu).
+   - Area *Lower Third* diperiksa secara intensif untuk mendeteksi intrusi objek eksternal (misal: jari tangan, telapak tangan menopang pipi/dagu, masker, cangkir).
+2. **Kriteria Deteksi Hambatan (Occlusion Triggers):**
+   - **Diskontinuitas Tepi Horizontal:** Munculnya garis kontras tinggi melintang di area dagu/leher menandakan adanya lengan atau telapak tangan yang menempel di wajah.
+   - **Perbedaan Warna Kulit Eksternal (Boundary Intrusion):** Objek yang memotong batas reticle dari arah bawah atau samping dengan kepadatan piksel tinggi.
+   - **Asimetri Kontur Wajah:** Ketidakseimbangan lebar pipi kiri dan kanan akibat tertutup kepalan tangan.
+3. **Respons UI & Guard Clause:**
+   - Apabila terdeteksi tangan/objek di area wajah:
+     - Reticle berubah menjadi **Merah Berkedip**.
+     - Status memunculkan peringatan tegas: `⚠️ Terdeteksi tangan / halangan menutupi dagu & wajah! Harap jauhkan tangan dari area wajah.`
+     - **Tombol capture dikunci** (*disabled*) sampai tangan benar-benar diturunkan dan wajah bebas dari gangguan.
+
+---
+
+### 12.4 Kalkulasi Vektor Centroid Multi-Frame di Backend AI
+
+1. Ke-5 citra pose dikirimkan ke endpoint backend `POST /api/employees` dalam atribut `faceImagesBase64: [img1, img2, img3, img4, img5]`.
+2. Backend API meneruskan ke mesin AI Python `apps/biometric-service` (`POST /api/v1/enroll`).
+3. Model ArcFace mengekstrak vektor 512-dimensi untuk setiap pose ($v_1, v_2, v_3, v_4, v_5$).
+4. Vektor centroid dinormalisasi dihitung:
+   $$\vec{c} = \frac{\sum_{i=1}^{5} \vec{v}_i}{\left\| \sum_{i=1}^{5} \vec{v}_i \right\|}$$
+5. Vektor centroid $\vec{c}$ berdimensi 512 disimpan ke tabel `face_biometric_profiles`, menghasilkan profil wajah 3D adaptif yang dapat mengenali karyawan bahkan saat karyawan bergerak atau menoleh saat presensi masuk.
+

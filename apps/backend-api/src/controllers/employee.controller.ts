@@ -7,7 +7,7 @@ export const createEmployee = async (req: Request, res: Response) => {
     const {
       firstName, lastName, email, phone, birthDate,
       gender, departmentId, positionId, joinDate,
-      employeeCode, avatarUrl, faceImageBase64
+      employeeCode, avatarUrl, faceImageBase64, faceImagesBase64
     } = req.body;
 
     // Guard Clauses
@@ -18,7 +18,7 @@ export const createEmployee = async (req: Request, res: Response) => {
     const employee = await EmployeeService.createEmployee({
       firstName, lastName, email, phone, birthDate,
       gender, departmentId, positionId, joinDate,
-      employeeCode, avatarUrl, faceImageBase64
+      employeeCode, avatarUrl, faceImageBase64, faceImagesBase64
     });
 
     return sendResult(res, 201, Result.ok(employee, "Karyawan berhasil ditambahkan."));
