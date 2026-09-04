@@ -269,14 +269,27 @@ export default function BiometricEnrollPage() {
     setErrorMessage("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/biometrics/enroll`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeId: employeeId,
-          imagesBase64: frames,
-        }),
-      });
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE_URL}/api/biometrics/enroll`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employeeId: employeeId,
+            imagesBase64: frames,
+          }),
+        });
+      } catch (e) {
+        // Fallback to relative proxy
+        res = await fetch("/api/biometrics/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employeeId: employeeId,
+            imagesBase64: frames,
+          }),
+        });
+      }
 
       const json = await res.json();
       if (json.isSuccess || json.success) {
@@ -286,7 +299,12 @@ export default function BiometricEnrollPage() {
         throw new Error(json.message || json.error || "Gagal mendaftarkan profil biometrik");
       }
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Terjadi kesalahan saat pendaftaran biometrik");
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat pendaftaran biometrik";
+      if (msg === "Failed to fetch") {
+        setErrorMessage("Gagal menghubungi server API Backend (Port 3002). Pastikan backend aktif.");
+      } else {
+        setErrorMessage(msg);
+      }
       setStage("enroll");
     }
   };
@@ -309,14 +327,27 @@ export default function BiometricEnrollPage() {
       ctx.drawImage(video, 0, 0, 640, 480);
       const selfieBase64 = canvas.toDataURL("image/jpeg", 0.85);
 
-      const res = await fetch(`${API_BASE_URL}/api/biometrics/test-verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeId: employeeId,
-          selfieBase64: selfieBase64,
-        }),
-      });
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE_URL}/api/biometrics/test-verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employeeId: employeeId,
+            selfieBase64: selfieBase64,
+          }),
+        });
+      } catch (e) {
+        // Fallback to relative proxy
+        res = await fetch("/api/biometrics/test-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employeeId: employeeId,
+            selfieBase64: selfieBase64,
+          }),
+        });
+      }
 
       const json = await res.json();
       if (json.isSuccess || json.success) {
@@ -335,7 +366,12 @@ export default function BiometricEnrollPage() {
         throw new Error(json.message || json.error || "Wajah belum cocok dengan profil yang baru didaftarkan");
       }
     } catch (err: unknown) {
-      setSelfTestError(err instanceof Error ? err.message : "Uji verifikasi biometrik gagal");
+      const msg = err instanceof Error ? err.message : "Uji verifikasi biometrik gagal";
+      if (msg === "Failed to fetch") {
+        setSelfTestError("Gagal menghubungi server API Backend (Port 3002). Pastikan backend service aktif.");
+      } else {
+        setSelfTestError(msg);
+      }
     } finally {
       setSelfTestLoading(false);
     }

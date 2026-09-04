@@ -34,8 +34,14 @@ import {
 const app: Application = express();
 
 // 1. Security & Global Middlewares (PRD §1 & §9 - 5mb safe payload limit)
-app.use(helmet());
-app.use(cors({ origin: "*" }));
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(morgan("dev"));
