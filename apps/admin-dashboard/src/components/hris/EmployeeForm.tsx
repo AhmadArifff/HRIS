@@ -720,21 +720,9 @@ export const EmployeeForm = () => {
               gray >= 40 &&
               gray <= 200;
 
-            // Dark Solid Object / Smartphone Screen & Case:
-            // Neutral, low chroma, very dark, not skin and not lips
-            const isDarkPhonePixel =
-              gray < 65 &&
-              r < 75 &&
-              g < 75 &&
-              b < 75 &&
-              Math.abs(r - g) <= 18 &&
-              Math.abs(g - b) <= 18 &&
-              Math.abs(r - b) <= 20;
-
             // Robust Hemoglobin-based Skin-Tone Detection
             const isSkinTone =
               !isDarkHair &&
-              !isDarkPhonePixel &&
               r > 75 &&
               g > 45 &&
               b > 30 &&
@@ -747,16 +735,24 @@ export const EmployeeForm = () => {
             // Artificial Object Detection (White ceramic mug, cup, paper, surgical mask)
             const isWhiteObject =
               gray > 125 &&
-              Math.abs(r - g) <= 16 &&
-              Math.abs(g - b) <= 16 &&
-              Math.abs(r - b) <= 18;
+              Math.abs(r - g) <= 20 &&
+              Math.abs(g - b) <= 20 &&
+              Math.abs(r - b) <= 20;
 
-            // Foreign non-skin, non-hair, non-lip artificial object (smartphone, mug, mask, card)
-            const isForeignObject =
+            const isTeeth = gray > 120 && r > 100 && g > 100 && b > 100 && Math.abs(r - g) <= 25 && Math.abs(g - b) <= 25;
+            const isInnerMouthDark = gray < 60 && r > g && r > b;
+
+            // Smartphone Screen & Case / Solid Objects of ANY color (Blue, Grey, Red, Black, etc):
+            // Basically anything that is not a natural facial feature in the oral/chin zone
+            const isDarkPhonePixel =
               !isSkinTone &&
               !isDarkHair &&
               !isLipPixel &&
-              (isWhiteObject || isDarkPhonePixel);
+              !isTeeth &&
+              !isInnerMouthDark;
+
+            // Foreign non-skin, non-hair, non-lip artificial object
+            const isForeignObject = isDarkPhonePixel || isWhiteObject;
 
             // Step 1: Reticle Oval Core Sampling (Center at 80, 60)
             if (y >= 28 && y <= 92 && x >= 48 && x <= 112) {
@@ -936,17 +932,19 @@ export const EmployeeForm = () => {
         // B. Object Covering Mouth or Chin (Smartphone, Mug, Cup, Mask, Document):
         const oralCoreNaturalRatio = oralCorePixels > 0 ? oralCoreNaturalCount / oralCorePixels : 1;
 
-        // 1. Black/Dark Smartphone or Dark Solid Object in oral core:
+        // 1. Smartphone or Solid Object in oral core (Total area ~432 pixels):
+        // If 20% of the oral core is covered by a foreign solid object and lips are missing.
         const isOralBlockedByPhone =
-          oralCorePixels >= 25 &&
-          (oralCoreDarkCount >= 14 || oralCoreForeignCount >= 16) &&
-          oralCoreLipCount < 5;
+          oralCorePixels >= 100 &&
+          (oralCoreDarkCount >= 85 || oralCoreForeignCount >= 85) &&
+          oralCoreLipCount < 10;
 
         // 2. Continuous Vertical Smartphone Slab (spanning across mouth and chin):
+        // Mouth area ~1352 pixels, Chin area ~896 pixels
         const isVerticalPhoneSlab =
-          mouthDarkObjectCount >= 16 &&
-          chinDarkObjectCount >= 16 &&
-          mouthLipCount < 5;
+          mouthDarkObjectCount >= 200 &&
+          chinDarkObjectCount >= 180 &&
+          mouthLipCount < 10;
 
         // 3. Ceramic Cup / Mug / Paper / White Mask:
         const isOralBlockedByCup =
