@@ -11,6 +11,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "concurrently \"npm run dev -w apps/admin-dashboard\" \"npm run dev -w apps/employee-portal\" \"npm run dev -w apps/backend-api\" \"npm run dev -w apps/biometric-service\"",
+    "db:rls": "npm run db:rls -w packages/database",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },

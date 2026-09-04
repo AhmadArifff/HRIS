@@ -7,6 +7,7 @@
     "build": "prisma generate",
     "generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:rls": "ts-node prisma/enable-rls.ts",
     "format": "prisma format",
     "seed": "ts-node prisma/seed.ts"
   },

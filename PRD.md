@@ -1601,3 +1601,179 @@ Untuk menjamin akurasi ArcFace $\ge 99.8\%$ dan meminimalkan False Rejection:
 *   **Hijab & Penutup Kepala:** Penggunaan jilbab/hijab **sangat didukung**. Area dahi, alis, kedua mata, hidung, dan bibir wajib terlihat jelas tanpa tertutup kain cadar saat proses capture.
 *   **Masker Medis:** Masker kesehatan wajib diturunkan sesaat selama proses verifikasi absensi berlangsung.
 *   **Pencahayaan:** Hindari berdiri tepat membelakangi jendela/lampu (*backlight* ekstrim). Algoritma CLAHE akan mengoreksi deviasi cahaya normal, namun pencahayaan merata dianjurkan.
+
+---
+
+## 10. Case Solve: Supabase Database Hardening & Row Level Security (RLS) Protocol
+
+### 10.1 Latar Belakang Masalah (Security Incident & Linter Analysis)
+Pada proses deployment dan re-migrasi database Supabase Cloud, sistem deteksi audit keamanan internal Supabase (**Database Linter**) memicu 21 pelanggaran keamanan dengan tingkat keparahan tinggi (**Level: ERROR**, **Category: SECURITY**):
+
+```text
+Error Rule: 0013_rls_disabled_in_public
+Facing: EXTERNAL
+Description: Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST.
+Observed Tables: public.master_statuses, public.payroll_details, public.employee_contracts, public.attendances, public.face_biometric_profiles, public.leave_requests, public.leave_types, public.payrolls, public.payroll_components, public.employees, public.shift_masters, public.offboardings, public.reimbursements, public.job_postings, public.applications, public.applicants, public.performance_reviews, public.roles, public.users, public.departments, public.positions.
+```
+
+#### Analisis Akar Masalah (Root Cause):
+1. **Eksposur PostgREST Otomatis:** Supabase secara *default* mengekspos seluruh tabel di dalam skema `public` ke antarmuka REST API publik PostgREST (`https://<project-ref>.supabase.co/rest/v1/`).
+2. **Perilaku Default Prisma ORM:** Perintah `prisma db push` atau `prisma migrate` membuat tabel PostgreSQL standar tanpa mengaktifkan atribut `ROW LEVEL SECURITY` (`relrowsecurity = false`).
+3. **Risiko Keamanan (Vulnerability Risk):** Siapapun pihak luar yang memegang kunci publik `anon key` dapat mengeksploitasi endpoint PostgREST secara langsung untuk membaca atau memanipulasi data sensitif perusahaan (gaji, data karyawan, riwayat kontrak kerja, embedding biometrik wajah 512-dimensi, riwayat absensi) dengan melewati (*bypass*) seluruh middleware validasi Express API.
+
+---
+
+### 10.2 Arsitektur Solusi Keamanan (Defense-in-Depth RLS Architecture)
+Sistem HRIS menerapkan prinsip **Defense-in-Depth** dan **Least Privilege** melalui pemisahan peran (*role separation*) di tingkat mesin database PostgreSQL:
+
+```mermaid
+graph TD
+    subgraph Client Requests
+        AnonClient[Anon / Public Web]
+        AuthUser[Authenticated User]
+    end
+
+    subgraph Supabase PostgREST Gateway
+        AnonClient -->|Blocked by RLS Default Deny| StrictTables[(Sensitive HR Tables)]
+        AnonClient -->|Allowed by Public Policy| JobTables[(public.job_postings)]
+        AuthUser -->|Allowed by Master Policy| MasterTables[(Master Lookup Tables)]
+    end
+
+    subgraph Internal Monorepo Network
+        BackendAPI[Express Backend API Server]
+        PrismaORM[Prisma ORM Client]
+        BackendAPI -->|Internal JWT + Guard Clauses| PrismaORM
+        PrismaORM -->|Direct Postgres / Service Role| FullDB[(Supabase PostgreSQL All Tables)]
+    end
+```
+
+1. **Prinsip Default Deny:** RLS diaktifkan (`ENABLE ROW LEVEL SECURITY`) pada seluruh 21 tabel. Secara *default*, PostgREST menolak segala bentuk akses jika tidak ada kebijakan (*policy*) yang cocok.
+2. **Koneksi Internal Backend Bebas Hambatan (`service_role`):** Seluruh logika bisnis HR (validasi kuota cuti, kalkulasi formula payroll PPh21, verifikasi ArcFace biometrik) berjalan di dalam `backend-api` (Express). Backend terhubung melalui koneksi langsung PostgreSQL (`DATABASE_URL` pooler dan `DIRECT_URL`) sebagai database owner (`postgres`) dan diberikan kebijakan `service_role_all` eksplisit:
+   ```sql
+   CREATE POLICY "service_role_all_<table_name>" ON public.<table_name>
+       FOR ALL TO service_role
+       USING (true) WITH CHECK (true);
+   ```
+3. **Akses Publik Terkontrol (E-Recruitment Portal):**
+   *   Tabel `job_postings` diberikan izin baca (`SELECT`) publik bagi peran `anon` dan `authenticated` untuk posisi lowongan yang masih aktif (`deleted_at IS NULL`).
+   *   Tabel `applicants` dan `applications` diberikan izin kirim lamaran (`INSERT`) publik bagi pelamar kerja luar tanpa membuka izin baca data pelamar lain.
+4. **Isolasi Data Master Lookup:**
+   *   Tabel referensi umum (`master_statuses`, `departments`, `positions`, `leave_types`, `shift_masters`) dapat dibaca (`SELECT`) oleh pengguna terotentikasi (`authenticated`).
+5. **Karantina Data Sensitif Mutlak:**
+   *   Tabel privat (`users`, `roles`, `employees`, `employee_contracts`, `payrolls`, `payroll_details`, `payroll_components`, `attendances`, `face_biometric_profiles`, `leave_requests`, `offboardings`, `reimbursements`, `performance_reviews`) **DITUTUP 100%** dari akses PostgREST anonim. Akses data hanya diizinkan melalui API Express dengan token JWT terverifikasi dan audit RBAC.
+
+---
+
+### 10.3 Matriks Kebijakan Row Level Security (21 Tabel)
+
+| No | Nama Tabel | Klasifikasi Data | Akses `service_role` | Akses `authenticated` | Akses `anon` | Status RLS |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `master_statuses` | Master Reference | Full Access (CRUD) | Read Only (`SELECT`) | Denied | ✅ Active |
+| 2 | `departments` | Organization Data | Full Access (CRUD) | Read Only (`SELECT`) | Denied | ✅ Active |
+| 3 | `positions` | Organization Data | Full Access (CRUD) | Read Only (`SELECT`) | Denied | ✅ Active |
+| 4 | `shift_masters` | Organization Data | Full Access (CRUD) | Read Only (`SELECT`) | Denied | ✅ Active |
+| 5 | `leave_types` | Master Reference | Full Access (CRUD) | Read Only (`SELECT`) | Denied | ✅ Active |
+| 6 | `job_postings` | Recruitment Public | Full Access (CRUD) | Read Only (`SELECT`) | Read Only (`SELECT`) | ✅ Active |
+| 7 | `applicants` | Recruitment Data | Full Access (CRUD) | Create (`INSERT`) | Create (`INSERT`) | ✅ Active |
+| 8 | `applications` | Recruitment Data | Full Access (CRUD) | Create (`INSERT`) | Create (`INSERT`) | ✅ Active |
+| 9 | `users` | Auth Credential | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 10 | `roles` | Auth & RBAC | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 11 | `employees` | Personal Identifiable Data (PII) | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 12 | `employee_contracts` | Financial / Legal | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 13 | `face_biometric_profiles`| Sensitif Spesifik (ArcFace 512) | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 14 | `attendances` | Audit Trail Kehadiran | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 15 | `leave_requests` | Kepegawaian Internal | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 16 | `payrolls` | Keuangan & Gaji | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 17 | `payroll_details` | Keuangan & Rincian Gaji | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 18 | `payroll_components`| Master Komponen Gaji | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 19 | `reimbursements` | Klaim Keuangan | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 20 | `performance_reviews`| Evaluasi Kinerja KPI | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+| 21 | `offboardings` | Kepegawaian Internal | Full Access (CRUD) | Denied (via Express) | Denied | ✅ Active |
+
+---
+
+### 10.4 SOP Setup Multi-Device & Database Re-Migration (Panduan Lintas Perangkat)
+Agar pengembang lain yang menggunakan perangkat komputer berbeda atau saat melakukan muat ulang database Supabase dari nol dapat menjalankan sistem secara sempurna tanpa kendala linter RLS, ikuti Standar Operasional Prosedur (SOP) 5 langkah berikut:
+
+#### Langkah 1: Konfigurasi Environment Variable
+Salin `.env.example` ke `.env` di root repository dan `packages/database/.env`:
+```env
+# Koneksi Transaksional Pooler (Port 6543)
+DATABASE_URL="postgresql://postgres.<project-ref>:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Koneksi Langsung Migrasi DDL (Port 5432)
+DIRECT_URL="postgresql://postgres.<project-ref>:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+
+NEXT_PUBLIC_SUPABASE_URL="https://<project-ref>.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="<supabase-anon-key>"
+SUPABASE_SERVICE_ROLE_KEY="<supabase-service-role-key>"
+```
+
+#### Langkah 2: Sinkronisasi Skema Database (DDL Push)
+Eksekusi migrasi skema tabel ke database Supabase:
+```bash
+npm run db:push -w packages/database
+```
+
+#### Langkah 3: Inisialisasi Storage Buckets Supabase
+Pastikan 5 bucket penyimpanan dokumen terbuat di Supabase:
+*   `avatars` (Public: true)
+*   `kanban-documents` (Public: false)
+*   `leave-attachments` (Public: false)
+*   `reimbursement-claims` (Public: false)
+*   `applicant-resumes` (Public: false)
+
+#### Langkah 4: Seeding Data Inti & Karyawan
+Eksekusi pengisian data awal master status, departemen, jabatan, shift reguler, dan akun admin HRD:
+```bash
+npm run seed -w packages/database
+```
+
+#### Langkah 5: Eksekusi Hardening RLS (Otomatis & Idempotent)
+Jalankan skrip automasi pengaktifan RLS dan penerapan kebijakan keamanan database:
+```bash
+# Dapat dijalankan dari root repository:
+npm run db:rls
+
+# Atau langsung dari package database:
+npm run db:rls -w packages/database
+```
+
+#### Hasil Verifikasi Terminal (Contoh Output Sukses):
+```text
+🔒 --- HRIS DATABASE SECURITY HARDENING: ROW LEVEL SECURITY (RLS) ---
+Executing 79 SQL statements to enforce RLS and security policies...
+✅ Successfully executed 79 security hardening statements.
+
+🔍 --- VERIFYING RLS STATUS ON ALL PUBLIC TABLES ---
+------------------------------------------------------------
+| Table Name                     | RLS Status              |
+------------------------------------------------------------
+| applicants                     | ✅ ENABLED               |
+| applications                   | ✅ ENABLED               |
+| attendances                    | ✅ ENABLED               |
+| departments                    | ✅ ENABLED               |
+| employee_contracts             | ✅ ENABLED               |
+| employees                      | ✅ ENABLED               |
+| face_biometric_profiles        | ✅ ENABLED               |
+| job_postings                   | ✅ ENABLED               |
+| leave_requests                 | ✅ ENABLED               |
+| leave_types                    | ✅ ENABLED               |
+| master_statuses                | ✅ ENABLED               |
+| offboardings                   | ✅ ENABLED               |
+| payroll_components             | ✅ ENABLED               |
+| payroll_details                | ✅ ENABLED               |
+| payrolls                       | ✅ ENABLED               |
+| performance_reviews            | ✅ ENABLED               |
+| positions                      | ✅ ENABLED               |
+| reimbursements                 | ✅ ENABLED               |
+| roles                          | ✅ ENABLED               |
+| shift_masters                  | ✅ ENABLED               |
+| users                          | ✅ ENABLED               |
+------------------------------------------------------------
+
+🎉 ALL 21 PUBLIC TABLES HAVE ROW LEVEL SECURITY (RLS) ACTIVATED!
+Supabase Database Linter rule '0013_rls_disabled_in_public' is completely RESOLVED.
+```
+
+Dengan protokol ini, setiap kali database dimuat ulang atau proyek di-clone di perangkat kerja baru, keamanan data terjamin 100% dan lolos standar linter Supabase tanpa intervensi manual yang rentan salah.
