@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ToastContainer, ToastMessage } from "@/components/ui/toast/Toast";
+import { CinematicFaceScannerHUD } from "@/components/hris/CinematicFaceScannerHUD";
 
 interface EmployeeFaceAuthModalProps {
   isOpen: boolean;
@@ -298,7 +299,7 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
         </div>
 
         {/* Camera Feed Viewer */}
-        <div className="w-full h-72 bg-slate-950 rounded-2xl border-2 border-slate-800 relative overflow-hidden flex items-center justify-center mb-6 shadow-inner">
+        <div className="w-full h-80 bg-slate-950 rounded-2xl border-2 border-slate-800 relative overflow-hidden flex items-center justify-center mb-6 shadow-inner">
           {/* Always mount video element when camera is active */}
           <video
             ref={attachVideoRef}
@@ -322,6 +323,28 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
               </span>
             </div>
           )}
+
+          {/* Cinematic Sci-Fi Face Recognition HUD */}
+          <CinematicFaceScannerHUD
+            poseId="center"
+            poseLabel="Verifikasi Wajah Masuk (1:1 ArcFace)"
+            fqaStatus={{
+              isValid: fqaStatus.isValid,
+              isFaceCentered: true,
+              isPoseAligned: true,
+              isOccluded: false,
+              occlusionZone: "none",
+              directionHint: fqaStatus.label,
+              label: fqaStatus.label,
+              brightness: fqaStatus.brightness,
+              sharpness: fqaStatus.sharpness,
+            }}
+            cameraActive={cameraActive}
+            cameraError={cameraError}
+            employeeCode="EMP-LOGIN"
+            employeeName="AUTENTIKASI WAJAH"
+            gender="ACTIVE"
+          />
 
           {/* Scanning Beam Bar */}
           {isScanning && (

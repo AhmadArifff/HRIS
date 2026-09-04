@@ -2334,3 +2334,39 @@ graph TD
      > *"✋ Terdeteksi ponsel / objek menutupi area mulut & dagu! Harap jauhkan benda dari wajah."*
    - Model 3D panduan (`KycThreeAvatar.tsx`) menampilkan badge peringatan `[✋ TERHALANG PONSEL / OBJEK]`.
    - **Pose Alignment Hard Lock:** Variabel `isPoseAligned` otomatis dipaksa `false`. Tombol shutter foto dikunci rapat, mencegah pendaftaran biometrik yang cacat atau terhalang objek.
+
+#### 12.11.8 Alur Pemindaian Wajah Sinematik Sci-Fi & Holographic HUD (Cinematic Movie-Grade Face Recognition HUD)
+1. **Latar Belakang & Filosofi Desain Sinematik:**
+   - Memenuhi kebutuhan pengguna akan antarmuka pemindaian biometrik wajah kelas dunia yang memproyeksikan langsung wajah asli pengguna dari kamera secara realistis dan presisi, mengadopsi estetika sci-fi ala film layar lebar (*Iron Man / Mission Impossible / Cyberpunk HUD*).
+   - Menggabungkan elemen geometris dari **2 gambar referensi**:
+     - **Gambar 1 (Cyber Wireframe & Spatial Grid):** Grid koordinat perspektif di sekeliling kepala, *target framing brackets* `[   ]`, serta wireframe anatomis berdensitas tinggi dari batok kepala hingga sangkar servikal leher (*cervical neck cage*).
+     - **Gambar 2 (Triangulated Facets, Constellation Landmarks, & Telemetry HUD):** Faset poligon transparan dengan pendaran luminansi biru elektrik, jalur konstelasi titik biometrik bercahaya (*glowing constellation path*) yang terhubung melintasi dahi &rarr; pelipis &rarr; mata &rarr; tulang pipi &rarr; cuping hidung &rarr; rahang &rarr; dagu, serta panel telemetri HUD vertikal di sisi kanan.
+2. **Arsitektur Komponen `CinematicFaceScannerHUD.tsx`:**
+   - **Background Cyber Matrix Grid:** Pola koordinat SVG $24 \times 24$ piksel berperspektif dengan *radial vignette fade mask*, memberikan ilusi ruang matriks pemindai 3D langsung di belakang siluet wajah.
+   - **Target Framing Brackets `[   ]`:** Empat siku sudut bermetrik kalibrasi, label sistem (`SYS//01`, `REC.3D`, `W:640 H:480`), dan derajat orientasi *real-time*.
+   - **3D Triangular Polygon Facets:** Shading faset segitiga poligon transparan yang merefleksikan topologi wajah 3D manusia.
+   - **Jalur Konstelasi Bercahaya (Constellation Flow):** Garis vektor bercahaya emas/sian dengan animasi *flowing stroke dashoffset* ($1.6\text{s}$ siklus) yang menghubungkan titik-titik biometrik utama dengan efek aliran energi data, dilengkapi cincin radar ping (`animate-ping`).
+   - **Holographic Wavefront Laser Scan Beam:** Berkas laser vertikal bersinar ganda (*double-glow gradient*) yang menyapu permukaan wajah dari atas ke bawah secara kontinu ($2.4\text{s}$ siklus).
+   - **Panel Telemetri Biometrik HUD Sisi Kanan (Sesuai Gambar 2):**
+     - Header: `FACE RECOGNITION` beraksen neon.
+     - `● NO` : Kode identitas karyawan terdaftar (contoh: `#0842-AX`).
+     - `● GEN` : Profil gender biometrik.
+     - `● AGE GROUP` : Estimasi kelompok usia biometrik (`ADULT (20-35)`).
+     - `● ETHNICITY` : Standar biometrik (`BIOMETRIC STD`).
+     - `● HUMAN PART` : Bagian anatomi terfokus (`CRANIOFACIAL 3D`).
+     - `● TIME` : Jam militer milidetik langsung (`HH:MM:SS.mmm`).
+     - `● DETECTION` : Status kepastian deteksi (`99.8% CONFIRMED`).
+     - `● POS` : Koordinat rotasi Yaw & Pitch langsung dari sensor FQA.
+     - *Cryptographic SHA-256 Vector Stream Ticker* di bagian bawah.
+3. **Sintesis Audio Fiksi Ilmiah (Web Audio API Synthesizer):**
+   - Menggunakan oscillator audio murni tanpa dependensi file MP3 eksternal untuk respon nol latensi:
+     - **Landmark Tracking Ping:** Frekuensi sine $1400\text{ Hz} \to 1800\text{ Hz}$ lembut saat titik wajah terkunci.
+     - **Target Lock Chime:** Double electronic confirmation chime ($880\text{ Hz} \to 1320\text{ Hz}$) saat pose berhasil terverifikasi.
+     - **Occlusion Alert Tone:** Sawtooth glitch pulse ($240\text{ Hz} \to 180\text{ Hz}$) saat ponsel atau tangan menutupi wajah.
+   - Tombol toggle audio `[ 🔊 SFX ON / 🔇 MUTE ]` terpasang langsung di sudut HUD untuk kenyamanan pengguna.
+4. **Respon Reaktif Status Warna (State-Adaptive Theme Engine):**
+   - **Scanning / Posisikan (Electric Cyan `#38bdf8`):** Mode pencarian kontur wajah normal.
+   - **Target Locked / Valid (Emerald Neon `#10b981`):** Wajah terpusat, sudut pose tepat, iluminasi cukup, siap jepret.
+   - **Occluded / Halangan Terdeteksi (Danger Crimson `#ef4444`):** Glitch sinematik seketika, wireframe merah menyala, peringatan oklusi aktif.
+   - **Angle Adjustment (Cyber Amber `#fbbf24`):** Panduan orientasi sudut kepala.
+
