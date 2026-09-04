@@ -2236,9 +2236,9 @@ graph TD
 
 #### 12.11.1 Model Panduan Visual 3D Orang Asli Interaktif (Interactive Three.js 3D Realistic Human Head Models)
 1. **Model 3D Scan Manusia Asli (Bukan Mannequin Kartun, Bukan Foto Statis):**
-   - Komponen `KycThreeAvatar.tsx` diintegrasikan langsung ke `Kyc3dHeadGuide.tsx` menggunakan engine WebGL **Three.js** dan aset 3D mesh fotorealistik manusia asli:
-     - **Pria (`male`):** Menggunakan 3D Head Scan manusia asli (*Lee Perry-Smith*) dilengkapi *PBR Diffuse Map* (`Map-COL.jpg`) dan *Tangent Normal Map* (`Infinite-Level_02_Tangent_SmoothUV.jpg`) yang menampilkan pori-pori kulit, kontur rahang, mata, dan hidung realistis.
-     - **Wanita (`female`):** Menggunakan model 3D karakter fotorealistik (*Michelle*) dengan geometri rambut, mata, kulit, dan pundak lengkap.
+   - Komponen `KycThreeAvatar.tsx` diintegrasikan langsung ke `Kyc3dHeadGuide.tsx` menggunakan engine WebGL **Three.js** dan aset 3D mesh fotorealistik manusia asli berbasis scan nyata:
+     - **Pria (`male`):** Menggunakan 3D Head Scan manusia asli (*Lee Perry-Smith*) dilengkapi *PBR Diffuse Map* (`Map-COL.jpg`) dan *Tangent Normal Map* (`Infinite-Level_02_Tangent_SmoothUV.jpg`, normal scale 0.85) yang menampilkan pori-pori kulit, kontur rahang maskulin, mata, dan hidung realistis.
+     - **Wanita (`female`):** Sepenuhnya meninggalkan model kartun T-pose (*Michelle.glb*). Menggunakan scan 3D kepala manusia fotorealistik berproporsi anatomis wanita (*slender jawline taper*, `scale(0.224, 0.238, 0.218)`), dipadukan dengan tekstur difusi kulit lembut kemerahan/peach (`Map-COL-female.jpg`) dan *soft normal bump* (`normalScale(0.35, 0.35)`), menghasilkan tampilan kepala wanita profesional yang serasi dengan model pria.
 2. **Rotasi 3D Dinamis & Terpandu per Pose:**
    - Model 3D bergerak dan menoleh secara halus (*lerp interpolation*) di ruang 3D nyata mengikuti setiap langkah KYC:
      - **Pose 1 (Center):** Menghadap lurus ke depan dengan mikromosi pernapasan alami (*idle micro-motion*).
@@ -2251,13 +2251,22 @@ graph TD
    - Reticle target lingkaran storyboard dan panah petunjuk sudut arah pandang beranimasi memandu pengguna secara intuitif.
    - Tersedia selector gender `[👩 Perempuan]` dan `[👨 Laki-Laki]`.
 
-#### 12.11.2 Kekebalan Pakaian Gelap pada Deteksi Oklusi (Dark-Clothing Occlusion Immunity)
-1. **Eliminasi Ambang Batas Gelap sebagai Objek:**
-   - Deteksi piksel asing (`isForeignObject`) mengecualikan warna gelap (`gray < 50` / `r, g, b < 50`) karena terbukti merupakan pakaian kaos hitam, jilbab/busana gelap, janggut, serta bayangan alami leher.
-2. **Pengetatan Zona Dagu Anatomis:**
-   - Batas vertikal sampling dagu dibatasi pada $Y \in [82, 98]$ (area dagu anatomis), tidak lagi mencapai $Y \ge 114$ yang mengenai kerah baju.
-3. **Verifikasi Oklusi Cangkir/Mug Ganda:**
-   - Alarm penutupan cangkir/benda asing hanya aktif jika terbukti terdapat penutupan nyata pada zona mulut ($Y \in [64, 90]$) atau benda keramik/plastik putih/berwarna yang melintang menutupi area oral dan dagu secara simultan.
+#### 12.11.2 Kekebalan Dinding Ruangan & Kumis/Jenggot pada Deteksi Oklusi (Room-Wall & Facial-Hair Occlusion Immunity)
+1. **Eliminasi Kesalahan Alarm Dinding Hijau/Berwarna (Anti-Green-Wall False Positive):**
+   - Aturan deteksi benda asing lama mengevaluasi kondisi `(g > r + 20 && g > 75)` pada *bounding box* lebar, yang menyebabkan cat tembok hijau terang di belakang pengguna salah dideteksi sebagai cangkir/benda yang menutupi wajah.
+   - Evaluasi piksel asing luar dihapuskan, dan deteksi oklusi benda difokuskan secara deterministik pada zona **Inner Oral Core** ($X \in [68, 92], Y \in [68, 86]$).
+2. **Perlakuan Kumis & Janggut sebagai Fitur Alami Wajah:**
+   - Piksel rambut wajah (*mustache/beard* dengan `isDarkHair`) diperlakukan sebagai fitur alami manusia (`isNaturalFeature = isSkinTone || isDarkHair`), sehingga kepadatan fitur alami tetap tinggi dan tidak memicu penurunan rasio kulit palsu.
+3. **Verifikasi Oklusi Benda Asli (Cangkir/Mug Keramik/Masker):**
+   - Alarm penutupan cangkir/benda asing (`hasObjectOcclusion`) hanya terpicu jika terdapat kluster benda putih keramik/masker (`isWhiteObject`, $\ge 15$ piksel) di inti oral yang secara nyata menekan fitur alami wajah ($< 30\%$).
+
+#### 12.11.5 Wireframe Biometrik Anatomis Leher (Anatomical Cervical Cage Mesh) & Proporsi Oval
+1. **Koneksi Mandibula ke Kontur Leher:**
+   - Menambahkan koneksi garis servikal lateral `[31, 38]`, `[32, 38]`, `[36, 40]`, `[37, 40]` pada `BIOMETRIC_MESH_CONNECTIONS` sehingga sudut rahang kiri dan kanan terhubung langsung ke kontur leher dan jakun.
+   - Menambahkan faset poligon 3D servikal lateral `[32, 33, 38]` dan `[36, 35, 40]` pada `BIOMETRIC_FACETS` untuk membentuk kedalaman leher realistis.
+2. **Proporsi Vertikal Reticle Oval:**
+   - Dimensi bingkai oval diselaraskan menjadi `sm:w-46 sm:h-60` dengan rasio antropometri wajah manusia ($1 : 1.30$).
+   - Garis batas "Area Dagu Bersih" diposisikan presisi pada ujung mandibula/dagu, memungkinkan jaring kawat leher memanjang secara alami ke bagian bawah bingkai kamera.
 
 #### 12.11.3 Fallback Embedding Kriptografis SHA-256 (Pencegahan Tabrakan 1:N Vektor Statis)
 1. **Akar Masalah Solved:**

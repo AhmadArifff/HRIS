@@ -113,7 +113,9 @@ const BIOMETRIC_FACETS: number[][] = [
   [37, 36, 35],
   [32, 33, 34],
   [36, 35, 34],
-  // 7. Neck & Throat Contours (Extending down the neck as shown in Image 1)
+  // 7. Neck & Throat Contours (Extending down the neck matching anatomical cervical cage)
+  [32, 33, 38],
+  [36, 35, 40],
   [33, 34, 39, 38],
   [34, 35, 40, 39],
   [38, 39, 41],
@@ -142,8 +144,12 @@ const BIOMETRIC_MESH_CONNECTIONS: [number, number][] = [
   [23, 31], [31, 32], [32, 33], [33, 34], [34, 35], [35, 36], [36, 37], [37, 25],
   // Mouth to Chin
   [30, 34],
-  // Neck & Throat Contours (38..41)
-  [33, 38], [34, 39], [35, 40], [38, 39], [39, 40], [38, 41], [39, 41], [40, 41],
+  // Neck & Throat Contours (38..41) - Full anatomical cervical cage
+  [31, 38], [32, 38], [33, 38],
+  [34, 39],
+  [35, 40], [36, 40], [37, 40],
+  [38, 39], [39, 40],
+  [38, 41], [39, 41], [40, 41],
 ];
 
 const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
@@ -157,38 +163,38 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
-          { id: "fh_c", x: 80, y: 62 },
-          { id: "fh_ml", x: 64, y: 66 },
-          { id: "fh_fl", x: 50, y: 76, isAnchor: true },
-          { id: "fh_mr", x: 104, y: 64 },
-          { id: "fh_fr", x: 134, y: 74, isAnchor: true },
+          { id: "fh_c", x: 80, y: 50 },
+          { id: "fh_ml", x: 64, y: 54 },
+          { id: "fh_fl", x: 50, y: 66, isAnchor: true },
+          { id: "fh_mr", x: 104, y: 54 },
+          { id: "fh_fr", x: 134, y: 66, isAnchor: true },
           // 5..7 Left Brow (Compressed)
-          { id: "br_lo", x: 48, y: 84 },
-          { id: "br_lm", x: 60, y: 80 },
-          { id: "br_li", x: 72, y: 84 },
+          { id: "br_lo", x: 48, y: 78 },
+          { id: "br_lm", x: 60, y: 74 },
+          { id: "br_li", x: 72, y: 78 },
           // 8..10 Right Brow (Expanded)
-          { id: "br_ri", x: 92, y: 84 },
-          { id: "br_rm", x: 112, y: 80 },
-          { id: "br_ro", x: 132, y: 84 },
+          { id: "br_ri", x: 92, y: 78 },
+          { id: "br_rm", x: 112, y: 74 },
+          { id: "br_ro", x: 132, y: 78 },
           // 11..13 Left Eye (Compressed)
-          { id: "ey_lo", x: 52, y: 96 },
-          { id: "ey_lp", x: 62, y: 96, isAnchor: true },
-          { id: "ey_li", x: 72, y: 96 },
+          { id: "ey_lo", x: 52, y: 90 },
+          { id: "ey_lp", x: 62, y: 90, isAnchor: true },
+          { id: "ey_li", x: 72, y: 90 },
           // 14..16 Right Eye (Broad)
-          { id: "ey_ri", x: 94, y: 96 },
-          { id: "ey_rp", x: 110, y: 96, isAnchor: true },
-          { id: "ey_ro", x: 126, y: 96 },
+          { id: "ey_ri", x: 94, y: 90 },
+          { id: "ey_rp", x: 110, y: 90, isAnchor: true },
+          { id: "ey_ro", x: 126, y: 90 },
           // 17..22 Nose
-          { id: "ns_1", x: 82, y: 88 },
-          { id: "ns_2", x: 80, y: 108 },
+          { id: "ns_1", x: 82, y: 84 },
+          { id: "ns_2", x: 80, y: 106 },
           { id: "ns_3", x: 78, y: 126 },
           { id: "ns_tip", x: 76, y: 138, isAnchor: true },
           { id: "ns_nl", x: 68, y: 140 },
           { id: "ns_nr", x: 90, y: 140 },
           // 23..26 Cheeks
-          { id: "ck_lt", x: 44, y: 122 },
+          { id: "ck_lt", x: 44, y: 120 },
           { id: "ck_lm", x: 52, y: 146 },
-          { id: "ck_rt", x: 138, y: 122 },
+          { id: "ck_rt", x: 138, y: 120 },
           { id: "ck_rm", x: 124, y: 146 },
           // 27..30 Lips
           { id: "lp_l", x: 66, y: 174 },
@@ -196,18 +202,18 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "lp_r", x: 104, y: 174 },
           { id: "lp_b", x: 82, y: 182 },
           // 31..37 Jaw & Chin
-          { id: "jw_1", x: 42, y: 152 },
-          { id: "jw_2", x: 50, y: 188 },
-          { id: "jw_3", x: 66, y: 212 },
-          { id: "ch_tip", x: 84, y: 218, isAnchor: true },
-          { id: "jw_5", x: 106, y: 212 },
-          { id: "jw_6", x: 128, y: 188 },
-          { id: "jw_7", x: 142, y: 152 },
-          // 38..41 Neck & Throat
-          { id: "nk_l", x: 68, y: 236 },
+          { id: "jw_1", x: 42, y: 148 },
+          { id: "jw_2", x: 50, y: 186 },
+          { id: "jw_3", x: 66, y: 210 },
+          { id: "ch_tip", x: 84, y: 216, isAnchor: true },
+          { id: "jw_5", x: 106, y: 210 },
+          { id: "jw_6", x: 128, y: 186 },
+          { id: "jw_7", x: 142, y: 148 },
+          // 38..41 Neck & Throat (Anatomical Cervical Contours)
+          { id: "nk_l", x: 62, y: 236 },
           { id: "nk_c", x: 84, y: 240, isAnchor: true },
-          { id: "nk_r", x: 112, y: 236 },
-          { id: "nk_b", x: 88, y: 250 },
+          { id: "nk_r", x: 120, y: 236 },
+          { id: "nk_b", x: 90, y: 252 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -221,38 +227,38 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
-          { id: "fh_c", x: 112, y: 62 },
-          { id: "fh_ml", x: 88, y: 64 },
-          { id: "fh_fl", x: 58, y: 74, isAnchor: true },
-          { id: "fh_mr", x: 128, y: 66 },
-          { id: "fh_fr", x: 142, y: 76, isAnchor: true },
+          { id: "fh_c", x: 112, y: 50 },
+          { id: "fh_ml", x: 88, y: 54 },
+          { id: "fh_fl", x: 58, y: 66, isAnchor: true },
+          { id: "fh_mr", x: 128, y: 54 },
+          { id: "fh_fr", x: 142, y: 66, isAnchor: true },
           // 5..7 Left Brow (Expanded)
-          { id: "br_lo", x: 60, y: 84 },
-          { id: "br_lm", x: 80, y: 80 },
-          { id: "br_li", x: 100, y: 84 },
+          { id: "br_lo", x: 60, y: 78 },
+          { id: "br_lm", x: 80, y: 74 },
+          { id: "br_li", x: 100, y: 78 },
           // 8..10 Right Brow (Compressed)
-          { id: "br_ri", x: 120, y: 84 },
-          { id: "br_rm", x: 132, y: 80 },
-          { id: "br_ro", x: 144, y: 84 },
+          { id: "br_ri", x: 120, y: 78 },
+          { id: "br_rm", x: 132, y: 74 },
+          { id: "br_ro", x: 144, y: 78 },
           // 11..13 Left Eye (Broad)
-          { id: "ey_lo", x: 66, y: 96 },
-          { id: "ey_lp", x: 82, y: 96, isAnchor: true },
-          { id: "ey_li", x: 98, y: 96 },
+          { id: "ey_lo", x: 66, y: 90 },
+          { id: "ey_lp", x: 82, y: 90, isAnchor: true },
+          { id: "ey_li", x: 98, y: 90 },
           // 14..16 Right Eye (Compressed)
-          { id: "ey_ri", x: 120, y: 96 },
-          { id: "ey_rp", x: 130, y: 96, isAnchor: true },
-          { id: "ey_ro", x: 140, y: 96 },
+          { id: "ey_ri", x: 120, y: 90 },
+          { id: "ey_rp", x: 130, y: 90, isAnchor: true },
+          { id: "ey_ro", x: 140, y: 90 },
           // 17..22 Nose
-          { id: "ns_1", x: 110, y: 88 },
-          { id: "ns_2", x: 112, y: 108 },
+          { id: "ns_1", x: 110, y: 84 },
+          { id: "ns_2", x: 112, y: 106 },
           { id: "ns_3", x: 114, y: 126 },
           { id: "ns_tip", x: 116, y: 138, isAnchor: true },
           { id: "ns_nl", x: 102, y: 140 },
           { id: "ns_nr", x: 124, y: 140 },
           // 23..26 Cheeks
-          { id: "ck_lt", x: 54, y: 122 },
+          { id: "ck_lt", x: 54, y: 120 },
           { id: "ck_lm", x: 68, y: 146 },
-          { id: "ck_rt", x: 148, y: 122 },
+          { id: "ck_rt", x: 148, y: 120 },
           { id: "ck_rm", x: 140, y: 146 },
           // 27..30 Lips
           { id: "lp_l", x: 90, y: 174 },
@@ -260,18 +266,18 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "lp_r", x: 128, y: 174 },
           { id: "lp_b", x: 112, y: 182 },
           // 31..37 Jaw & Chin
-          { id: "jw_1", x: 50, y: 152 },
-          { id: "jw_2", x: 64, y: 188 },
-          { id: "jw_3", x: 88, y: 212 },
-          { id: "ch_tip", x: 112, y: 218, isAnchor: true },
-          { id: "jw_5", x: 126, y: 212 },
-          { id: "jw_6", x: 142, y: 188 },
-          { id: "jw_7", x: 150, y: 152 },
-          // 38..41 Neck & Throat
-          { id: "nk_l", x: 80, y: 236 },
+          { id: "jw_1", x: 50, y: 148 },
+          { id: "jw_2", x: 64, y: 186 },
+          { id: "jw_3", x: 88, y: 210 },
+          { id: "ch_tip", x: 112, y: 216, isAnchor: true },
+          { id: "jw_5", x: 126, y: 210 },
+          { id: "jw_6", x: 142, y: 186 },
+          { id: "jw_7", x: 150, y: 148 },
+          // 38..41 Neck & Throat (Anatomical Cervical Contours)
+          { id: "nk_l", x: 72, y: 236 },
           { id: "nk_c", x: 108, y: 240, isAnchor: true },
-          { id: "nk_r", x: 124, y: 236 },
-          { id: "nk_b", x: 104, y: 250 },
+          { id: "nk_r", x: 130, y: 236 },
+          { id: "nk_b", x: 102, y: 252 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -285,29 +291,29 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
-          { id: "fh_c", x: 96, y: 52 },
-          { id: "fh_ml", x: 74, y: 56 },
-          { id: "fh_fl", x: 54, y: 66, isAnchor: true },
-          { id: "fh_mr", x: 118, y: 56 },
-          { id: "fh_fr", x: 138, y: 66, isAnchor: true },
+          { id: "fh_c", x: 96, y: 44 },
+          { id: "fh_ml", x: 74, y: 48 },
+          { id: "fh_fl", x: 54, y: 60, isAnchor: true },
+          { id: "fh_mr", x: 118, y: 48 },
+          { id: "fh_fr", x: 138, y: 60, isAnchor: true },
           // 5..7 Left Brow
-          { id: "br_lo", x: 50, y: 74 },
-          { id: "br_lm", x: 66, y: 70 },
-          { id: "br_li", x: 82, y: 74 },
+          { id: "br_lo", x: 50, y: 70 },
+          { id: "br_lm", x: 66, y: 66 },
+          { id: "br_li", x: 82, y: 70 },
           // 8..10 Right Brow
-          { id: "br_ri", x: 110, y: 74 },
-          { id: "br_rm", x: 126, y: 70 },
-          { id: "br_ro", x: 142, y: 74 },
+          { id: "br_ri", x: 110, y: 70 },
+          { id: "br_rm", x: 126, y: 66 },
+          { id: "br_ro", x: 142, y: 70 },
           // 11..13 Left Eye
-          { id: "ey_lo", x: 56, y: 84 },
-          { id: "ey_lp", x: 68, y: 84, isAnchor: true },
-          { id: "ey_li", x: 80, y: 84 },
+          { id: "ey_lo", x: 56, y: 80 },
+          { id: "ey_lp", x: 68, y: 80, isAnchor: true },
+          { id: "ey_li", x: 80, y: 80 },
           // 14..16 Right Eye
-          { id: "ey_ri", x: 112, y: 84 },
-          { id: "ey_rp", x: 124, y: 84, isAnchor: true },
-          { id: "ey_ro", x: 136, y: 84 },
+          { id: "ey_ri", x: 112, y: 80 },
+          { id: "ey_rp", x: 124, y: 80, isAnchor: true },
+          { id: "ey_ro", x: 136, y: 80 },
           // 17..22 Nose
-          { id: "ns_1", x: 96, y: 76 },
+          { id: "ns_1", x: 96, y: 74 },
           { id: "ns_2", x: 96, y: 94 },
           { id: "ns_3", x: 96, y: 112 },
           { id: "ns_tip", x: 96, y: 124, isAnchor: true },
@@ -324,17 +330,17 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "lp_r", x: 118, y: 162 },
           { id: "lp_b", x: 96, y: 170 },
           // 31..37 Jaw & Chin
-          { id: "jw_1", x: 44, y: 144 },
-          { id: "jw_2", x: 56, y: 184 },
-          { id: "jw_3", x: 76, y: 210 },
-          { id: "ch_tip", x: 96, y: 218, isAnchor: true },
-          { id: "jw_5", x: 116, y: 210 },
-          { id: "jw_6", x: 136, y: 184 },
-          { id: "jw_7", x: 148, y: 144 },
-          // 38..41 Neck & Throat
-          { id: "nk_l", x: 74, y: 236 },
+          { id: "jw_1", x: 44, y: 142 },
+          { id: "jw_2", x: 56, y: 182 },
+          { id: "jw_3", x: 76, y: 208 },
+          { id: "ch_tip", x: 96, y: 216, isAnchor: true },
+          { id: "jw_5", x: 116, y: 208 },
+          { id: "jw_6", x: 136, y: 182 },
+          { id: "jw_7", x: 148, y: 142 },
+          // 38..41 Neck & Throat (Anatomical Cervical Contours)
+          { id: "nk_l", x: 68, y: 236 },
           { id: "nk_c", x: 96, y: 242, isAnchor: true },
-          { id: "nk_r", x: 118, y: 236 },
+          { id: "nk_r", x: 124, y: 236 },
           { id: "nk_b", x: 96, y: 254 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
@@ -349,57 +355,57 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
-          { id: "fh_c", x: 96, y: 74 },
-          { id: "fh_ml", x: 74, y: 78 },
-          { id: "fh_fl", x: 54, y: 88, isAnchor: true },
-          { id: "fh_mr", x: 118, y: 78 },
-          { id: "fh_fr", x: 138, y: 88, isAnchor: true },
+          { id: "fh_c", x: 96, y: 64 },
+          { id: "fh_ml", x: 74, y: 68 },
+          { id: "fh_fl", x: 54, y: 78, isAnchor: true },
+          { id: "fh_mr", x: 118, y: 68 },
+          { id: "fh_fr", x: 138, y: 78, isAnchor: true },
           // 5..7 Left Brow
-          { id: "br_lo", x: 50, y: 96 },
-          { id: "br_lm", x: 66, y: 92 },
-          { id: "br_li", x: 82, y: 96 },
+          { id: "br_lo", x: 50, y: 88 },
+          { id: "br_lm", x: 66, y: 84 },
+          { id: "br_li", x: 82, y: 88 },
           // 8..10 Right Brow
-          { id: "br_ri", x: 110, y: 96 },
-          { id: "br_rm", x: 126, y: 92 },
-          { id: "br_ro", x: 142, y: 96 },
+          { id: "br_ri", x: 110, y: 88 },
+          { id: "br_rm", x: 126, y: 84 },
+          { id: "br_ro", x: 142, y: 88 },
           // 11..13 Left Eye
-          { id: "ey_lo", x: 56, y: 106 },
-          { id: "ey_lp", x: 68, y: 106, isAnchor: true },
-          { id: "ey_li", x: 80, y: 106 },
+          { id: "ey_lo", x: 56, y: 98 },
+          { id: "ey_lp", x: 68, y: 98, isAnchor: true },
+          { id: "ey_li", x: 80, y: 98 },
           // 14..16 Right Eye
-          { id: "ey_ri", x: 112, y: 106 },
-          { id: "ey_rp", x: 124, y: 106, isAnchor: true },
-          { id: "ey_ro", x: 136, y: 106 },
+          { id: "ey_ri", x: 112, y: 98 },
+          { id: "ey_rp", x: 124, y: 98, isAnchor: true },
+          { id: "ey_ro", x: 136, y: 98 },
           // 17..22 Nose
-          { id: "ns_1", x: 96, y: 100 },
-          { id: "ns_2", x: 96, y: 120 },
-          { id: "ns_3", x: 96, y: 140 },
-          { id: "ns_tip", x: 96, y: 152, isAnchor: true },
-          { id: "ns_nl", x: 84, y: 154 },
-          { id: "ns_nr", x: 108, y: 154 },
+          { id: "ns_1", x: 96, y: 94 },
+          { id: "ns_2", x: 96, y: 116 },
+          { id: "ns_3", x: 96, y: 136 },
+          { id: "ns_tip", x: 96, y: 148, isAnchor: true },
+          { id: "ns_nl", x: 84, y: 150 },
+          { id: "ns_nr", x: 108, y: 150 },
           // 23..26 Cheeks
-          { id: "ck_lt", x: 46, y: 134 },
-          { id: "ck_lm", x: 58, y: 158 },
-          { id: "ck_rt", x: 146, y: 134 },
-          { id: "ck_rm", x: 134, y: 158 },
+          { id: "ck_lt", x: 46, y: 130 },
+          { id: "ck_lm", x: 58, y: 156 },
+          { id: "ck_rt", x: 146, y: 130 },
+          { id: "ck_rm", x: 134, y: 156 },
           // 27..30 Lips
-          { id: "lp_l", x: 74, y: 188 },
-          { id: "lp_t", x: 96, y: 182 },
-          { id: "lp_r", x: 118, y: 188 },
-          { id: "lp_b", x: 96, y: 196 },
+          { id: "lp_l", x: 74, y: 184 },
+          { id: "lp_t", x: 96, y: 178 },
+          { id: "lp_r", x: 118, y: 184 },
+          { id: "lp_b", x: 96, y: 192 },
           // 31..37 Jaw & Chin
-          { id: "jw_1", x: 46, y: 160 },
-          { id: "jw_2", x: 58, y: 196 },
-          { id: "jw_3", x: 76, y: 220 },
-          { id: "ch_tip", x: 96, y: 226, isAnchor: true },
-          { id: "jw_5", x: 116, y: 220 },
-          { id: "jw_6", x: 134, y: 196 },
-          { id: "jw_7", x: 146, y: 160 },
-          // 38..41 Neck & Throat
-          { id: "nk_l", x: 78, y: 238 },
+          { id: "jw_1", x: 46, y: 158 },
+          { id: "jw_2", x: 58, y: 194 },
+          { id: "jw_3", x: 76, y: 218 },
+          { id: "ch_tip", x: 96, y: 224, isAnchor: true },
+          { id: "jw_5", x: 116, y: 218 },
+          { id: "jw_6", x: 134, y: 194 },
+          { id: "jw_7", x: 146, y: 158 },
+          // 38..41 Neck & Throat (Anatomical Cervical Contours)
+          { id: "nk_l", x: 70, y: 238 },
           { id: "nk_c", x: 96, y: 242, isAnchor: true },
-          { id: "nk_r", x: 114, y: 238 },
-          { id: "nk_b", x: 96, y: 250 },
+          { id: "nk_r", x: 122, y: 238 },
+          { id: "nk_b", x: 96, y: 252 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -413,56 +419,56 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead & Temples
-          { id: "fh_c", x: 96, y: 64 },
-          { id: "fh_ml", x: 74, y: 68 },
-          { id: "fh_fl", x: 54, y: 78, isAnchor: true },
-          { id: "fh_mr", x: 118, y: 68 },
-          { id: "fh_fr", x: 138, y: 78, isAnchor: true },
+          { id: "fh_c", x: 96, y: 50 },
+          { id: "fh_ml", x: 74, y: 54 },
+          { id: "fh_fl", x: 54, y: 66, isAnchor: true },
+          { id: "fh_mr", x: 118, y: 54 },
+          { id: "fh_fr", x: 138, y: 66, isAnchor: true },
           // 5..7 Left Brow
-          { id: "br_lo", x: 50, y: 86 },
-          { id: "br_lm", x: 66, y: 82 },
-          { id: "br_li", x: 82, y: 86 },
+          { id: "br_lo", x: 50, y: 78 },
+          { id: "br_lm", x: 66, y: 74 },
+          { id: "br_li", x: 82, y: 78 },
           // 8..10 Right Brow
-          { id: "br_ri", x: 110, y: 86 },
-          { id: "br_rm", x: 126, y: 82 },
-          { id: "br_ro", x: 142, y: 86 },
+          { id: "br_ri", x: 110, y: 78 },
+          { id: "br_rm", x: 126, y: 74 },
+          { id: "br_ro", x: 142, y: 78 },
           // 11..13 Left Eye
-          { id: "ey_lo", x: 56, y: 98 },
-          { id: "ey_lp", x: 68, y: 98, isAnchor: true },
-          { id: "ey_li", x: 80, y: 98 },
+          { id: "ey_lo", x: 56, y: 92 },
+          { id: "ey_lp", x: 68, y: 92, isAnchor: true },
+          { id: "ey_li", x: 80, y: 92 },
           // 14..16 Right Eye
-          { id: "ey_ri", x: 112, y: 98 },
-          { id: "ey_rp", x: 124, y: 98, isAnchor: true },
-          { id: "ey_ro", x: 136, y: 98 },
+          { id: "ey_ri", x: 112, y: 92 },
+          { id: "ey_rp", x: 124, y: 92, isAnchor: true },
+          { id: "ey_ro", x: 136, y: 92 },
           // 17..22 Nose
-          { id: "ns_1", x: 96, y: 90 },
-          { id: "ns_2", x: 96, y: 110 },
-          { id: "ns_3", x: 96, y: 128 },
+          { id: "ns_1", x: 96, y: 84 },
+          { id: "ns_2", x: 96, y: 106 },
+          { id: "ns_3", x: 96, y: 126 },
           { id: "ns_tip", x: 96, y: 138, isAnchor: true },
           { id: "ns_nl", x: 84, y: 140 },
           { id: "ns_nr", x: 108, y: 140 },
           // 23..26 Cheeks
-          { id: "ck_lt", x: 46, y: 124 },
+          { id: "ck_lt", x: 46, y: 122 },
           { id: "ck_lm", x: 58, y: 148 },
-          { id: "ck_rt", x: 146, y: 124 },
+          { id: "ck_rt", x: 146, y: 122 },
           { id: "ck_rm", x: 134, y: 148 },
           // 27..30 Lips
-          { id: "lp_l", x: 74, y: 176 },
-          { id: "lp_t", x: 96, y: 170 },
-          { id: "lp_r", x: 118, y: 176 },
+          { id: "lp_l", x: 74, y: 174 },
+          { id: "lp_t", x: 96, y: 168 },
+          { id: "lp_r", x: 118, y: 174 },
           { id: "lp_b", x: 96, y: 184 },
           // 31..37 Jaw & Chin
-          { id: "jw_1", x: 44, y: 154 },
-          { id: "jw_2", x: 56, y: 192 },
-          { id: "jw_3", x: 76, y: 214 },
-          { id: "ch_tip", x: 96, y: 220, isAnchor: true },
-          { id: "jw_5", x: 116, y: 214 },
-          { id: "jw_6", x: 136, y: 192 },
-          { id: "jw_7", x: 148, y: 154 },
-          // 38..41 Neck & Throat
-          { id: "nk_l", x: 76, y: 236 },
+          { id: "jw_1", x: 44, y: 150 },
+          { id: "jw_2", x: 54, y: 188 },
+          { id: "jw_3", x: 74, y: 212 },
+          { id: "ch_tip", x: 96, y: 216, isAnchor: true },
+          { id: "jw_5", x: 118, y: 212 },
+          { id: "jw_6", x: 138, y: 188 },
+          { id: "jw_7", x: 148, y: 150 },
+          // 38..41 Neck & Throat (Anatomical Cervical Contours)
+          { id: "nk_l", x: 68, y: 236 },
           { id: "nk_c", x: 96, y: 240, isAnchor: true },
-          { id: "nk_r", x: 116, y: 236 },
+          { id: "nk_r", x: 124, y: 236 },
           { id: "nk_b", x: 96, y: 252 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
@@ -682,6 +688,12 @@ export const EmployeeForm = () => {
         let upperCount = 0;
         let lowerCount = 0;
 
+        // Step 2B: Central Oral & Chin Core (Strictly central: X: 68-92, Y: 68-86)
+        // Guaranteed inside face silhouette. Background room walls (green/blue/white) CANNOT reach here!
+        let oralCorePixels = 0;
+        let oralCoreNaturalCount = 0;
+        let oralCoreWhiteCount = 0;
+
         for (let y = 0; y < 120; y++) {
           for (let x = 0; x < 160; x++) {
             const idx = (y * 160 + x) * 4;
@@ -690,7 +702,7 @@ export const EmployeeForm = () => {
             const b = data[idx + 2];
             const gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            // Dark Hair vs Skin-Tone Distinction (Anti-False-Positive for Bangs & Hairline)
+            // Dark Hair vs Skin-Tone Distinction (Anti-False-Positive for Bangs, Mustache, Beard & Hairline)
             const isDarkHair = gray < 65 || (r < 75 && g < 70 && b < 70);
 
             // Robust Hemoglobin-based Skin-Tone Detection
@@ -709,19 +721,17 @@ export const EmployeeForm = () => {
             // Human skin strictly requires high red-to-blue difference (r - b >= 25).
             // A white/light ceramic cup or paper has high luminance and low saturation:
             const isWhiteObject =
-              gray > 115 &&
-              Math.abs(r - g) <= 18 &&
-              Math.abs(g - b) <= 18 &&
-              Math.abs(r - b) <= 20;
+              gray > 125 &&
+              Math.abs(r - g) <= 16 &&
+              Math.abs(g - b) <= 16 &&
+              Math.abs(r - b) <= 18;
 
-            // Colored foreign object (e.g. vivid cyan, blue, emerald print on mug/phone)
-            // Black/dark clothing, normal hair, and skin tones are strictly EXCLUDED
+            // Foreign object: Must NEVER include room background walls (green walls, blue curtains, painted doors).
+            // Background walls are physically outside or behind the user.
             const isForeignObject =
               !isSkinTone &&
               !isDarkHair &&
-              (isWhiteObject ||
-                (b > r + 18 && b > 65) ||
-                (g > r + 20 && g > 75));
+              isWhiteObject;
 
             // Step 1: Reticle Oval Core Sampling (Center at 80, 60)
             if (y >= 28 && y <= 92 && x >= 48 && x <= 112) {
@@ -741,6 +751,18 @@ export const EmployeeForm = () => {
               if (idx + 160 * 4 < data.length) {
                 const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
                 if (Math.abs(gray - downGray) > 18) mouthEdgeCount++;
+              }
+            }
+
+            // Step 2B: Inner Oral Core (Strictly central: X: 68-92, Y: 68-86)
+            // Immune to room background walls. Tests if mug/cup is held directly over the mouth/chin.
+            if (y >= 68 && y <= 86 && x >= 68 && x <= 92) {
+              oralCorePixels++;
+              if (isSkinTone || isDarkHair) {
+                oralCoreNaturalCount++;
+              }
+              if (isWhiteObject) {
+                oralCoreWhiteCount++;
               }
             }
 
@@ -873,25 +895,31 @@ export const EmployeeForm = () => {
         const hasChinHandOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand);
 
         // B. Object Covering Mouth or Chin (Mug, Cup, Mask, Phone, Document):
-        // In an unobstructed face, healthy skin is present in mouth and chin.
-        // A real cup/mug held to the face blocks the mouth and upper chin:
-        const isMouthBlockedByObject =
+        // In an unobstructed face, the central oral core has healthy natural skin / facial hair / lips (> 45%).
+        // A real cup, mug, or mask held directly over the mouth/chin suppresses natural features (< 30%)
+        // AND introduces a dense cluster of white/ceramic/mask pixels (oralCoreWhiteCount >= 15).
+        const oralCoreNaturalRatio = oralCorePixels > 0 ? oralCoreNaturalCount / oralCorePixels : 1;
+        const isOralBlockedByCup =
+          oralCorePixels >= 30 &&
+          oralCoreNaturalRatio < 0.30 &&
+          oralCoreWhiteCount >= 15;
+
+        // Outer mouth & chin checks: require dense white ceramic/mask clusters across both mouth & chin
+        // combined with suppressed oral core natural features, completely immune to room background walls.
+        const isMouthAndChinBlocked =
           mouthPixelCount > 50 &&
-          ((mouthSkinRatio < 0.22 && (mouthWhiteObjectCount > 20 || mouthForeignCount > 35)) ||
-            mouthWhiteObjectCount > 35 ||
-            mouthForeignCount > 55);
+          chinPixelCount > 40 &&
+          mouthWhiteObjectCount > 25 &&
+          chinWhiteObjectCount > 20 &&
+          oralCoreNaturalRatio < 0.38;
 
-        // A cup spanning mouth and chin simultaneously:
-        const isCupSpanningMouthAndChin =
-          (mouthWhiteObjectCount > 18 && chinWhiteObjectCount > 18) ||
-          (mouthForeignCount > 30 && chinForeignCount > 25);
-
-        // Large foreign ceramic/plastic object covering chin with simultaneous mouth disturbance:
         const isChinObjectConfirmed =
-          chinWhiteObjectCount > 40 && chinSkinRatio < 0.20 && mouthSkinRatio < 0.40;
+          chinWhiteObjectCount > 35 &&
+          chinSkinRatio < 0.18 &&
+          oralCoreNaturalRatio < 0.35;
 
         const hasObjectOcclusion =
-          isFacePresent && (isMouthBlockedByObject || isCupSpanningMouthAndChin || isChinObjectConfirmed);
+          isFacePresent && (isOralBlockedByCup || isMouthAndChinBlocked || isChinObjectConfirmed);
 
         // C. Zone Forehead, Brows, Eyes, & Crown:
         const foreheadIntraSkinDensity = foreheadSkinCount > 0 ? foreheadIntraSkinEdgeCount / foreheadSkinCount : 0;
@@ -1617,7 +1645,7 @@ export const EmployeeForm = () => {
                       {/* Dynamic Oval Reticle with Centering & Angle Verification Color */}
                       <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
                         <div
-                          className={`w-44 h-56 sm:w-48 sm:h-64 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-between py-2 transition-all duration-300 relative overflow-hidden ${
+                          className={`w-44 h-56 sm:w-46 sm:h-60 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-between pt-2 pb-1.5 transition-all duration-300 relative overflow-hidden ${
                             !fqaStatus.isFaceCentered
                               ? "border-amber-400/80 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                               : fqaStatus.isOccluded
@@ -1827,8 +1855,8 @@ export const EmployeeForm = () => {
                           </div>
 
                           {/* Lower Jawline Safe Zone Marker */}
-                          <div className="z-10 flex flex-col items-center">
-                            <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-0.5"></div>
+                          <div className="z-10 flex flex-col items-center mb-0.5">
+                            <div className="w-24 h-0.5 border-b border-dashed border-white/40 mb-0.5"></div>
                             <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400">
                               Area Dagu Bersih
                             </span>

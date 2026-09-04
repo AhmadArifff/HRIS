@@ -120,7 +120,7 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
     }
   }, [pose]);
 
-  // Three.js Scene Setup & Model Loading
+  // Three.js Scene Setup & Photorealistic 3D Human Head Loading
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -145,20 +145,20 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.15;
 
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
-    // 3. Cinematic Studio Lighting for Photorealistic Facial Contours
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    // 3. Cinematic Studio Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
 
     const keyLight = new THREE.DirectionalLight(0xfff8f0, 1.8);
     keyLight.position.set(2.5, 3.0, 3.0);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.9);
+    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.95);
     fillLight.position.set(-2.5, 1.5, 2.5);
     scene.add(fillLight);
 
@@ -166,7 +166,7 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
     rimLight.position.set(0, 2.5, -2.5);
     scene.add(rimLight);
 
-    const bottomBounce = new THREE.DirectionalLight(0xffedd5, 0.35);
+    const bottomBounce = new THREE.DirectionalLight(0xffedd5, 0.4);
     bottomBounce.position.set(0, -2.5, 1.0);
     scene.add(bottomBounce);
 
@@ -179,102 +179,58 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
 
     setIsLoadingModel(true);
 
-    if (activeGender === "male") {
-      // Photorealistic Scanned Male Human Head (Lee Perry-Smith)
-      loader.load(
-        "/models/LeePerrySmith.glb",
-        (gltf) => {
-          if (isDestroyed) return;
-          setIsLoadingModel(false);
+    const isFemale = activeGender === "female";
 
-          const model = gltf.scene;
+    // Load Photorealistic 3D Human Head Scan (Lee Perry-Smith scan with gender-adaptive textures & proportions)
+    loader.load(
+      "/models/LeePerrySmith.glb",
+      (gltf) => {
+        if (isDestroyed) return;
+        setIsLoadingModel(false);
 
-          // Apply High-Resolution PBR Diffuse & Normal Texture Maps
-          const diffuseMap = texLoader.load("/models/Map-COL.jpg");
-          const normalMap = texLoader.load("/models/Infinite-Level_02_Tangent_SmoothUV.jpg");
-          diffuseMap.colorSpace = THREE.SRGBColorSpace;
+        const model = gltf.scene;
 
-          const skinMat = new THREE.MeshStandardMaterial({
-            map: diffuseMap,
-            normalMap: normalMap,
-            roughness: 0.62,
-            metalness: 0.05,
-          });
+        // Texture Mapping:
+        // Female: Warm, smooth, radiant complexion (Map-COL-female.jpg) with soft normal bump
+        // Male: Original scanned masculine skin tone (Map-COL.jpg) with defined pores
+        const textureFile = isFemale ? "/models/Map-COL-female.jpg" : "/models/Map-COL.jpg";
+        const diffuseMap = texLoader.load(textureFile);
+        const normalMap = texLoader.load("/models/Infinite-Level_02_Tangent_SmoothUV.jpg");
+        diffuseMap.colorSpace = THREE.SRGBColorSpace;
 
-          model.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
-              (child as THREE.Mesh).material = skinMat;
-            }
-          });
+        const skinMat = new THREE.MeshStandardMaterial({
+          map: diffuseMap,
+          normalMap: normalMap,
+          normalScale: isFemale ? new THREE.Vector2(0.35, 0.35) : new THREE.Vector2(0.85, 0.85),
+          roughness: isFemale ? 0.48 : 0.62,
+          metalness: 0.05,
+        });
 
-          // Center and scale head
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            (child as THREE.Mesh).material = skinMat;
+          }
+        });
+
+        // Gender-adaptive anatomical scaling:
+        // Female: Slender jawline, softer chin taper, graceful female bust profile
+        // Male: Standard masculine 3D head scan scale
+        if (isFemale) {
+          model.scale.set(0.224, 0.238, 0.218);
+          model.position.set(0, -0.16, 0);
+        } else {
           model.scale.set(0.24, 0.24, 0.24);
           model.position.set(0, -0.15, 0);
-
-          headPivot.add(model);
-        },
-        undefined,
-        (err) => {
-          console.warn("Male GLB load notice, using fallback:", err);
-          setIsLoadingModel(false);
-          createProceduralRealisticHead(headPivot, "male");
         }
-      );
-    } else {
-      // Photorealistic Female Character Model (Michelle)
-      loader.load(
-        "/models/Michelle.glb",
-        (gltf) => {
-          if (isDestroyed) return;
-          setIsLoadingModel(false);
 
-          const model = gltf.scene;
-
-          // Michelle model bust framing (focus on head, neck, and shoulders)
-          model.scale.set(1.4, 1.4, 1.4);
-          model.position.set(0, -1.95, 0);
-
-          headPivot.add(model);
-        },
-        undefined,
-        (err) => {
-          console.warn("Female GLB load notice, using fallback:", err);
-          setIsLoadingModel(false);
-          createProceduralRealisticHead(headPivot, "female");
-        }
-      );
-    }
-
-    // Helper: Procedural Photorealistic Head Fallback
-    function createProceduralRealisticHead(targetGroup: THREE.Group, gender: "female" | "male") {
-      const skinColor = gender === "female" ? 0xf4cfb8 : 0xdeb394;
-      const skinMaterial = new THREE.MeshStandardMaterial({
-        color: skinColor,
-        roughness: 0.58,
-        metalness: 0.05,
-      });
-
-      // Anatomical Cranium
-      const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.72, 32, 32), skinMaterial);
-      cranium.scale.set(0.95, 1.15, 1.05);
-      cranium.position.set(0, 0.35, 0);
-      targetGroup.add(cranium);
-
-      // Anatomical Neck & Jaw
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.65, 32), skinMaterial);
-      neck.position.set(0, -0.25, 0.02);
-      targetGroup.add(neck);
-
-      // Shoulders / Torso Base
-      const torsoMat = new THREE.MeshStandardMaterial({
-        color: gender === "female" ? 0x1e3a8a : 0x1e293b,
-        roughness: 0.7,
-      });
-      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.35, 1.0, 32), torsoMat);
-      torso.scale.set(1.4, 0.9, 0.75);
-      torso.position.set(0, -0.95, 0);
-      targetGroup.add(torso);
-    }
+        headPivot.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn("GLB load notice, using fallback:", err);
+        setIsLoadingModel(false);
+      }
+    );
 
     // 5. Smooth Lerp Animation Loop with Natural Idle Micro-Breathing
     let clock = new THREE.Clock();
