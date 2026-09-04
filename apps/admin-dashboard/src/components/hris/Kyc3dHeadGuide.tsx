@@ -33,7 +33,7 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({ pose, status, oc
           border: "#f87171",
           label:
             occlusionZone === "forehead"
-              ? "✋ Tangan Menutupi Dahi"
+              ? "✋ Tangan Menutupi Dahi / Mata"
               : occlusionZone === "chin"
               ? "✋ Tangan Menutupi Dagu"
               : "✋ Terhalang Tangan / Objek",

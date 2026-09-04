@@ -1934,33 +1934,35 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
 
 ### 12.3 Algoritma Multi-Zone Anti-Occlusion (Deteksi Tangan di Dahi, Kening, Kepala, & Dagu)
 
-Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifikasi pra-pemrosesan di sisi klien (*Client-Side Pre-Capture Guard*) dengan segmentasi spasial multi-zona untuk mendeteksi halangan tangan di seluruh area wajah:
-
-#### 12.3.1 Kasus Hambatan Wajah Bawah (Lower Face: Hand-on-Chin & Mouth Obstruction)
+#### 12.3.1 Kasus Solusi Hambatan Wajah Bawah (Lower Face: Chin & Jawline) & Eliminasi False-Positive Bayangan Rahang
 - **Area Analisis:** Sub-area *Lower Third* ($Y \in [75, 115], X \in [40, 120]$).
-- **Indikator Heuristik:**
-  1. **Diskontinuitas Tepi Horizontal Rahang:** Adanya lipatan jari atau telapak tangan di dagu menghasilkan densitas tepi `chinEdgeDensity > 0.36`.
-  2. **Intrusi Pergelangan Tangan Bawah:** Piksel warna kulit masuk dari batas bawah reticle ($Y > 105$) melebihi 65 piksel.
-  3. **Asimetri Intensitas Rahang Kiri vs Kanan:** Perbedaan $\Delta I_{\text{jaw}} > 38$ akibat kepalan tangan menopang salah satu sisi rahang.
+- **Evaluasi False-Positive Bayangan (Shadow Immunity):**
+  - Pada pengujian lapangan, pencahayaan ruangan dari samping atas menimbulkan bayangan tajam pada salah satu sisi rahang/leher.
+  - Aturan awal yang mengukur selisih intensitas rahang ($\Delta I_{\text{jaw}} > 38$) secara keliru menuduh bayangan lampu samping sebagai "tangan menopang dagu" padahal wajah pengguna bersih tanpa tangan.
+  - **Penyempurnaan Algoritma (Shadow-Immune Heuristic):**
+    - Metrik asimetri intensitas rahang rapuh resmi **DIELIMINASI**.
+    - Deteksi tangan pada dagu kini murni bertumpu pada **Lipatan Tepi Jari Horizontal Nyata** (`chinEdgeDensity > 0.40`) atau kombinasi tepi terarah dengan intrusi pergelangan tangan masif dari bawah reticle (`chinEdgeDensity > 0.28 && bottomSkinEntryCount > 130`).
 - **Respons Sistem:** Flag `hasChinOcclusion = true`, `occlusionZone = "chin"`.
 
-#### 12.3.2 Kasus Solusi Hambatan Wajah Atas (Upper Face: Forehead, Brow, & Crown) & Eliminasi False-Positive Rambut
-- **Latar Belakang Kasus & Evaluasi Masalah:**
-  - Pengguna terkadang meletakkan 4 jari atau telapak tangan secara horizontal menutupi dahi/kening, atau menaruh tangan di atas kepala.
-  - Pada iterasi awal, sampling warna kulit di tepi samping layar ($X < 42$) keliru mendeteksi dinding ruangan bercat kuning/krem muda sebagai kulit, serta tepi poni rambut alami dihitung sebagai garis celah jari sehingga memicu *false positive* permanen.
-- **Formulasi Diskriminator Warna Kulit Manusia Asli vs Rambut Alami:**
-  1. **Spektrum Rambut Hitam Alami (`isDarkHair`):**
-     $$gray < 65 \quad \lor \quad (R < 75 \land G < 70 \land B < 70)$$
-  2. **Spektrum Hemoglobin Kulit Manusia Asli (`isSkinTone`):**
-     $$\neg\text{isDarkHair} \land R > 75 \land G > 45 \land B > 30 \land R > G \land G > B \land (R - G) \ge 12 \land (R - B) \ge 25 \land gray \ge 60$$
-     *Nilai ini secara deterministik menolak warna dinding kamar kuning/krem ($R - G < 10$) dan menolak dinding merah bata tanpa merusak deteksi kulit manusia.*
-- **Indikator Heuristik Intra-Skin Crease Detection:**
-  - **Prinsip Dasar:** Jari-jari tangan yang menempel di dahi menghasilkan bayangan celah di antara dua permukaan kulit. Oleh karena itu, gradien vertikal $|gray_{(x, y)} - gray_{(x, y+1)}| > 20$ **HANYA DIHITUNG JIKA KEDUA PIKSEL TERSEBUT ADALAH KULIT MANUSIA** (`isUpperSkin && isLowerSkin`).
-  - Rambut poni gelap bukan kulit manusia, sehingga batas tepinya tidak akan pernah memicu *intra-skin crease*.
-  - Pada dahi normal (dengan atau tanpa poni), kulit dahi mulus sehingga $\text{intraSkinDensity} < 0.06$.
-  - Pada tangan melintang di dahi, $\text{intraSkinDensity} > 0.16$.
-- **Kondisi Pemicu Deteksi:**
-  $$\text{hasForeheadOcclusion} = \text{isFaceCentered} \land (\rho_{\text{intraSkin}} > 0.16 \lor \rho_{\text{crownSkin}} > 0.38)$$
+#### 12.3.2 Kasus Solusi Hambatan Dahi, Kening, & Ocular Occlusion (Mata Tertutup Tangan)
+- **Latar Belakang Kasus & Evaluasi Masalah (Miss-Detection & False Turn Diagnosis):**
+  - Pengguna terkadang menempelkan 4 jari dan telapak tangan secara rapat menutupi dahi dan salah satu mata (sebagaimana terlihat pada pengujian kamera).
+  - Karena jari tangan menempel rapat dan disinari lampu, celah bayangan antar-jari menjadi minimal ($\rho_{\text{intraSkin}} < 0.12$).
+  - Tanpa deteksi mata tertutup, sistem lolos dari evaluasi anti-occlusion lalu masuk ke evaluasi pose yaw. Tangan di samping pelipis menaikkan tepi pipi, sehingga sistem secara keliru mendiagnosis *"Wajah miring/menoleh, harap menatap lurus tepat ke depan"*, alih-alih mendeteksi tangan yang menutupi wajah!
+- **Formulasi Solusi Tri-Zone Upper Face Anti-Occlusion:**
+  1. **Ocular Eye-Pair Symmetry Check (Deteksi Mata Tertutup Tangan):**
+     - Mengukur densitas tepi pupil/kelopak mata kiri ($X \in [50, 72], Y \in [44, 60]$) dan mata kanan ($X \in [88, 110], Y \in [44, 60]$).
+     - Mata manusia yang terlihat normal memiliki tepi tajam (pupil, alis, lipatan kelopak mata).
+     - Saat tangan menutupi salah satu mata:
+       $$\text{eyeRatio} = \frac{\min(E_{\text{left}}, E_{\text{right}})}{\max(E_{\text{left}}, E_{\text{right}}) + 1e-5} < 0.35$$
+       Disertai saturasi kulit pada area mata tertutup ($\text{skinDensity} \ge 0.50$). Kondisi ini secara instan dan deterministik menandai penutupan mata/dahi oleh tangan.
+  2. **Lateral Temple Bridge Detection (Jembatan Lengan/Telapak Tangan dari Samping):**
+     - Memindai intrusi piksel kulit dari samping kiri ($X \in [15, 42]$) atau kanan ($X \in [118, 145]$) pada ketinggian pelipis ($Y \in [30, 65]$).
+     - Jika terdeteksi lengan/pergelangan masuk ($\text{templeSkinCount} > 65$) yang terhubung dengan dahi/mata tertutup, sistem memicu oklusi dahi.
+  3. **Intra-Skin Crease Sampling (Celah Jari pada Dahi):**
+     - Menghitung gradien vertikal $|gray_{(x, y)} - gray_{(x, y+1)}| > 20$ khusus di antara piksel kulit manusia asli (`isUpperSkin && isLowerSkin`), imun dari rambut poni alami.
+- **Kondisi Pemicu Deteksi Forehead & Ocular Occlusion:**
+  $$\text{hasForeheadOcclusion} = \text{isFaceCentered} \land (\rho_{\text{intraSkin}} > 0.14 \lor \text{isEyeOccluded} \lor (\text{hasTempleBridge} \land \rho_{\text{intraSkin}} > 0.08) \lor \rho_{\text{crownSkin}} > 0.35)$$
 
 #### 12.3.3 Tata Kelola UX & Guard Clause Multi-Zone
 1. **Dual Safe-Zone Reticle Markers:** Bingkai oval panduan dilengkapi dua garis batas putus-putus eksplisit:
@@ -1969,10 +1971,10 @@ Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifi
 2. **Indikator Status Reaktif & Penguncian Tombol Capture:**
    - **Reticle Oval:** Berkedip merah menyala (*Crimson Pulse*).
    - **Banner Video:**
-     - Jika terhalang di dahi: `✋ Terdeteksi Halangan / Tangan Menutupi Dahi atau Kening! Tolong turunkan tangan dan jauhkan jari/lengan dari area dahi, kening, dan kepala.`
+     - Jika terhalang di dahi/mata: `✋ Terdeteksi Halangan / Tangan Menutupi Dahi atau Mata! Tolong turunkan tangan dan jauhkan jari/lengan dari area dahi, mata, dan kening.`
      - Jika terhalang di dagu: `✋ Terdeteksi Halangan / Tangan Menopang Dagu! Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.`
-   - **Model 3D Guide ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)):** Berubah warna menjadi merah dengan badge spesifik: `✋ TANGAN MENUTUPI DAHI` atau `✋ TANGAN MENUTUPI DAGU`.
-   - **Tombol Capture:** **SEKETIKA TERKUNCI (`disabled = true`)** dengan label `✋ Jauhkan Tangan dari Dahi/Kepala untuk Mengambil` atau `✋ Jauhkan Tangan dari Dagu untuk Mengambil`. Pengambilan foto sama sekali tidak dapat dipaksa sebelum tangan dijauhkan.
+   - **Model 3D Guide ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)):** Berubah warna menjadi merah dengan badge spesifik: `✋ TANGAN MENUTUPI DAHI / MATA` atau `✋ TANGAN MENUTUPI DAGU`.
+   - **Tombol Capture:** **SEKETIKA TERKUNCI (`disabled = true`)** dengan label `✋ Jauhkan Tangan dari Dahi/Mata untuk Mengambil` atau `✋ Jauhkan Tangan dari Dagu untuk Mengambil`. Pengambilan foto sama sekali tidak dapat dipaksa sebelum tangan dijauhkan.
 
 #### 12.3.4 Face Presence & Oval Reticle Centering Gate (Verifikasi Keberadaan & Posisi Wajah)
 - **Latar Belakang Masalah:**
@@ -2129,4 +2131,6 @@ Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/kar
 | **Deteksi Halangan Tangan (Multi-Zone)** | Hanya dagu / reticle dasar | **Multi-Zone Anti-Occlusion** (Dahi, Kening, Kepala Atas, & Dagu) | Mencegah pendaftaran foto yang terhalang tangan di bagian dahi maupun dagu |
 | **Pembedaan Rambut vs Tangan Dahi** | Poni rambut memicu false-positive | **Intra-Skin Crease & Hemoglobin Tone** (Hanya mendeteksi celah antar-kulit tangan) | Bebas salah deteksi rambut poni/kening alami |
 | **Verifikasi Posisi Wajah di Oval** | Tidak ada verifikasi keberadaan | **Face Presence & Oval Reticle Centering Gate** (Kunci jika kepala di luar oval) | Mencegah pengambilan saat wajah bergeser keluar dari oval reticle |
+| **Deteksi Ocular (Mata Tertutup Tangan)** | Keliru dianggap menoleh (*false yaw*) | **Ocular Eye-Pair Symmetry & Temple Bridge** | Deteksi instan saat 4 jari/tangan menutup dahi & mata |
+| **Kekebalan Bayangan Dagu (Shadow Immunity)** | Bayangan samping memicu alarm dagu palsu | **Pure Horizontal Edge Density** (Eliminasi selisih rahang rapuh) | Bebas alarm dagu palsu akibat lampu samping ruangan |
 
