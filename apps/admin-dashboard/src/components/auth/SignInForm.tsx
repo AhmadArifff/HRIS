@@ -25,9 +25,9 @@ export default function SignInForm() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Admin Login State
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Admin Login State - Pre-filled dengan kredensial database Supabase agar testing instan
+  const [email, setEmail] = useState("hrd@hriscorp.dev");
+  const [password, setPassword] = useState("admin123");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,45 +40,104 @@ export default function SignInForm() {
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
 
-  const handleAdminLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const executeAdminLogin = async (targetEmail: string, targetPass: string) => {
     // PRD §8.2: Guard Clauses Auth Login Admin
-    if (!email.trim()) {
+    if (!targetEmail.trim()) {
       addToast("error", "Validasi Gagal", "Guard Clause: Email Pekerjaan wajib diisi.");
       return;
     }
-    if (!email.includes("@")) {
+    if (!targetEmail.includes("@")) {
       addToast("error", "Validasi Gagal", "Guard Clause: Format Email tidak valid (harus mengandung @).");
       return;
     }
-    if (!password) {
+    if (!targetPass) {
       addToast("error", "Validasi Gagal", "Guard Clause: Kata Sandi wajib diisi.");
       return;
     }
 
     setIsLoading(true);
 
-    const adminSessionDurationMinutes = 30;
-    const expiresAt = Date.now() + adminSessionDurationMinutes * 60 * 1000;
-    
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("hris_session_token", `ADMIN_TOKEN_${Date.now()}`);
-      sessionStorage.setItem("hris_role", "admin");
-      sessionStorage.setItem("hris_session_expires", String(expiresAt));
-      sessionStorage.setItem("hris_user_email", email);
+    try {
+      // Verifikasi ke Backend API yang terhubung ke Supabase PostgreSQL
+      const response = await fetch("http://localhost:3002/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: targetEmail.trim(), password: targetPass }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const adminUser = data.data.user;
+        const expiresAt = data.data.expiresAt || (Date.now() + 30 * 60 * 1000);
+
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("hris_session_token", data.data.token);
+          sessionStorage.setItem("hris_role", "admin");
+          sessionStorage.setItem("hris_session_expires", String(expiresAt));
+          sessionStorage.setItem("hris_user_email", adminUser.email);
+          sessionStorage.setItem("hris_user_name", adminUser.name);
+          sessionStorage.setItem("hris_employee_id", adminUser.employeeCode || "HRD-0001");
+        }
+
+        addToast(
+          "success",
+          "Autentikasi Supabase Berhasil!",
+          `Selamat datang, ${adminUser.name} (${adminUser.role}). Sesi aktif 30 Menit.`
+        );
+
+        setTimeout(() => {
+          setIsLoading(false);
+          router.push("/dashboard");
+        }, 900);
+        return;
+      } else {
+        addToast(
+          "error",
+          "Login Gagal",
+          data.message || data.error || "Kredensial tidak sesuai dengan data Supabase."
+        );
+        setIsLoading(false);
+        return;
+      }
+    } catch (networkError) {
+      console.warn("Backend API tidak merespons, menjalankan fallback sesi lokal:", networkError);
+
+      // Fallback sesi lokal jika backend offline
+      const adminSessionDurationMinutes = 30;
+      const expiresAt = Date.now() + adminSessionDurationMinutes * 60 * 1000;
+      
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("hris_session_token", `ADMIN_TOKEN_${Date.now()}`);
+        sessionStorage.setItem("hris_role", "admin");
+        sessionStorage.setItem("hris_session_expires", String(expiresAt));
+        sessionStorage.setItem("hris_user_email", targetEmail);
+        sessionStorage.setItem("hris_user_name", "Budi Santoso (Admin HRD)");
+        sessionStorage.setItem("hris_employee_id", "HRD-0001");
+      }
+
+      addToast(
+        "success",
+        "Autentikasi Admin Berhasil (Offline Mode)",
+        `Selamat datang kembali, ${targetEmail}. Sesi aktif: 30 Menit.`
+      );
+
+      setTimeout(() => {
+        setIsLoading(false);
+        router.push("/dashboard");
+      }, 1000);
     }
+  };
 
-    addToast(
-      "success",
-      "Autentikasi Admin Berhasil!",
-      `Selamat datang kembali, ${email}. Sesi aktif: 30 Menit.`
-    );
+  const handleAdminLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    executeAdminLogin(email, password);
+  };
 
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/dashboard");
-    }, 1200);
+  const handleQuickLogin = () => {
+    setEmail("hrd@hriscorp.dev");
+    setPassword("admin123");
+    executeAdminLogin("hrd@hriscorp.dev", "admin123");
   };
 
   const handleEmployeeFaceLogin = () => {
@@ -185,6 +244,62 @@ export default function SignInForm() {
           {/* TAB 1: ADMIN LOGIN */}
           {roleTab === "admin" && (
             <div>
+              {/* Quick-Access Testing Banner for Supabase Database Admin */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-brand-500/5 to-indigo-500/10 border-2 border-emerald-500/40 dark:border-emerald-500/30 mb-6 shadow-sm">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                      ⚡ Akses Cepat Testing (Database Supabase)
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
+                    Live Supabase DB
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs bg-white/80 dark:bg-gray-900/80 p-3 rounded-xl border border-emerald-100 dark:border-gray-800 mb-3 font-mono shadow-inner">
+                  <div>
+                    <span className="text-gray-400 block text-[10px] uppercase">Email Admin:</span>
+                    <strong className="text-gray-900 dark:text-white text-xs select-all">hrd@hriscorp.dev</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block text-[10px] uppercase">Kata Sandi:</span>
+                    <strong className="text-gray-900 dark:text-white text-xs select-all">admin123</strong>
+                  </div>
+                  <div className="col-span-2 pt-1 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                    <span>Nama: <strong className="text-gray-700 dark:text-gray-300 font-sans">Budi Santoso</strong></span>
+                    <span>Role: <strong className="text-emerald-600 dark:text-emerald-400 font-sans font-semibold">HRD Administrator (HRD-0001)</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleQuickLogin}
+                    disabled={isLoading}
+                    className="flex-1 py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white text-xs font-extrabold rounded-xl transition shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <span>⚡ 1-Klik Masuk Langsung (Instant Test)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail("hrd@hriscorp.dev");
+                      setPassword("admin123");
+                      addToast("info", "Form Direset", "Kredensial database Supabase telah disetel ke form.");
+                    }}
+                    className="py-2.5 px-3.5 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 transition cursor-pointer"
+                    title="Isi ulang form dengan kredensial Supabase"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 mb-6">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-semibold text-gray-800 dark:text-white">Kredensial Akses Manajemen HRD</span>

@@ -30,6 +30,7 @@ import {
   testVerifyBiometric,
   verifyFaceLogin,
 } from "./controllers/biometric.controller";
+import { loginAdmin } from "./controllers/auth.controller";
 
 const app: Application = express();
 
@@ -52,6 +53,7 @@ app.use("/api", globalLimiter);
 // 3. Routes
 app.get("/api/health", checkHealth);
 app.get("/api/infrastructure/redis", getRedisStats);
+app.post("/api/auth/login", loginAdmin);
 
 // Biometrics & Face Recognition
 app.post("/api/biometrics/enroll", attendanceLimiter, enrollFace);

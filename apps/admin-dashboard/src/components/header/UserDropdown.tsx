@@ -1,21 +1,47 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [userName, setUserName] = useState("Budi Santoso");
+  const [userEmail, setUserEmail] = useState("hrd@hriscorp.dev");
+  const [userRole, setUserRole] = useState("Administrator HRD");
 
-function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-  e.stopPropagation();
-  setIsOpen((prev) => !prev);
-}
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedName = sessionStorage.getItem("hris_user_name");
+      const storedEmail = sessionStorage.getItem("hris_user_email");
+      const storedRole = sessionStorage.getItem("hris_role");
+      if (storedName) setUserName(storedName);
+      if (storedEmail) setUserEmail(storedEmail);
+      if (storedRole) setUserRole(storedRole.toUpperCase() === "ADMIN" ? "Administrator HRD" : storedRole);
+    }
+  }, []);
+
+  function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    e.stopPropagation();
+    setIsOpen((prev) => !prev);
+  }
 
   function closeDropdown() {
     setIsOpen(false);
   }
+
+  function handleSignOut() {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("hris_session_token");
+      sessionStorage.removeItem("hris_role");
+      sessionStorage.removeItem("hris_session_expires");
+      sessionStorage.removeItem("hris_user_email");
+      sessionStorage.removeItem("hris_user_name");
+      sessionStorage.removeItem("hris_employee_id");
+    }
+  }
+
   return (
     <div className="relative">
       <button
@@ -32,7 +58,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
           />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">Arif.Dev</span>
+        <span className="block mr-1 font-medium text-theme-sm">{userName}</span>
 
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
@@ -61,10 +87,13 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            Arif.Dev
+            {userName}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            admin@arif.dev
+            {userEmail}
+          </span>
+          <span className="mt-1 inline-block text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800">
+            {userRole}
           </span>
         </div>
 
@@ -147,6 +176,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         </ul>
         <Link
           href="/signin"
+          onClick={handleSignOut}
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
         >
           <svg
