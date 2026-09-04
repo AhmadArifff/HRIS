@@ -78,34 +78,34 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
   const getPoseTransform = () => {
     switch (pose) {
       case "right":
-        // Turning to the Right (~25°): Rotate Y clockwise in 3D
+        // Turning to the Right (~25°): Subtle 3D perspective depth
         return {
-          transform: "perspective(500px) rotateY(24deg) scale(1.03) translateZ(10px)",
-          lightGradient: "linear-gradient(90deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.08) 70%, rgba(56,189,248,0.2) 100%)",
+          transform: "perspective(600px) rotateY(6deg) translateZ(6px)",
+          lightGradient: "linear-gradient(90deg, rgba(0,0,0,0.3) 0%, rgba(255,255,255,0.06) 70%, rgba(56,189,248,0.15) 100%)",
         };
       case "left":
-        // Turning to the Left (~25°): Rotate Y counter-clockwise in 3D
+        // Turning to the Left (~25°): Subtle 3D perspective depth
         return {
-          transform: "perspective(500px) rotateY(-24deg) scale(1.03) translateZ(10px)",
-          lightGradient: "linear-gradient(270deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.08) 70%, rgba(56,189,248,0.2) 100%)",
+          transform: "perspective(600px) rotateY(-6deg) translateZ(6px)",
+          lightGradient: "linear-gradient(270deg, rgba(0,0,0,0.3) 0%, rgba(255,255,255,0.06) 70%, rgba(56,189,248,0.15) 100%)",
         };
       case "up":
-        // Tilting Head Upward (~15°): Rotate X backwards
+        // Tilting Head Upward (~15°): Subtle 3D tilt
         return {
-          transform: "perspective(500px) rotateX(-16deg) scale(1.02) translateZ(8px)",
-          lightGradient: "linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.1) 80%, rgba(56,189,248,0.2) 100%)",
+          transform: "perspective(600px) rotateX(-5deg) translateZ(4px)",
+          lightGradient: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, rgba(255,255,255,0.08) 80%, rgba(56,189,248,0.15) 100%)",
         };
       case "down":
-        // Tilting Head Downward (~15°): Rotate X forwards
+        // Tilting Head Downward (~15°): Subtle 3D tilt
         return {
-          transform: "perspective(500px) rotateX(16deg) scale(1.02) translateZ(8px)",
-          lightGradient: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.08) 70%, rgba(56,189,248,0.2) 100%)",
+          transform: "perspective(600px) rotateX(5deg) translateZ(4px)",
+          lightGradient: "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(255,255,255,0.06) 70%, rgba(56,189,248,0.15) 100%)",
         };
       case "center":
       default:
         return {
-          transform: "perspective(500px) rotateY(0deg) rotateX(0deg) scale(1)",
-          lightGradient: "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.2) 80%)",
+          transform: "perspective(600px) rotateY(0deg) rotateX(0deg) scale(1)",
+          lightGradient: "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.15) 80%)",
         };
     }
   };
@@ -189,7 +189,7 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
           </div>
 
           <div
-            className={`relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-slate-950 border transition-all duration-300 ${
+            className={`relative w-full h-36 sm:h-40 rounded-xl overflow-hidden bg-slate-950 border transition-all duration-300 ${
               status === "aligned"
                 ? "border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
                 : status === "occluded"
@@ -203,9 +203,9 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
               style={{ transform: poseTransform.transform, transformStyle: "preserve-3d" }}
             >
               <img
-                src="/images/kyc/female_avatar.jpg"
-                alt="Model 3D Perempuan"
-                className="w-full h-full object-cover object-top filter contrast-[1.03] select-none"
+                src={`/images/kyc/female_${pose}.jpg`}
+                alt={`Model 3D Perempuan - Pose ${pose}`}
+                className="w-full h-full object-cover object-center filter contrast-[1.03] select-none"
                 loading="eager"
               />
 
@@ -215,26 +215,27 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
                 style={{ background: poseTransform.lightGradient }}
               />
 
-              {/* Biometric KYC Head Contour Grid Overlay */}
+              {/* Biometric KYC Head & Shoulder Contour Overlay */}
               <svg
                 viewBox="0 0 100 100"
-                className="absolute inset-0 w-full h-full pointer-events-none opacity-40 mix-blend-screen"
+                className="absolute inset-0 w-full h-full pointer-events-none opacity-35 mix-blend-screen"
               >
                 <ellipse
                   cx="50"
-                  cy="45"
-                  rx="26"
-                  ry="34"
+                  cy="42"
+                  rx="24"
+                  ry="30"
                   fill="none"
                   stroke={theme.mesh}
                   strokeWidth="0.8"
                   strokeDasharray="2 2"
                 />
                 {/* Horizontal Feature Crosshairs */}
-                <line x1="30" y1="42" x2="70" y2="42" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
-                <line x1="42" y1="56" x2="58" y2="56" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
+                <line x1="32" y1="40" x2="68" y2="40" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
                 {/* Vertical Meridian */}
-                <line x1="50" y1="18" x2="50" y2="76" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="3 3" />
+                <line x1="50" y1="14" x2="50" y2="82" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="3 3" />
+                {/* Collar/Shoulder Arc */}
+                <path d="M 20 88 Q 50 78 80 88" fill="none" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="2 2" strokeOpacity="0.5" />
               </svg>
             </div>
 
@@ -270,7 +271,7 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
           </div>
 
           <div
-            className={`relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-slate-950 border transition-all duration-300 ${
+            className={`relative w-full h-36 sm:h-40 rounded-xl overflow-hidden bg-slate-950 border transition-all duration-300 ${
               status === "aligned"
                 ? "border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
                 : status === "occluded"
@@ -284,9 +285,9 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
               style={{ transform: poseTransform.transform, transformStyle: "preserve-3d" }}
             >
               <img
-                src="/images/kyc/male_avatar.jpg"
-                alt="Model 3D Laki-Laki"
-                className="w-full h-full object-cover object-top filter contrast-[1.03] select-none"
+                src={`/images/kyc/male_${pose}.jpg`}
+                alt={`Model 3D Laki-Laki - Pose ${pose}`}
+                className="w-full h-full object-cover object-center filter contrast-[1.03] select-none"
                 loading="eager"
               />
 
@@ -296,26 +297,27 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
                 style={{ background: poseTransform.lightGradient }}
               />
 
-              {/* Biometric KYC Head Contour Grid Overlay */}
+              {/* Biometric KYC Head & Shoulder Contour Overlay */}
               <svg
                 viewBox="0 0 100 100"
-                className="absolute inset-0 w-full h-full pointer-events-none opacity-40 mix-blend-screen"
+                className="absolute inset-0 w-full h-full pointer-events-none opacity-35 mix-blend-screen"
               >
                 <ellipse
                   cx="50"
-                  cy="45"
-                  rx="26"
-                  ry="34"
+                  cy="42"
+                  rx="24"
+                  ry="30"
                   fill="none"
                   stroke={theme.mesh}
                   strokeWidth="0.8"
                   strokeDasharray="2 2"
                 />
                 {/* Horizontal Feature Crosshairs */}
-                <line x1="30" y1="42" x2="70" y2="42" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
-                <line x1="42" y1="56" x2="58" y2="56" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
+                <line x1="32" y1="40" x2="68" y2="40" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
                 {/* Vertical Meridian */}
-                <line x1="50" y1="18" x2="50" y2="76" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="3 3" />
+                <line x1="50" y1="14" x2="50" y2="82" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="3 3" />
+                {/* Collar/Shoulder Arc */}
+                <path d="M 20 88 Q 50 78 80 88" fill="none" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="2 2" strokeOpacity="0.5" />
               </svg>
             </div>
 

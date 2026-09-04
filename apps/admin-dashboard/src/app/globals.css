@@ -814,3 +814,45 @@ span.flatpickr-weekday,
   opacity: 0.8;
   cursor: grabbing; /* Changes the cursor to indicate dragging */
 }
+
+/* Biometric KYC Cyber Laser Scan & Dot Mesh Animations */
+@keyframes kycLaserScan {
+  0% {
+    top: 6%;
+    opacity: 0.2;
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 6%;
+    opacity: 0.2;
+  }
+}
+
+.animate-kyc-laser {
+  animation: kycLaserScan 2.4s ease-in-out infinite;
+}
+
+@keyframes kycDotPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+
+.animate-kyc-dot-pulse {
+  animation: kycDotPulse 1.8s ease-in-out infinite;
+}
+

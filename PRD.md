@@ -1949,9 +1949,9 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
 - **Latar Belakang Masalah (False Alarm Tangan pada Pose Tolehan Menoleh):**
   - Pada pengujian, saat pengguna menoleh ke kiri (~25°), mata kanan pengguna menghadap kamera sedangkan mata kiri secara alami tersembunyi/mengecil di belakang batang hidung akibat rotasi 3D perspektif (*self-occlusion*).
   - Algoritma awal yang mengevaluasi asimetri mata (`eyeEdgeRatio < 0.38`) pada semua pose secara keliru menuduh kondisi alami tolehan ini sebagai *"✋ Terdeteksi halangan / tangan menutupi dahi atau mata!"* padahal tidak ada tangan sama sekali.
-- **Formulasi Pose-Specific Ocular Isolation:**
+- **Formulasi Pose-Specific Ocular & Lateral Temple Isolation:**
   - Evaluasi asimetri mata (`isOcularOccluded`) dan jembatan pelipis (`hasTempleHandBridge`) **HANYA DIAKTIFKAN PADA POSE 1 (CENTER FRONTAL)**.
-  - Pada pose tolehan (`right`, `left`, `up`, `down`), oklusi dahi murni bertumpu pada **Intra-Skin Crease Density** ($\rho_{\text{intraSkin}} > 0.10$) atau saturasi mahkota atas ($\rho_{\text{crown}} > 0.65$), sehingga pengguna bebas menoleh ke kiri maupun ke kanan tanpa memicu alarm tangan palsu.
+  - Pada pose tolehan (`right`, `left`, `up`, `down`), tolehan kepala dan pergeseran poni rambut alami tidak boleh memicu alarm tangan palsu (*zero false-positives*). Sistem mewajibkan adanya konfirmasi intrusi tangan lateral dari pelipis/lengan (`hasLateralTempleIntrusion = leftTempleSkinCount > 60 || rightTempleSkinCount > 60`) atau kepadatan kulit ekstrem mahkota+dahi ($\rho_{\text{crown}} > 0.80 \land \rho_{\text{intraSkin}} > 0.20$) sebelum membunyikan alarm oklusi dahi.
 - **Hierarki Prioritas Mutlak (Anti-Occlusion First):**
   - Deteksi oklusi tangan dievaluasi **SEBELUM** evaluasi centering atau pose alignment.
   - Selama wajah hadir di kamera (`isFacePresent = coreSkinCount >= 180`), jika terdeteksi oklusi tangan di dahi atau mulut, sistem seketika memicu alarm tangan dan mengunci tombol capture.
@@ -1982,23 +1982,35 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
      - **Mendongak Atas (Pose 4):** Mendeteksi dominasi leher/dagu (`verticalBalance < 1.15` atau `avgLower > avgUpper * 0.90` atau `chinSkinCount > 90`).
      - **Menunduk Bawah (Pose 5):** Mendeteksi dominasi dahi atas (`verticalBalance > 0.85` atau `avgUpper > avgLower * 0.95`).
 
-#### 12.3.5 Dynamic In-Camera Facial Feature Alignment Grid (Panduan Garis Mata, Alis, Hidung, & Bibir)
-- **Latar Belakang UX:**
-  - Sebelumnya, panduan arah hanya divisualisasikan pada model kepala 3D di samping kanan layar. Pengguna mengalami kesulitan memperkirakan apakah sudut mata, lekukan hidung, dan bibir mereka sudah berada pada posisi yang diharapkan oleh model deteksi kamera.
-- **Spesifikasi In-Camera Overlay (Vector SVG Real-Time):**
-  - Di dalam bingkai oval panduan kamera, dirender kisi-kisi landmark anatomi dinamis:
-    1. **Sumbu Alis & Level Mata (*Eyebrow & Eyeline Axis*):** Garis horizontal putus-putus dengan penanda sepasang target mata (elips + titik pupil) berlabel `"ALIS & MATA"`.
-    2. **Meridian Batang Hidung (*Nose Bridge Meridian*):** Garis lengkung proyeksi 3D yang bergeser dinamis per pose:
-       - **Center:** Garis lurus vertikal di tengah dengan cuping hidung di $Y = 142$.
-       - **Kanan (Menoleh Kanan):** Garis meridian melengkung ke kanan dengan panah proyeksi arah.
-       - **Kiri (Menoleh Kiri):** Garis meridian melengkung ke kiri dengan panah proyeksi arah.
-       - **Atas (Mendongak):** Garis hidung memendek ke atas ($Y = 122$) dengan panah ke atas.
-       - **Bawah (Menunduk):** Garis hidung memanjang ke bawah ($Y = 158$) dengan panah ke bawah.
-    3. **Garis Target Bibir & Dagu (*Mouth Target Line*):** Garis lengkung busur horizontal berlabel `"BIBIR & DAGU"`.
-  - **Umpan Balik Warna Interaktif (*Snap Alignment Feedback*):**
-    - **Amber (`#fbbf24`):** Kepala belum sejajar dengan garis target anatomis.
-    - **Merah (`#ef4444`):** Terdeteksi oklusi tangan di wajah.
-    - **Hijau Emerald Menyala (`#10b981`):** Fitur wajah telah menempati garis target dengan presisi tinggi, mengindikasikan siap foto (*ready-to-snap*).
+#### 12.3.5 Dynamic Cyber Biometric Landmark Dot Mesh & Adaptive Laser Scanner (Face ID Cyberpunk Standard)
+- **Latar Belakang UX & Standar Visual:**
+  - Sebelumnya, reticle kamera menggunakan garis putus-putus elips mata dan garis bibir statis 2D yang tata letaknya kaku dan canggung (sering kali jatuh di dahi atau garis rambut saat pengguna menoleh).
+  - Pengguna menginginkan efek pemindaian wajah futuristik (*biometric dot mesh scan*) yang menyatu secara organik dengan anatomi wajah pengguna, dilengkapi animasi laser bergerak dan umpan balik saat foto diambil.
+- **Spesifikasi Biometric Dot Matrix & Wireframe Mesh (`getBiometricMesh`):**
+  1. **38-Point Adaptive Landmark Dot Matrix:**
+     - Menghamparkan 38 titik koordinat biometrik dinamis yang bergeser mengikuti pose target:
+       - **Dahi & Pelipis (Dots 0–4):** Titik jangkar pelipis kiri/kanan (`isAnchor: true`).
+       - **Alis Kiri & Kanan (Dots 5–10):** Kontur lengkung alis luar, tengah, dan dalam.
+       - **Mata & Pupil (Dots 11–16):** Titik pupil mata kiri & kanan dengan animasi radar ping berdenyut (`animate-ping`).
+       - **Batang & Cuping Hidung (Dots 17–22):** Titik jembatan dan puncak hidung (`ns_tip`).
+       - **Pipi Dalam & Rahang (Dots 23–26):** Topologi pipi kiri/kanan yang meregang/merapat saat menoleh.
+       - **Kontur Bibir (Dots 27–30):** Garis perimeter mulut (kiri, atas, kanan, bawah).
+       - **Garis Rahang & Dagu (Dots 31–37):** Titik kontur rahang bawah dan dagu (`ch_tip`).
+  2. **Interconnecting Cyber Wireframe Lines:**
+     - Menghubungkan titik-titik landmark menggunakan garis vektor berjarak putus-putus tipis (`BIOMETRIC_MESH_CONNECTIONS`), membentuk jaring poligon 3D ala scanner biometrik militer/Face ID enterprise.
+  3. **Sweeping Cyber Laser Scan Beam:**
+     - Garis laser horizontal cyan menyala bergradasi (`animate-kyc-laser`, `@keyframes kycLaserScan`) yang menyapu naik-turun dari atas ke bawah reticle oval secara kontinu selama kamera aktif.
+  4. **Corner HUD Telemetry Badges:**
+     - Menampilkan label telemetri biometrik di sudut reticle:
+       - Kiri Atas: `[38-PTS MESH]`
+       - Kanan Atas: `[+25° YAW]` / `[-15° PITCH]` / `[0° FRONT]`
+  5. **Capture Snapshot Lock Ripple Effect:**
+     - Saat foto diambil (`flashFeedback = true`), layar kamera menampilkan kilatan optik putih transparan, lingkaran ganda hijau emerald yang mengembang (*ripple ping*), serta lencana status konfirmasi:
+       `✓ BIOMETRIC MESH SNAPSHOT`
+  6. **Umpan Balik Warna Status Reaktif:**
+     - **Merah Glowing (`#ef4444`):** Terdeteksi tangan atau objek menutupi wajah.
+     - **Kuning / Cyan (`#fbbf24` / `#38bdf8`):** Melacak orientasi kepala (*tracking*).
+     - **Hijau Emerald Menyala (`#10b981`):** Orientasi dan ketajaman wajah terkunci 100% (*ready-to-snap*).
 
 ---
 
@@ -2095,18 +2107,20 @@ Penggunaan emoticon / emoji kartun (seperti `🙂`, `👉`, `👆`) **resmi diti
 *   Emoticon kartun bersifat 2D datar sehingga ambigu dan tidak dapat menunjukkan kedalaman rotasi perspektif 3D yang tepat kepada karyawan.
 
 #### 12.7.2 Spesifikasi Komponen Model 3D Dual-Gender (`Kyc3dHeadGuide.tsx`)
-Komponen panduan visual dibangun menggunakan model 3D manusia asli photorealistic (*Realistic 3D Digital Human Bust*):
-1. **Anatomi Visual 3D Human Model Lengkap:**
-   - Menampilkan wajah manusia asli digital twin lengkap: **rambut, mata, hidung, alis, mulut/bibir, telinga, leher, dan pundak** dengan pakaian kemeja profesional netral.
+Komponen panduan visual dibangun menggunakan **10 aset model 3D manusia asli photorealistic (5 model perempuan & 5 model laki-laki)** untuk masing-masing pose target:
+1. **Anatomi Visual 3D Human Model Lengkap (Bust Framing):**
+   - Menampilkan postur tubuh bagian atas manusia digital twin lengkap: **rambut, mata, hidung, alis, mulut/bibir, telinga, leher jenjang, kerah kemeja, dan kedua pundak/bahu** secara proporsional.
+   - Menggunakan rasio bingkai luas (`h-36 sm:h-40`, `object-cover object-center`) yang memastikan pundak dan leher tidak terpotong, memberikan panduan arah tolehan yang sangat natural dan mudah dipahami oleh pengguna.
    - Menampilkan **2 model gender** yang tersusun vertikal pada panel samping panduan:
      - **Bagian Atas:** Model 3D Perempuan (*Female Avatar Guide*)
      - **Bagian Bawah:** Model 3D Laki-Laki (*Male Avatar Guide*)
-2. **Visualisasi Spesifik & Transformasi 3D per Pose:**
-   - **Center:** Kedua model menghadap lurus frontal ke arah kamera (`rotateY(0deg) rotateX(0deg)`).
-   - **Right:** Kedua model menoleh ke kanan (~25°) dengan kedalaman perspektif 3D (`rotateY(24deg)`), memperlihatkan profil samping dan panah rotasi berarah ke kanan.
-   - **Left:** Kedua model menoleh ke kiri (~25°) dengan kedalaman perspektif 3D (`rotateY(-24deg)`), memperlihatkan profil samping dan panah rotasi berarah ke kiri.
-   - **Up:** Kedua model mendongak ke atas (~15°) (`rotateX(-16deg)`), memperlihatkan dagu dan leher dengan panah vertikal ke atas.
-   - **Down:** Kedua model menunduk ke bawah (~15°) (`rotateX(16deg)`), memperlihatkan bagian atas rambut dan dahi dengan panah vertikal ke bawah.
+2. **Dedicated Multi-Model Visual Asset per Pose (5 Model Female & 5 Model Male):**
+   - Setiap pose memiliki citra render 3D tersendiri, bukan memutar foto frontal tunggal via CSS:
+     - **Pose 1 (Center):** `/images/kyc/female_center.jpg` & `male_center.jpg` (Menghadap lurus frontal dengan bahu tegak simetris).
+     - **Pose 2 (Right):** `/images/kyc/female_right.jpg` & `male_right.jpg` (Menoleh ke kanan ~25°, memperlihatkan profil rahang kiri, telinga, dan pergeseran pundak).
+     - **Pose 3 (Left):** `/images/kyc/female_left.jpg` & `male_left.jpg` (Menoleh ke kiri ~25°, memperlihatkan profil rahang kanan, telinga, dan pergeseran pundak).
+     - **Pose 4 (Up):** `/images/kyc/female_up.jpg` & `male_up.jpg` (Mendongak ke atas ~15°, mengekspos leher, dagu, dan pangkal kerah kemeja).
+     - **Pose 5 (Down):** `/images/kyc/female_down.jpg` & `male_down.jpg` (Menunduk ke bawah ~15°, memperlihatkan mahkota rambut, dahi, dan pundak rileks).
 3. **Indikator Status Reaktif 5-Tema:**
    - **Sky Blue (`#38bdf8` - Waiting):** Menunggu pengguna memposisikan kepala sesuai model 3D (`IKUTI ARAH MODEL 3D`).
    - **Emerald Green (`#10b981` - Aligned):** Kepala telah menoleh dengan sudut presisi, siap dipindai (`✓ SUDUT ROTASI TEPAT`).

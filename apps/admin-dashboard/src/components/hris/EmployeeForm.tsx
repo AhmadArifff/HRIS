@@ -56,89 +56,335 @@ const KYC_POSES: KycPose[] = [
   },
 ];
 
-interface FacialGuideConfig {
-  leftEye: { x: number; y: number };
-  rightEye: { x: number; y: number };
-  leftBrow: string;
-  rightBrow: string;
-  eyeline: string;
-  nosePath: string;
-  noseTip: { x: number; y: number };
-  mouthPath: string;
-  poseHintText: string;
-  arrowPath?: string;
+interface BiometricDot {
+  id: string;
+  x: number;
+  y: number;
+  isAnchor?: boolean;
 }
 
-const getFacialGuideCoordinates = (poseId: string): FacialGuideConfig => {
+interface BiometricMeshConfig {
+  dots: BiometricDot[];
+  meshConnections: [number, number][];
+  poseHintText: string;
+  yawDegrees: string;
+  centerPos: { x: number; y: number };
+}
+
+// Interconnection lines between biometric facial landmark nodes (pairs of dot indices)
+const BIOMETRIC_MESH_CONNECTIONS: [number, number][] = [
+  // Forehead & Temples (0..4)
+  [0, 1], [1, 2], [0, 3], [3, 4],
+  // Eyebrows (5..7 left, 8..10 right)
+  [5, 6], [6, 7], [8, 9], [9, 10],
+  // Eyes (11..13 left, 14..16 right)
+  [11, 12], [12, 13], [14, 15], [15, 16],
+  // Eye-to-Nose bridges
+  [7, 17], [8, 17], [13, 17], [14, 17],
+  // Nose Bridge & Tip (17..22)
+  [17, 18], [18, 19], [19, 20], [20, 21], [20, 22],
+  // Cheeks (23..26)
+  [5, 23], [23, 24], [10, 25], [25, 26],
+  // Nose to Mouth (20 -> 28)
+  [20, 28],
+  // Lips / Mouth Perimeter (27..30)
+  [27, 28], [28, 29], [29, 30], [30, 27],
+  // Jawline & Chin contour (31..37)
+  [23, 31], [31, 32], [32, 33], [33, 34], [34, 35], [35, 36], [36, 37], [37, 25],
+  // Mouth to Chin
+  [30, 34],
+];
+
+const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
   switch (poseId) {
     case "right":
-      // Menoleh ke kanan (~25°): di feed kamera cermin, wajah berputar ke kiri layar
+      // Menoleh ke Kanan (~+25°): Dalam kamera cermin, wajah bergeser & berputar ke arah kiri layar
       return {
-        leftEye: { x: 58, y: 96 },
-        rightEye: { x: 104, y: 98 },
-        leftBrow: "M 44,82 Q 58,76 72,83",
-        rightBrow: "M 92,86 Q 104,80 118,84",
-        eyeline: "M 38,98 L 122,100",
-        nosePath: "M 84,84 Q 72,112 68,142",
-        noseTip: { x: 68, y: 142 },
-        mouthPath: "M 62,185 Q 78,188 98,184",
-        poseHintText: "ARAH TOLEHAN KANAN",
-        arrowPath: "M 88,118 Q 70,118 56,126",
+        poseHintText: "TOLEHKAN KE KANAN (+25°)",
+        yawDegrees: "+25° YAW",
+        centerPos: { x: 80, y: 138 },
+        dots: [
+          // 0..4 Forehead
+          { id: "fh_c", x: 80, y: 62 },
+          { id: "fh_ml", x: 64, y: 66 },
+          { id: "fh_fl", x: 50, y: 76, isAnchor: true },
+          { id: "fh_mr", x: 104, y: 64 },
+          { id: "fh_fr", x: 134, y: 74, isAnchor: true },
+          // 5..7 Left Brow (Compressed)
+          { id: "br_lo", x: 48, y: 84 },
+          { id: "br_lm", x: 60, y: 80 },
+          { id: "br_li", x: 72, y: 84 },
+          // 8..10 Right Brow (Expanded)
+          { id: "br_ri", x: 92, y: 84 },
+          { id: "br_rm", x: 112, y: 80 },
+          { id: "br_ro", x: 132, y: 84 },
+          // 11..13 Left Eye (Compressed)
+          { id: "ey_lo", x: 52, y: 96 },
+          { id: "ey_lp", x: 62, y: 96, isAnchor: true },
+          { id: "ey_li", x: 72, y: 96 },
+          // 14..16 Right Eye (Broad)
+          { id: "ey_ri", x: 94, y: 96 },
+          { id: "ey_rp", x: 110, y: 96, isAnchor: true },
+          { id: "ey_ro", x: 126, y: 96 },
+          // 17..22 Nose
+          { id: "ns_1", x: 82, y: 88 },
+          { id: "ns_2", x: 80, y: 108 },
+          { id: "ns_3", x: 78, y: 126 },
+          { id: "ns_tip", x: 76, y: 138, isAnchor: true },
+          { id: "ns_nl", x: 68, y: 140 },
+          { id: "ns_nr", x: 90, y: 140 },
+          // 23..26 Cheeks
+          { id: "ck_lt", x: 44, y: 122 },
+          { id: "ck_lm", x: 52, y: 146 },
+          { id: "ck_rt", x: 138, y: 122 },
+          { id: "ck_rm", x: 124, y: 146 },
+          // 27..30 Lips
+          { id: "lp_l", x: 64, y: 174 },
+          { id: "lp_t", x: 80, y: 168 },
+          { id: "lp_r", x: 102, y: 174 },
+          { id: "lp_b", x: 80, y: 182 },
+          // 31..37 Jaw & Chin
+          { id: "jw_1", x: 42, y: 152 },
+          { id: "jw_2", x: 50, y: 188 },
+          { id: "jw_3", x: 66, y: 212 },
+          { id: "ch_tip", x: 80, y: 218, isAnchor: true },
+          { id: "jw_5", x: 104, y: 212 },
+          { id: "jw_6", x: 128, y: 188 },
+          { id: "jw_7", x: 142, y: 152 },
+        ],
+        meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
+
     case "left":
-      // Menoleh ke kiri (~25°): di feed kamera cermin, wajah berputar ke kanan layar
+      // Menoleh ke Kiri (~-25°): Dalam kamera cermin, wajah bergeser & berputar ke arah kanan layar
       return {
-        leftEye: { x: 88, y: 98 },
-        rightEye: { x: 134, y: 96 },
-        leftBrow: "M 74,84 Q 88,80 100,86",
-        rightBrow: "M 120,83 Q 134,76 148,82",
-        eyeline: "M 70,100 L 154,98",
-        nosePath: "M 108,84 Q 120,112 124,142",
-        noseTip: { x: 124, y: 142 },
-        mouthPath: "M 94,184 Q 114,188 130,185",
-        poseHintText: "ARAH TOLEHAN KIRI",
-        arrowPath: "M 104,118 Q 122,118 136,126",
+        poseHintText: "TOLEHKAN KE KIRI (-25°)",
+        yawDegrees: "-25° YAW",
+        centerPos: { x: 112, y: 138 },
+        dots: [
+          // 0..4 Forehead
+          { id: "fh_c", x: 112, y: 62 },
+          { id: "fh_ml", x: 88, y: 64 },
+          { id: "fh_fl", x: 58, y: 74, isAnchor: true },
+          { id: "fh_mr", x: 128, y: 66 },
+          { id: "fh_fr", x: 142, y: 76, isAnchor: true },
+          // 5..7 Left Brow (Expanded)
+          { id: "br_lo", x: 60, y: 84 },
+          { id: "br_lm", x: 80, y: 80 },
+          { id: "br_li", x: 100, y: 84 },
+          // 8..10 Right Brow (Compressed)
+          { id: "br_ri", x: 120, y: 84 },
+          { id: "br_rm", x: 132, y: 80 },
+          { id: "br_ro", x: 144, y: 84 },
+          // 11..13 Left Eye (Broad)
+          { id: "ey_lo", x: 66, y: 96 },
+          { id: "ey_lp", x: 82, y: 96, isAnchor: true },
+          { id: "ey_li", x: 98, y: 96 },
+          // 14..16 Right Eye (Compressed)
+          { id: "ey_ri", x: 120, y: 96 },
+          { id: "ey_rp", x: 130, y: 96, isAnchor: true },
+          { id: "ey_ro", x: 140, y: 96 },
+          // 17..22 Nose
+          { id: "ns_1", x: 110, y: 88 },
+          { id: "ns_2", x: 112, y: 108 },
+          { id: "ns_3", x: 114, y: 126 },
+          { id: "ns_tip", x: 116, y: 138, isAnchor: true },
+          { id: "ns_nl", x: 102, y: 140 },
+          { id: "ns_nr", x: 124, y: 140 },
+          // 23..26 Cheeks
+          { id: "ck_lt", x: 54, y: 122 },
+          { id: "ck_lm", x: 68, y: 146 },
+          { id: "ck_rt", x: 148, y: 122 },
+          { id: "ck_rm", x: 140, y: 146 },
+          // 27..30 Lips
+          { id: "lp_l", x: 90, y: 174 },
+          { id: "lp_t", x: 112, y: 168 },
+          { id: "lp_r", x: 128, y: 174 },
+          { id: "lp_b", x: 112, y: 182 },
+          // 31..37 Jaw & Chin
+          { id: "jw_1", x: 50, y: 152 },
+          { id: "jw_2", x: 64, y: 188 },
+          { id: "jw_3", x: 88, y: 212 },
+          { id: "ch_tip", x: 112, y: 218, isAnchor: true },
+          { id: "jw_5", x: 126, y: 212 },
+          { id: "jw_6", x: 142, y: 188 },
+          { id: "jw_7", x: 150, y: 152 },
+        ],
+        meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
+
     case "up":
-      // Mendongak ke atas (~15°): fitur wajah bergeser naik
+      // Mendongak ke Atas (~+15°): Fitur wajah bergeser naik
       return {
-        leftEye: { x: 66, y: 80 },
-        rightEye: { x: 126, y: 80 },
-        leftBrow: "M 50,66 Q 66,58 82,66",
-        rightBrow: "M 110,66 Q 126,58 142,66",
-        eyeline: "M 40,80 L 152,80",
-        nosePath: "M 96,68 L 96,122",
-        noseTip: { x: 96, y: 122 },
-        mouthPath: "M 74,166 Q 96,172 118,166",
-        poseHintText: "DONGAKKAN KE ATAS",
-        arrowPath: "M 96,106 L 96,86",
+        poseHintText: "DONGAKKAN KE ATAS (+15°)",
+        yawDegrees: "+15° PITCH",
+        centerPos: { x: 96, y: 124 },
+        dots: [
+          // 0..4 Forehead
+          { id: "fh_c", x: 96, y: 52 },
+          { id: "fh_ml", x: 74, y: 56 },
+          { id: "fh_fl", x: 54, y: 66, isAnchor: true },
+          { id: "fh_mr", x: 118, y: 56 },
+          { id: "fh_fr", x: 138, y: 66, isAnchor: true },
+          // 5..7 Left Brow
+          { id: "br_lo", x: 50, y: 74 },
+          { id: "br_lm", x: 66, y: 70 },
+          { id: "br_li", x: 82, y: 74 },
+          // 8..10 Right Brow
+          { id: "br_ri", x: 110, y: 74 },
+          { id: "br_rm", x: 126, y: 70 },
+          { id: "br_ro", x: 142, y: 74 },
+          // 11..13 Left Eye
+          { id: "ey_lo", x: 56, y: 84 },
+          { id: "ey_lp", x: 68, y: 84, isAnchor: true },
+          { id: "ey_li", x: 80, y: 84 },
+          // 14..16 Right Eye
+          { id: "ey_ri", x: 112, y: 84 },
+          { id: "ey_rp", x: 124, y: 84, isAnchor: true },
+          { id: "ey_ro", x: 136, y: 84 },
+          // 17..22 Nose
+          { id: "ns_1", x: 96, y: 76 },
+          { id: "ns_2", x: 96, y: 94 },
+          { id: "ns_3", x: 96, y: 112 },
+          { id: "ns_tip", x: 96, y: 124, isAnchor: true },
+          { id: "ns_nl", x: 84, y: 126 },
+          { id: "ns_nr", x: 108, y: 126 },
+          // 23..26 Cheeks
+          { id: "ck_lt", x: 46, y: 112 },
+          { id: "ck_lm", x: 58, y: 136 },
+          { id: "ck_rt", x: 146, y: 112 },
+          { id: "ck_rm", x: 134, y: 136 },
+          // 27..30 Lips
+          { id: "lp_l", x: 74, y: 162 },
+          { id: "lp_t", x: 96, y: 156 },
+          { id: "lp_r", x: 118, y: 162 },
+          { id: "lp_b", x: 96, y: 170 },
+          // 31..37 Jaw & Chin
+          { id: "jw_1", x: 44, y: 144 },
+          { id: "jw_2", x: 56, y: 184 },
+          { id: "jw_3", x: 76, y: 210 },
+          { id: "ch_tip", x: 96, y: 218, isAnchor: true },
+          { id: "jw_5", x: 116, y: 210 },
+          { id: "jw_6", x: 136, y: 184 },
+          { id: "jw_7", x: 148, y: 144 },
+        ],
+        meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
+
     case "down":
-      // Menunduk ke bawah (~15°): fitur wajah bergeser turun
+      // Menunduk ke Bawah (~-15°): Fitur wajah bergeser turun
       return {
-        leftEye: { x: 66, y: 106 },
-        rightEye: { x: 126, y: 106 },
-        leftBrow: "M 50,90 Q 66,82 82,90",
-        rightBrow: "M 110,90 Q 126,82 142,90",
-        eyeline: "M 40,106 L 152,106",
-        nosePath: "M 96,90 L 96,158",
-        noseTip: { x: 96, y: 158 },
-        mouthPath: "M 74,196 Q 96,202 118,196",
-        poseHintText: "TUNDUKKAN KE BAWAH",
-        arrowPath: "M 96,134 L 96,154",
+        poseHintText: "TUNDUKKAN KE BAWAH (-15°)",
+        yawDegrees: "-15° PITCH",
+        centerPos: { x: 96, y: 152 },
+        dots: [
+          // 0..4 Forehead
+          { id: "fh_c", x: 96, y: 74 },
+          { id: "fh_ml", x: 74, y: 78 },
+          { id: "fh_fl", x: 54, y: 88, isAnchor: true },
+          { id: "fh_mr", x: 118, y: 78 },
+          { id: "fh_fr", x: 138, y: 88, isAnchor: true },
+          // 5..7 Left Brow
+          { id: "br_lo", x: 50, y: 96 },
+          { id: "br_lm", x: 66, y: 92 },
+          { id: "br_li", x: 82, y: 96 },
+          // 8..10 Right Brow
+          { id: "br_ri", x: 110, y: 96 },
+          { id: "br_rm", x: 126, y: 92 },
+          { id: "br_ro", x: 142, y: 96 },
+          // 11..13 Left Eye
+          { id: "ey_lo", x: 56, y: 106 },
+          { id: "ey_lp", x: 68, y: 106, isAnchor: true },
+          { id: "ey_li", x: 80, y: 106 },
+          // 14..16 Right Eye
+          { id: "ey_ri", x: 112, y: 106 },
+          { id: "ey_rp", x: 124, y: 106, isAnchor: true },
+          { id: "ey_ro", x: 136, y: 106 },
+          // 17..22 Nose
+          { id: "ns_1", x: 96, y: 100 },
+          { id: "ns_2", x: 96, y: 120 },
+          { id: "ns_3", x: 96, y: 140 },
+          { id: "ns_tip", x: 96, y: 152, isAnchor: true },
+          { id: "ns_nl", x: 84, y: 154 },
+          { id: "ns_nr", x: 108, y: 154 },
+          // 23..26 Cheeks
+          { id: "ck_lt", x: 46, y: 134 },
+          { id: "ck_lm", x: 58, y: 158 },
+          { id: "ck_rt", x: 146, y: 134 },
+          { id: "ck_rm", x: 134, y: 158 },
+          // 27..30 Lips
+          { id: "lp_l", x: 74, y: 188 },
+          { id: "lp_t", x: 96, y: 182 },
+          { id: "lp_r", x: 118, y: 188 },
+          { id: "lp_b", x: 96, y: 196 },
+          // 31..37 Jaw & Chin
+          { id: "jw_1", x: 46, y: 160 },
+          { id: "jw_2", x: 58, y: 196 },
+          { id: "jw_3", x: 76, y: 220 },
+          { id: "ch_tip", x: 96, y: 226, isAnchor: true },
+          { id: "jw_5", x: 116, y: 220 },
+          { id: "jw_6", x: 134, y: 196 },
+          { id: "jw_7", x: 146, y: 160 },
+        ],
+        meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
+
     default:
-      // Center: posisi frontal tegak lurus
+      // Center: Posisi Frontal Simetris Alami
       return {
-        leftEye: { x: 66, y: 92 },
-        rightEye: { x: 126, y: 92 },
-        leftBrow: "M 50,76 Q 66,68 82,76",
-        rightBrow: "M 110,76 Q 126,68 142,76",
-        eyeline: "M 40,92 L 152,92",
-        nosePath: "M 96,76 L 96,142",
-        noseTip: { x: 96, y: 142 },
-        mouthPath: "M 74,184 Q 96,190 118,184",
-        poseHintText: "CENTER FRONTAL",
+        poseHintText: "POSISI LURUS (FRONTAL)",
+        yawDegrees: "0° (FRONT)",
+        centerPos: { x: 96, y: 138 },
+        dots: [
+          // 0..4 Forehead & Temples
+          { id: "fh_c", x: 96, y: 64 },
+          { id: "fh_ml", x: 74, y: 68 },
+          { id: "fh_fl", x: 54, y: 78, isAnchor: true },
+          { id: "fh_mr", x: 118, y: 68 },
+          { id: "fh_fr", x: 138, y: 78, isAnchor: true },
+          // 5..7 Left Brow
+          { id: "br_lo", x: 50, y: 86 },
+          { id: "br_lm", x: 66, y: 82 },
+          { id: "br_li", x: 82, y: 86 },
+          // 8..10 Right Brow
+          { id: "br_ri", x: 110, y: 86 },
+          { id: "br_rm", x: 126, y: 82 },
+          { id: "br_ro", x: 142, y: 86 },
+          // 11..13 Left Eye
+          { id: "ey_lo", x: 56, y: 98 },
+          { id: "ey_lp", x: 68, y: 98, isAnchor: true },
+          { id: "ey_li", x: 80, y: 98 },
+          // 14..16 Right Eye
+          { id: "ey_ri", x: 112, y: 98 },
+          { id: "ey_rp", x: 124, y: 98, isAnchor: true },
+          { id: "ey_ro", x: 136, y: 98 },
+          // 17..22 Nose
+          { id: "ns_1", x: 96, y: 90 },
+          { id: "ns_2", x: 96, y: 110 },
+          { id: "ns_3", x: 96, y: 128 },
+          { id: "ns_tip", x: 96, y: 138, isAnchor: true },
+          { id: "ns_nl", x: 84, y: 140 },
+          { id: "ns_nr", x: 108, y: 140 },
+          // 23..26 Cheeks
+          { id: "ck_lt", x: 46, y: 124 },
+          { id: "ck_lm", x: 58, y: 148 },
+          { id: "ck_rt", x: 146, y: 124 },
+          { id: "ck_rm", x: 134, y: 148 },
+          // 27..30 Lips
+          { id: "lp_l", x: 74, y: 176 },
+          { id: "lp_t", x: 96, y: 170 },
+          { id: "lp_r", x: 118, y: 176 },
+          { id: "lp_b", x: 96, y: 184 },
+          // 31..37 Jaw & Chin
+          { id: "jw_1", x: 44, y: 154 },
+          { id: "jw_2", x: 56, y: 192 },
+          { id: "jw_3", x: 76, y: 214 },
+          { id: "ch_tip", x: 96, y: 220, isAnchor: true },
+          { id: "jw_5", x: 116, y: 214 },
+          { id: "jw_6", x: 136, y: 192 },
+          { id: "jw_7", x: 148, y: 154 },
+        ],
+        meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
   }
 };
@@ -566,17 +812,31 @@ export const EmployeeForm = () => {
           maxEyeEdge > 300 &&
           eyeEdgeRatio < 0.36;
 
+        // Lateral temple intrusion detection (hand/arm reaching into upper face):
+        const hasLateralTempleIntrusion = leftTempleSkinCount > 60 || rightTempleSkinCount > 60;
         const hasTempleHandBridge =
           targetPose.id === "center" &&
-          (leftTempleSkinCount > 55 || rightTempleSkinCount > 55) &&
-          (eyeEdgeRatio < 0.48 || foreheadIntraSkinDensity > 0.03 || foreheadSkinCount > 220);
+          hasLateralTempleIntrusion &&
+          (eyeEdgeRatio < 0.45 || foreheadIntraSkinDensity > 0.05 || foreheadSkinCount > 220);
 
-        const hasForeheadOcclusion =
-          isFacePresent &&
-          (foreheadIntraSkinDensity > 0.10 ||
-            isOcularOccluded ||
-            hasTempleHandBridge ||
-            (crownSkinDensity > 0.65 && foreheadSkinCount > 140));
+        let hasForeheadOcclusion = false;
+        if (isFacePresent) {
+          if (targetPose.id === "center") {
+            hasForeheadOcclusion =
+              isOcularOccluded ||
+              hasTempleHandBridge ||
+              (hasLateralTempleIntrusion && (foreheadIntraSkinDensity > 0.08 || foreheadSkinCount > 180)) ||
+              (crownSkinDensity > 0.76 && foreheadSkinCount > 220 && foreheadIntraSkinDensity > 0.14) ||
+              foreheadIntraSkinDensity > 0.22;
+          } else {
+            // Non-center poses (Right, Left, Up, Down):
+            // Natural hair movement, side profile, and background changes must not trigger false alarms.
+            // Require verified lateral hand intrusion OR extreme skin density in crown+forehead.
+            hasForeheadOcclusion =
+              (hasLateralTempleIntrusion && (foreheadIntraSkinDensity > 0.12 || foreheadSkinCount > 200)) ||
+              (crownSkinDensity > 0.80 && foreheadSkinCount > 240 && foreheadIntraSkinDensity > 0.20);
+          }
+        }
 
         const hasHandOcclusion = hasChinHandOcclusion || hasForeheadOcclusion;
         const hasAnyOcclusion = hasHandOcclusion || hasObjectOcclusion;
@@ -1208,9 +1468,15 @@ export const EmployeeForm = () => {
                         }`}
                       />
 
-                      {/* Camera Shutter Flash Effect */}
+                      {/* Camera Shutter Flash & Biometric Capture Effect */}
                       {flashFeedback && (
-                        <div className="absolute inset-0 bg-white/80 z-40 transition-opacity duration-200"></div>
+                        <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                          <div className="absolute inset-0 bg-white/75 backdrop-blur-sm transition-opacity duration-200" />
+                          <div className="w-48 h-64 border-4 border-emerald-400 rounded-full animate-ping opacity-75 z-50" />
+                          <div className="relative z-50 px-4 py-2 bg-emerald-950/90 border border-emerald-400 rounded-xl text-emerald-300 font-mono text-xs font-bold tracking-widest shadow-2xl animate-pulse">
+                            ✓ BIOMETRIC MESH SNAPSHOT
+                          </div>
+                        </div>
                       )}
 
                       {/* Fallback Simulator Viewport */}
@@ -1278,9 +1544,12 @@ export const EmployeeForm = () => {
                             <div className="w-28 h-0.5 border-b border-dashed border-white/40 mt-0.5"></div>
                           </div>
 
-                          {/* Dynamic In-Camera Facial Feature Alignment Grid (Eyebrows, Eyes, Nose, Mouth) */}
+                          {/* Biometric Cyber Laser Scan Beam */}
+                          <div className="absolute inset-x-2 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] pointer-events-none animate-kyc-laser opacity-80 z-20" />
+
+                          {/* Dynamic Adaptive Biometric Landmark Dot Mesh (38-Point Facial Topology) */}
                           {(() => {
-                            const guide = getFacialGuideCoordinates(currentPose.id);
+                            const mesh = getBiometricMesh(currentPose.id);
                             const guideColor = fqaStatus.isOccluded
                               ? "#ef4444"
                               : fqaStatus.isValid
@@ -1289,154 +1558,110 @@ export const EmployeeForm = () => {
                               ? "#fbbf24"
                               : "#38bdf8";
 
+                            const guideColorClass = fqaStatus.isOccluded
+                              ? "text-red-400 border-red-500/40 bg-red-950/50"
+                              : fqaStatus.isValid
+                              ? "text-emerald-400 border-emerald-500/40 bg-emerald-950/50"
+                              : !fqaStatus.isPoseAligned
+                              ? "text-amber-400 border-amber-500/40 bg-amber-950/50"
+                              : "text-cyan-400 border-cyan-500/40 bg-cyan-950/50";
+
                             return (
-                              <svg
-                                className="absolute inset-0 w-full h-full pointer-events-none transition-all duration-300 z-0"
-                                viewBox="0 0 192 256"
-                                fill="none"
-                              >
-                                {/* Alis Kiri & Kanan */}
-                                <path
-                                  d={guide.leftBrow}
-                                  stroke={guideColor}
-                                  strokeWidth="1.8"
-                                  strokeLinecap="round"
-                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.5"}
-                                />
-                                <path
-                                  d={guide.rightBrow}
-                                  stroke={guideColor}
-                                  strokeWidth="1.8"
-                                  strokeLinecap="round"
-                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.5"}
-                                />
-
-                                {/* Eyeline Axis (Garis Horizontal Level Mata) */}
-                                <line
-                                  x1="34"
-                                  y1={guide.leftEye.y}
-                                  x2="158"
-                                  y2={guide.rightEye.y}
-                                  stroke={guideColor}
-                                  strokeWidth="1"
-                                  strokeDasharray="2 3"
-                                  strokeOpacity={fqaStatus.isValid ? "0.8" : "0.35"}
-                                />
-
-                                {/* Target Mata Kiri: Lingkaran & Titik Pupil */}
-                                <ellipse
-                                  cx={guide.leftEye.x}
-                                  cy={guide.leftEye.y}
-                                  rx="9"
-                                  ry="6"
-                                  stroke={guideColor}
-                                  strokeWidth="1.4"
-                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
-                                />
-                                <circle
-                                  cx={guide.leftEye.x}
-                                  cy={guide.leftEye.y}
-                                  r="2"
-                                  fill={guideColor}
-                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
-                                />
-
-                                {/* Target Mata Kanan: Lingkaran & Titik Pupil */}
-                                <ellipse
-                                  cx={guide.rightEye.x}
-                                  cy={guide.rightEye.y}
-                                  rx="9"
-                                  ry="6"
-                                  stroke={guideColor}
-                                  strokeWidth="1.4"
-                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
-                                />
-                                <circle
-                                  cx={guide.rightEye.x}
-                                  cy={guide.rightEye.y}
-                                  r="2"
-                                  fill={guideColor}
-                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
-                                />
-
-                                {/* Garis Batang Hidung (Nose Bridge Meridian) */}
-                                <path
-                                  d={guide.nosePath}
-                                  stroke={guideColor}
-                                  strokeWidth="1.6"
-                                  strokeDasharray="3 2"
-                                  strokeLinecap="round"
-                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.5"}
-                                />
-                                {/* Titik Cuping Hidung */}
-                                <path
-                                  d={`M ${guide.noseTip.x - 7},${guide.noseTip.y} Q ${guide.noseTip.x},${guide.noseTip.y + 4} ${guide.noseTip.x + 7},${guide.noseTip.y}`}
-                                  stroke={guideColor}
-                                  strokeWidth="1.6"
-                                  strokeLinecap="round"
-                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
-                                />
-
-                                {/* Garis Bibir/Mulut (Mouth Target Line) */}
-                                <path
-                                  d={guide.mouthPath}
-                                  stroke={guideColor}
-                                  strokeWidth="1.8"
-                                  strokeLinecap="round"
-                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
-                                />
-
-                                {/* Label Panduan Anatomi */}
-                                <text
-                                  x="96"
-                                  y={guide.leftEye.y - 12}
-                                  textAnchor="middle"
-                                  fill={guideColor}
-                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
-                                  fontSize="7"
-                                  fontFamily="monospace"
-                                  letterSpacing="0.8"
+                              <div className="absolute inset-0 pointer-events-none z-10">
+                                <svg
+                                  className="w-full h-full"
+                                  viewBox="0 0 192 256"
+                                  fill="none"
                                 >
-                                  ALIS & MATA
-                                </text>
+                                  {/* Biometric Mesh Wireframe Interconnecting Lines */}
+                                  {mesh.meshConnections.map(([startIdx, endIdx], i) => {
+                                    const p1 = mesh.dots[startIdx];
+                                    const p2 = mesh.dots[endIdx];
+                                    if (!p1 || !p2) return null;
+                                    return (
+                                      <line
+                                        key={`line-${i}`}
+                                        x1={p1.x}
+                                        y1={p1.y}
+                                        x2={p2.x}
+                                        y2={p2.y}
+                                        stroke={guideColor}
+                                        strokeWidth="0.8"
+                                        strokeOpacity={fqaStatus.isValid ? "0.45" : "0.25"}
+                                        strokeDasharray="2 3"
+                                      />
+                                    );
+                                  })}
 
-                                <text
-                                  x={guide.noseTip.x > 96 ? guide.noseTip.x + 15 : guide.noseTip.x - 15}
-                                  y={guide.noseTip.y}
-                                  textAnchor="middle"
-                                  fill={guideColor}
-                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
-                                  fontSize="6.5"
-                                  fontFamily="monospace"
-                                >
-                                  HIDUNG
-                                </text>
+                                  {/* Biometric Landmark Dots (38 Points) */}
+                                  {mesh.dots.map((dot) => (
+                                    <g key={dot.id}>
+                                      {/* Anchor Point Expanding Radar Ping */}
+                                      {dot.isAnchor && (
+                                        <circle
+                                          cx={dot.x}
+                                          cy={dot.y}
+                                          r="6"
+                                          stroke={guideColor}
+                                          strokeWidth="0.8"
+                                          strokeOpacity={fqaStatus.isValid ? "0.6" : "0.3"}
+                                          className="animate-ping origin-center"
+                                        />
+                                      )}
+                                      {/* Outer Halo */}
+                                      <circle
+                                        cx={dot.x}
+                                        cy={dot.y}
+                                        r={dot.isAnchor ? 3.8 : 2.4}
+                                        fill={guideColor}
+                                        fillOpacity={dot.isAnchor ? "0.35" : "0.2"}
+                                      />
+                                      {/* Core Landmark Dot */}
+                                      <circle
+                                        cx={dot.x}
+                                        cy={dot.y}
+                                        r={dot.isAnchor ? 2.2 : 1.4}
+                                        fill={guideColor}
+                                        fillOpacity={fqaStatus.isValid ? "1" : "0.85"}
+                                      />
+                                    </g>
+                                  ))}
 
-                                <text
-                                  x="96"
-                                  y={currentPose.id === "down" ? 212 : 202}
-                                  textAnchor="middle"
-                                  fill={guideColor}
-                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
-                                  fontSize="6.5"
-                                  fontFamily="monospace"
-                                  letterSpacing="0.8"
-                                >
-                                  BIBIR & DAGU
-                                </text>
+                                  {/* Orientation Flow Direction Indicator */}
+                                  {currentPose.id === "right" && (
+                                    <g transform="translate(138, 134)">
+                                      <path d="M0,0 L12,4 L0,8" stroke={guideColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                    </g>
+                                  )}
+                                  {currentPose.id === "left" && (
+                                    <g transform="translate(42, 134)">
+                                      <path d="M12,0 L0,4 L12,8" stroke={guideColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                    </g>
+                                  )}
+                                  {currentPose.id === "up" && (
+                                    <g transform="translate(92, 54)">
+                                      <path d="M0,8 L4,0 L8,8" stroke={guideColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                    </g>
+                                  )}
+                                  {currentPose.id === "down" && (
+                                    <g transform="translate(92, 222)">
+                                      <path d="M0,0 L4,8 L8,0" stroke={guideColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                    </g>
+                                  )}
+                                </svg>
 
-                                {/* Panah Arah Tolehan (Bila ada) */}
-                                {guide.arrowPath && (
-                                  <path
-                                    d={guide.arrowPath}
-                                    stroke={guideColor}
-                                    strokeWidth="1.6"
-                                    strokeLinecap="round"
-                                    strokeDasharray="2 2"
-                                    strokeOpacity="0.75"
-                                  />
-                                )}
-                              </svg>
+                                {/* Biometric HUD Corner Telemetry Badges */}
+                                <div className="absolute top-2 left-2 flex items-center gap-1">
+                                  <span className={`text-[8px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded border backdrop-blur-md ${guideColorClass}`}>
+                                    38-PTS MESH
+                                  </span>
+                                </div>
+                                <div className="absolute top-2 right-2 flex items-center gap-1">
+                                  <span className={`text-[8px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded border backdrop-blur-md ${guideColorClass}`}>
+                                    {mesh.yawDegrees}
+                                  </span>
+                                </div>
+                              </div>
                             );
                           })()}
 
