@@ -1233,6 +1233,28 @@ Seluruh parameter teknis AI **DILARANG KERAS DI-HARDCODE** di kode program. Selu
 *   `ekyc_min_similarity_selftest`: `0.85` (skor kemiripan minimal kelulusan uji mandiri).
 *   Admin HR dapat mengalihkan konfigurasi model atau mengkalibrasi nilai threshold langsung dari panel admin secara *real-time* tanpa redeploy aplikasi.
 
+#### 9.1.7 Kebijakan Presensi Sekali Pindai Terpadu (One-Shot Unified Biometric Attendance & Login Policy)
+Guna mengeliminasi redundansi interaksi (di mana pengguna dipaksa memindai wajah dua kali: sekali untuk membuka portal dan sekali lagi di menu absensi), sistem menerapkan **SOP Presensi Sekali Pindai Terpadu**:
+1.  **One-Shot Scan Gatekeeper:**
+    *   Ketika karyawan memindai wajah di gerbang `FaceAuthGuard`, sistem melakukan verifikasi 1:1 terhadap embedding biometrik terdaftar.
+    *   Jika verifikasi berhasil, sistem **SECARA OTOMATIS** mengecek rekaman absensi hari ini (`recordDate = today`).
+    *   Jika belum absen masuk, sistem langsung membuat record `Attendance` baru (*Auto-Clock In*) dengan stempel waktu presisi, status `Present` (Hadir), `isFaceVerified = true`, dan skor kemiripan AI.
+2.  **Halaman Absensi Tanpa Scan Ganda:**
+    *   Saat karyawan masuk ke menu `/attendance`, sistem langsung menampilkan status **"✓ Sudah Absen Masuk Hari Ini"** lengkap dengan jam masuk dan rincian verifikasi.
+    *   Kamera di halaman absensi **TIDAK DIAKTIFKAN** untuk Clock In ulang.
+    *   Kamera hanya akan aktif ketika karyawan hendak melakukan **Clock Out (Presensi Pulang)** di akhir jam kerja, atau bagi karyawan yang sebelumnya login menggunakan kredensial/PIN tanpa pemindaian wajah.
+3.  **Hasil UX:** Karyawan **HANYA MEMINDAI WAJAH 1 KALI SAJA** setiap pagi hari.
+
+#### 9.1.8 Topologi Deployment Vercel & Kompatibilitas Mesin AI Biometrik
+Platform Vercel merupakan lingkungan *Serverless* (Node.js/Next.js/Edge) dengan batas bundle fungsi maksimal 250 MB, sehingga paket Python DeepFace + TensorFlow + OpenCV (>2.5 GB) ditangani melalui strategi arsitektur terpisah:
+1.  **Arsitektur Hybrid Enterprise (Pilihan Utama / Default):**
+    *   `apps/employee-portal`, `apps/admin-dashboard`, dan `apps/backend-api` dideploy di platform **Vercel**.
+    *   `apps/biometric-service` (Python FastAPI Engine) dideploy pada container Docker gratis/ekonomis (misalnya **Railway**, **Render**, **Fly.io**, atau **HuggingFace Spaces**).
+    *   Komunikasi antar layanan dihubungkan via variabel lingkungan `BIOMETRIC_SERVICE_URL`.
+2.  **Arsitektur 100% Vercel Serverless (Client-Side WebGL Fallback):**
+    *   Ekstraksi vektor wajah diproses langsung di browser klien menggunakan pustaka `@vladmandic/face-api` (WASM / WebGL).
+    *   Server Vercel hanya bertindak sebagai API Prisma + Supabase + Redis untuk menyimpan array vektor angka (*irreversible embeddings*), sehingga seluruh proyek monorepo dapat berjalan 100% di Vercel tanpa server komputasi eksternal.
+
 ---
 
 ### 9.2 Perancangan Backend Engineering (/backend)

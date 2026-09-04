@@ -471,12 +471,20 @@ export default function BiometricEnrollPage() {
             </div>
           </div>
 
-          <button
-            onClick={() => (window.location.href = "/attendance")}
-            className="w-full py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/30 transition duration-200 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            Lanjut ke Presensi Harian <ArrowRight size={18} />
-          </button>
+          <div className="space-y-2.5">
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="w-full py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/30 transition duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              Masuk ke Portal Karyawan <ArrowRight size={18} />
+            </button>
+            <button
+              onClick={() => (window.location.href = "/attendance")}
+              className="w-full py-3 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              Buka Status Presensi Harian
+            </button>
+          </div>
         </div>
       </div>
     );

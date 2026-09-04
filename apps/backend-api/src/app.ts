@@ -19,7 +19,7 @@ import {
   deletePosition,
 } from "./controllers/master.controller";
 import { getApplicants, createApplicant, updateApplicantStage } from "./controllers/applicant.controller";
-import { clockIn, getAttendances } from "./controllers/attendance.controller";
+import { clockIn, clockOut, getAttendances, getTodayAttendance } from "./controllers/attendance.controller";
 import { getLeaveRequests, createLeaveRequest, updateLeaveStatus } from "./controllers/leave.controller";
 import { getPayrollComponents, createPayrollComponent } from "./controllers/payroll.controller";
 import { getDashboardStats } from "./controllers/dashboard.controller";
@@ -78,7 +78,9 @@ app.delete("/api/positions/:id", deletePosition);
 
 // Time & Attendance
 app.get("/api/attendance", getAttendances);
+app.get("/api/attendance/today/:employeeId", getTodayAttendance);
 app.post("/api/attendance/clock-in", attendanceLimiter, clockIn);
+app.post("/api/attendance/clock-out", attendanceLimiter, clockOut);
 
 // Leave Requests
 app.get("/api/leave", getLeaveRequests);

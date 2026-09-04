@@ -222,16 +222,30 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
         sessionStorage.setItem("hris_employee_name", empData.name);
         localStorage.setItem("current_employee_id", empData.id);
         localStorage.setItem("current_employee_name", empData.name);
+
+        // One-Shot Unified Attendance: Record in sessionStorage
+        if (loginJson.data?.attendance?.clockedIn) {
+          sessionStorage.setItem("hris_today_clocked_in", "true");
+          sessionStorage.setItem(
+            "hris_clock_in_time",
+            loginJson.data.attendance.clockInTime || new Date().toISOString()
+          );
+        }
       }
 
       setSessionSeconds(15 * 60);
       setIsScanning(false);
       setFaceVerified(true);
 
+      const attendanceInfo = loginJson.data?.attendance;
+      const attMsg = attendanceInfo?.isNewClockIn
+        ? ` ✓ Presensi masuk otomatis tercatat (${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })})!`
+        : (attendanceInfo?.clockedIn ? ` (Presensi masuk hari ini sudah aktif)` : "");
+
       addToast(
         "success",
-        "Wajah Terverifikasi Cocok!",
-        `✓ Selamat datang, ${empData.name}. Kemiripan: ${loginJson.data?.similarityScore ?? 96}%. Sesi aktif (15 Menit).`
+        "Wajah Terverifikasi & Presensi Tercatat!",
+        `✓ Selamat datang, ${empData.name}. Kemiripan: ${loginJson.data?.similarityScore ?? 96}%.${attMsg}`
       );
 
       setTimeout(() => {
@@ -504,8 +518,8 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
                   </svg>
                 </div>
                 <div className="text-left flex-1">
-                  <span className="block text-sm font-extrabold leading-tight">Pindai Wajah & Buka Portal</span>
-                  <span className="block text-[11px] text-brand-200 font-medium leading-none mt-1">Verifikasi AI 1:1 Resmi</span>
+                  <span className="block text-sm font-extrabold leading-tight">Pindai Wajah & Presensi (1x Scan)</span>
+                  <span className="block text-[11px] text-brand-200 font-medium leading-none mt-1">Otomatis Buka Portal & Presensi Masuk Hari Ini</span>
                 </div>
                 <svg className="w-4 h-4 text-white/70 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
