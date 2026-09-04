@@ -40,6 +40,19 @@ export default function BiometricEnrollPage() {
   const [consentAgreed, setConsentAgreed] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(true);
 
+  // Active Employee Identity
+  const [employeeId, setEmployeeId] = useState("EMP-001");
+  const [employeeName, setEmployeeName] = useState("Budi Santoso");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedId = localStorage.getItem("current_employee_id") || "EMP-001";
+      const savedName = localStorage.getItem("current_employee_name") || "Budi Santoso";
+      setEmployeeId(savedId);
+      setEmployeeName(savedName);
+    }
+  }, []);
+
   // Real-time quality meters
   const [illuminationStatus, setIlluminationStatus] = useState<"good" | "dark" | "bright">("good");
 
@@ -149,7 +162,7 @@ export default function BiometricEnrollPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          employeeId: "f47ac10b-58cc-4372-a567-0e02b2c3d479", // Demo employee id
+          employeeId: employeeId,
           imagesBase64: frames,
         }),
       });
