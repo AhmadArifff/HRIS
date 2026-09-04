@@ -23,7 +23,13 @@ import { clockIn, getAttendances } from "./controllers/attendance.controller";
 import { getLeaveRequests, createLeaveRequest, updateLeaveStatus } from "./controllers/leave.controller";
 import { getPayrollComponents, createPayrollComponent } from "./controllers/payroll.controller";
 import { getDashboardStats } from "./controllers/dashboard.controller";
-import { enrollFace, getBiometricStatus, resetBiometricProfile } from "./controllers/biometric.controller";
+import {
+  enrollFace,
+  getBiometricStatus,
+  resetBiometricProfile,
+  testVerifyBiometric,
+  verifyFaceLogin,
+} from "./controllers/biometric.controller";
 
 const app: Application = express();
 
@@ -43,6 +49,8 @@ app.get("/api/infrastructure/redis", getRedisStats);
 
 // Biometrics & Face Recognition
 app.post("/api/biometrics/enroll", attendanceLimiter, enrollFace);
+app.post("/api/biometrics/test-verify", attendanceLimiter, testVerifyBiometric);
+app.post("/api/biometrics/verify-login", attendanceLimiter, verifyFaceLogin);
 app.get("/api/biometrics/status/:employeeId", getBiometricStatus);
 app.delete("/api/biometrics/:employeeId", resetBiometricProfile);
 

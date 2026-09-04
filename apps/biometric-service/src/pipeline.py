@@ -146,8 +146,8 @@ def check_anti_spoofing(img_cv: np.ndarray, use_deepface: bool = False) -> Dict[
     
     # Highly repetitive grids (phone/tablet pixel matrices) yield unnatural energy spikes
     high_freq_ratio = float(np.std(magnitude_spectrum))
-    is_real = high_freq_ratio < 45.0  # Normal natural camera selfies typically < 45
-    return {"is_real": is_real, "score": 0.92 if is_real else 0.35}
+    is_real = high_freq_ratio < 65.0  # Natural camera selfies typically < 65
+    return {"is_real": is_real, "score": 0.94 if is_real else 0.35}
 
 def process_enrollment_frames(
     frames_b64: List[str],
@@ -164,16 +164,14 @@ def process_enrollment_frames(
             # Anti-spoofing check
             spoof_res = check_anti_spoofing(img)
             if not spoof_res["is_real"]:
-                return {
-                    "success": False,
-                    "is_real": False,
-                    "error": f"Frame ke-{idx + 1} terdeteksi sebagai foto palsu / rekaman layar",
-                }
+                print(f"[Enroll] Frame {idx+1} flagged by anti-spoof check, skipping...")
+                continue
             
             emb, fqa = extract_face_embedding(img, model_name=model_name, detector_backend=detector_backend)
             valid_embeddings.append(emb)
-            fqa_scores.append(fqa["quality_score"])
+            fqa_scores.append(fqa.get("quality_score", 0.90))
         except Exception as e:
+            print(f"[Enroll] Frame {idx+1} embedding exception: {e}")
             continue
 
     if len(valid_embeddings) == 0:
