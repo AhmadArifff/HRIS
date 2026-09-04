@@ -2234,13 +2234,22 @@ graph TD
 
 ### 12.11 Peningkatan SOTA: Model Panduan Orang Asli, Kekebalan Kaos Gelap, & Persistensi Berkas Fisik
 
-#### 12.11.1 Model Panduan Visual Orang Asli (Real Human Photorealistic 3D Bust Guide)
-1. **Peniadaan Model Boneka/Mannequin Prosedural:**
-   - Komponen `Kyc3dHeadGuide.tsx` menggunakan fotografi manusia asli beresolusi tinggi (*Real Human Photorealistic Model*) dengan sudut pandang *Bust* 3D (kepala, leher, dan bahu) lengkap.
-2. **Dukungan Gender Adaptif & Storyboard Reticle:**
-   - Disediakan tombol selector gender `[👩 Perempuan]` dan `[👨 Laki-Laki]` untuk kenyamanan pengguna.
-   - Masing-masing gender memiliki 5 sudut pose realistis (`center`, `right`, `left`, `up`, `down`) yang selaras dengan storyboard orientasi.
-   - Dilengkapi panah panduan arah pandang dinamis (`←`, `→`, `↑`, `↓`) dan reticle target lingkaran beranimasi radar.
+#### 12.11.1 Model Panduan Visual 3D Orang Asli Interaktif (Interactive Three.js 3D Realistic Human Head Models)
+1. **Model 3D Scan Manusia Asli (Bukan Mannequin Kartun, Bukan Foto Statis):**
+   - Komponen `KycThreeAvatar.tsx` diintegrasikan langsung ke `Kyc3dHeadGuide.tsx` menggunakan engine WebGL **Three.js** dan aset 3D mesh fotorealistik manusia asli:
+     - **Pria (`male`):** Menggunakan 3D Head Scan manusia asli (*Lee Perry-Smith*) dilengkapi *PBR Diffuse Map* (`Map-COL.jpg`) dan *Tangent Normal Map* (`Infinite-Level_02_Tangent_SmoothUV.jpg`) yang menampilkan pori-pori kulit, kontur rahang, mata, dan hidung realistis.
+     - **Wanita (`female`):** Menggunakan model 3D karakter fotorealistik (*Michelle*) dengan geometri rambut, mata, kulit, dan pundak lengkap.
+2. **Rotasi 3D Dinamis & Terpandu per Pose:**
+   - Model 3D bergerak dan menoleh secara halus (*lerp interpolation*) di ruang 3D nyata mengikuti setiap langkah KYC:
+     - **Pose 1 (Center):** Menghadap lurus ke depan dengan mikromosi pernapasan alami (*idle micro-motion*).
+     - **Pose 2 (Kanan):** Model 3D menolehkan kepala ke kanan (+28°).
+     - **Pose 3 (Kiri):** Model 3D menolehkan kepala ke kiri (-28°).
+     - **Pose 4 (Atas):** Model 3D mendongakkan kepala ke atas (+18°).
+     - **Pose 5 (Bawah):** Model 3D menundukkan kepala ke bawah (-18°).
+3. **Pencahayaan Studio Sinematik & Storyboard Reticle:**
+   - Dilengkapi 4 titik pencahayaan (Key light, Fill light, Rim light pembentuk siluet kepala, dan Bottom bounce).
+   - Reticle target lingkaran storyboard dan panah petunjuk sudut arah pandang beranimasi memandu pengguna secara intuitif.
+   - Tersedia selector gender `[👩 Perempuan]` dan `[👨 Laki-Laki]`.
 
 #### 12.11.2 Kekebalan Pakaian Gelap pada Deteksi Oklusi (Dark-Clothing Occlusion Immunity)
 1. **Eliminasi Ambang Batas Gelap sebagai Objek:**
