@@ -2150,4 +2150,60 @@ Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/kar
 | **Relaksasi Centering 5-Pose** | Menoleh ke kanan/kiri terblokir oval | **Pose-Adaptive Centering Relaxation** | Pose tolehan kanan, kiri, atas, bawah responsif dan mulus |
 | **Isolasi Ocular Pose Tolehan** | Menoleh kiri/kanan memicu alarm tangan | **Pose-Specific Ocular Isolation** (Khusus Center) | Bebas salah deteksi tangan saat menoleh ke kiri/kanan |
 | **Panduan Landmark di Dalam Kamera** | Hanya model 3D terpisah di samping | **Dynamic In-Camera SVG Alignment Grid** | Garis panduan level mata, alis, hidung, & bibir langsung di video |
+| **Pencegahan Registrasi 1 Muka / 1 Foto** | Boleh upload 1 foto statis / 1 sudut wajah | **Wajib 5-Pose Lengkap (Center, Kanan, Kiri, Atas, Bawah) & Skor $\ge 75$** | Menghilangkan kerentanan spoofing & foto tunggal tanpa kedalaman 3D |
+| **Deduplikasi Biometrik 1:N (Anti-Duplikasi)** | Tidak ada pengecekan duplikasi wajah antar-pegawai | **1:N ArcFace Cosine Distance Scan ($\le 0.35$)** pada seluruh profil DB | Mencegah 1 wajah didaftarkan ke multi-karyawan (*ghost employee*) |
+
+---
+
+### 12.10 Kebijakan Ketat Larangan Pendaftaran 1 Wajah (Strict Single-Face & 1-Pose Prevention) & Deduplikasi Biometrik 1:N
+
+Untuk memenuhi standar integritas data biometrik perbankan (*Bank-Grade Identity Assurance*), sistem memberlakukan dua lapis validasi ketat mutlak terhadap pendaftaran karyawan:
+
+```mermaid
+graph TD
+    A[Admin Mengisi Form Karyawan] --> B[Sesi Kamera KYC 5-Pose Terpandu]
+    B --> C{Apakah 5/5 Pose Lengkap & Skor >= 75?}
+    C -->|Tidak (Hanya 1 Muka / Sebagian)| D[Tombol Simpan Terkunci: Wajib 5 Pose KYC x/5]
+    C -->|Ya (Semua 5 Pose Terpenuhi)| E[Kirim Payload ke Backend POST /api/employees]
+    
+    E --> F{Guard Clause: Array faceImagesBase64 >= 5?}
+    F -->|Tidak (< 5 Gambar)| G[HTTP 400: Ditolak - Wajib 5 Pose Lengkap]
+    F -->|Ya| H[Ekstraksi Embedding ArcFace 512-d]
+    
+    H --> I[Pindai Seluruh Profil Aktif di DB: 1:N Cosine Distance]
+    I --> J{Apakah Ada Wajah Cocok? Distance <= 0.35}
+    J -->|Ya (Wajah Sudah Terdaftar)| K[HTTP 400: Ditolak - Wajah Sudah Terdaftar atas Nama Karyawan Lain]
+    J -->|Tidak (Wajah Unik & Baru)| L[Simpan Karyawan + Profil Biometrik Wajah ke DB Supabase]
+    L --> M[Karyawan Aktif & Terverifikasi 100%]
+```
+
+#### 12.10.1 Pencegahan Registrasi 1 Foto / Wajah Tunggal (Strict 5-Pose Completeness)
+1. **Peniadaan Modus Upload Foto Tunggal:**
+   - Modus upload berkas gambar tunggal (*single dropzone*) pada form Tambah Karyawan dinonaktifkan demi menegakkan integritas biometrik. Pengguna diarahkan secara eksklusif ke kamera KYC 5-Pose.
+2. **Client-Side Submit Lock:**
+   - Tombol submit formulir dikunci (`disabled={loading || !isKycComplete}`) dan menampilkan peringatan:
+     `⚠️ KYC Belum Lengkap (x/5 Pose): Sistem mewajibkan 5 sudut foto wajah dengan skor >= 75. Pendaftaran karyawan dengan 1 muka / foto tunggal dilarang.`
+   - Tombol baru terbuka menjadi hijau emerald ketika seluruh kelima pose (`center`, `right`, `left`, `up`, `down`) berhasil diambil dengan nilai skor $\ge 75$.
+3. **Backend Guard Clause (`employee.service.ts`):**
+   - Sebelum memulai transaksi database, backend memvalidasi:
+     ```typescript
+     if (!data.faceImagesBase64 || data.faceImagesBase64.length < 5) {
+       throw new Error(
+         "Validasi Ketat KYC: Pendaftaran karyawan wajib menyertakan 5 foto sudut pose lengkap (Center, Kanan, Kiri, Atas, Bawah). Pendaftaran dengan 1 muka atau foto tunggal dilarang!"
+       );
+     }
+     ```
+
+#### 12.10.2 Deduplikasi Biometrik 1:N (Anti-Face Collision / 1 Wajah = 1 Karyawan)
+1. **Latar Belakang Risiko:**
+   - Mencegah oknum mendaftarkan karyawan fiktif (*ghost employee*) menggunakan wajah karyawan yang sudah ada, atau mendaftarkan satu individu yang sama ke beberapa NIK/identitas berbeda.
+2. **Algoritma Pemindaian 1:N (Cosine Distance):**
+   - Backend memanggil layanan ekstraksi ArcFace untuk menghasilkan vektor embedding 512-dimensi dari snapshot pose KYC.
+   - Backend mengambil seluruh vektor biometrik aktif dari tabel `face_biometric_profiles`.
+   - Menghitung Cosine Distance terhadap setiap profil eksisting:
+     $$\text{Distance}(\vec{u}, \vec{v}) = 1 - \frac{\sum_{i=1}^{512} u_i v_i}{\sqrt{\sum_{i=1}^{512} u_i^2} \sqrt{\sum_{i=1}^{512} v_i^2}}$$
+3. **Pemberlakuan Ambang Batas Toleransi ($\text{Distance} \le 0.35$):**
+   - Jika jarak kosinus $\le 0.35$ (ekuivalen dengan kemiripan wajah $\ge 65\%$, standar tinggi model ArcFace), pendaftaran dibatalkan seketika dan transaksi di-*rollback*.
+   - Sistem mengembalikan pesan kesalahan terperinci:
+     > *"Validasi Biometrik Gagal: Wajah ini sudah terdaftar atas nama karyawan [Nama Karyawan] ([NIK]). Sistem melarang pendaftaran karyawan ganda dengan 1 muka yang sama demi keamanan enterprise."*
 

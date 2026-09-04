@@ -937,79 +937,68 @@ export const EmployeeForm = () => {
       let avatarUrl = "";
       let faceImagesBase64: string[] = [];
 
-      // 1. Mode KYC Bank 5-Pose (PRD §12)
-      if (photoMode === "kyc_camera") {
-        if (!capturedPoses.center) {
-          throw new Error("Langkah 1 (Pose Center) wajib diambil untuk foto profil resmi.");
-        }
+      // 1. Validasi Ketat KYC Bank 5-Pose (PRD §12)
+      // Dilarang mendaftarkan karyawan hanya dengan 1 muka / 1 foto / pose tidak lengkap!
+      const requiredPoses: ("center" | "right" | "left" | "up" | "down")[] = ["center", "right", "left", "up", "down"];
+      const missingPoses = requiredPoses.filter((p) => !capturedPoses[p]);
 
-        // Upload Pose 1 (Center Frontal) to Supabase Storage as official employee avatar
-        try {
-          const resBlob = await fetch(capturedPoses.center);
-          const blob = await resBlob.blob();
-          const fileName = `avatar-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-          const filePath = `avatars/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("avatars")
-            .upload(filePath, blob, { contentType: "image/jpeg" });
-
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage
-              .from("avatars")
-              .getPublicUrl(filePath);
-            avatarUrl = publicUrlData.publicUrl;
-          } else {
-            console.warn("Supabase Storage avatar upload notice:", uploadError);
-            avatarUrl = `/images/user/user-01.jpg`;
-          }
-        } catch (storageErr) {
-          console.warn("Storage upload fallback:", storageErr);
-          avatarUrl = `/images/user/user-01.jpg`;
-        }
-
-        // Collect all 5 KYC pose images for multi-angle centroid embedding
-        const orderedFrames = [
-          capturedPoses.center,
-          capturedPoses.right,
-          capturedPoses.left,
-          capturedPoses.up,
-          capturedPoses.down,
-        ].filter(Boolean) as string[];
-
-        faceImagesBase64 = orderedFrames;
+      if (missingPoses.length > 0 || !isKycComplete) {
+        const poseLabels: Record<string, string> = {
+          center: "1. Center (Lurus)",
+          right: "2. Kanan (Menoleh ~25°)",
+          left: "3. Kiri (Menoleh ~25°)",
+          up: "4. Atas (Mendongak ~15°)",
+          down: "5. Bawah (Menunduk ~15°)",
+        };
+        const missingList = missingPoses.map((p) => poseLabels[p]).join(", ");
+        throw new Error(
+          `Validasi Ketat KYC: Anda belum menyelesaikan seluruh 5 pose biometrik! Pose yang belum diambil: ${missingList}. Semua 5 pose wajib diselesaikan dengan skor minimal 75/100 sebelum karyawan dapat disimpan. Dilarang mendaftar hanya dengan 1 muka!`
+        );
       }
-      // 2. Mode Unggah Berkas Biasa
-      else if (photoMode === "upload" && file) {
-        try {
-          const fileExt = file.name.split(".").pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const filePath = `avatars/${fileName}`;
 
-          const { error: uploadError } = await supabase.storage
-            .from("avatars")
-            .upload(filePath, file);
-
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage
-              .from("avatars")
-              .getPublicUrl(filePath);
-            avatarUrl = publicUrlData.publicUrl;
-          } else {
-            avatarUrl = `/images/user/user-01.jpg`;
-          }
-
-          const fileBase64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-          });
-          faceImagesBase64 = [fileBase64];
-        } catch (uploadErr) {
-          console.warn("Upload fallback:", uploadErr);
-          avatarUrl = `/images/user/user-01.jpg`;
+      // Validasi skor setiap pose wajib >= 75
+      for (const poseKey of requiredPoses) {
+        const score = poseScores[poseKey] || 0;
+        if (score < 75) {
+          throw new Error(
+            `Validasi Ketat KYC: Skor pose ${poseKey.toUpperCase()} (${score}/100) belum memenuhi standar kelayakan minimal 75. Silakan ambil ulang pose tersebut.`
+          );
         }
       }
+
+      // Upload Pose 1 (Center Frontal) to Supabase Storage as official employee avatar
+      try {
+        const resBlob = await fetch(capturedPoses.center!);
+        const blob = await resBlob.blob();
+        const fileName = `avatar-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, blob, { contentType: "image/jpeg" });
+
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from("avatars")
+            .getPublicUrl(filePath);
+          avatarUrl = publicUrlData.publicUrl;
+        } else {
+          console.warn("Supabase Storage avatar upload notice:", uploadError);
+          avatarUrl = `/images/user/user-01.jpg`;
+        }
+      } catch (storageErr) {
+        console.warn("Storage upload fallback:", storageErr);
+        avatarUrl = `/images/user/user-01.jpg`;
+      }
+
+      // Collect all 5 KYC pose images for multi-angle centroid embedding
+      faceImagesBase64 = [
+        capturedPoses.center!,
+        capturedPoses.right!,
+        capturedPoses.left!,
+        capturedPoses.up!,
+        capturedPoses.down!,
+      ];
 
       // 3. Submit ke Backend API
       const res = await fetch(`${API_BASE_URL}/api/employees`, {
@@ -1063,6 +1052,9 @@ export const EmployeeForm = () => {
   const prevPose = activePoseStep > 0 ? KYC_POSES[activePoseStep - 1] : null;
   const prevPoseSnapshot = prevPose ? capturedPoses[prevPose.id] : null;
   const prevPoseScore = prevPose ? poseScores[prevPose.id] : null;
+  const completedPosesCount = ["center", "right", "left", "up", "down"].filter(
+    (p) => Boolean(capturedPoses[p as keyof typeof capturedPoses])
+  ).length;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 shadow-sm">
@@ -1108,30 +1100,12 @@ export const EmployeeForm = () => {
               </p>
             </div>
 
-            {/* Mode Switcher Tabs */}
-            <div className="flex p-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setPhotoMode("kyc_camera")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                  photoMode === "kyc_camera"
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-                }`}
-              >
-                📸 Kamera Biometrik KYC (5 Pose)
-              </button>
-              <button
-                type="button"
-                onClick={() => setPhotoMode("upload")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                  photoMode === "upload"
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-                }`}
-              >
-                📁 Unggah Berkas Pas Foto
-              </button>
+            {/* Strict KYC Badge */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-xl self-start sm:self-auto shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 font-mono">
+                Wajib 5-Pose KYC Lengkap • Anti-Duplikasi Aktif
+              </span>
             </div>
           </div>
 
@@ -1732,18 +1706,12 @@ export const EmployeeForm = () => {
             </div>
           )}
 
-          {/* OPSI 2: UNGGAH BERKAS PAS FOTO BIASA */}
+          {/* Strict Notice: Mode Unggah 1 Foto Dinonaktifkan */}
           {photoMode === "upload" && (
-            <div>
-              <DropzoneComponent onFileSelect={setFile} />
-              {file && (
-                <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-                  <span>✓ Berkas terpilih: <strong>{file.name}</strong> ({Math.round(file.size / 1024)} KB)</span>
-                  <span className="text-[10px] font-mono uppercase bg-emerald-200 dark:bg-emerald-900 px-2 py-0.5 rounded font-bold">Siap Upload</span>
-                </div>
-              )}
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Mendukung file PNG, JPG, JPEG ukuran maksimal 2MB. Foto akan otomatis diekstraksi biometrik saat disimpan.
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-300">
+              <p className="font-bold mb-1">🔒 Kebijakan Integritas Biometrik Perusahaan (PRD §12):</p>
+              <p>
+                Mode unggah 1 foto telah dinonaktifkan demi mencegah pendaftaran karyawan hanya dengan 1 sudut muka. Seluruh karyawan baru WAJIB mendaftar melalui Kamera Biometrik KYC 5-Pose untuk memastikan akurasi data biometrik dan mencegah duplikasi identitas.
               </p>
             </div>
           )}
@@ -1835,19 +1803,47 @@ export const EmployeeForm = () => {
           </div>
         </div>
 
-        {/* FOOTER ACTIONS */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-          <Button size="sm" variant="outline" type="button" onClick={() => window.history.back()}>
-            Batal
-          </Button>
-          <Button
-            size="sm"
-            type="submit"
-            disabled={loading}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5"
-          >
-            {loading ? "Menyimpan & Mendaftarkan Biometrik KYC..." : "Simpan Karyawan Baru"}
-          </Button>
+        {/* FOOTER ACTIONS: STRICT 5-POSE KYC GATING (ANTI 1-MUKA) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            {!isKycComplete ? (
+              <div className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                <span className="text-amber-600 dark:text-amber-400">⚠️</span>
+                <span>
+                  <strong>KYC Belum Lengkap ({completedPosesCount}/5 Pose):</strong> Sistem mewajibkan 5 sudut foto wajah dengan skor &ge; 75. Pendaftaran karyawan dengan 1 muka / foto tunggal dilarang.
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+                <span>
+                  <strong>5/5 Pose KYC Lengkap:</strong> Seluruh sudut wajah terverifikasi & deduplikasi biometrik 1:N siap dijalankan.
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3 shrink-0">
+            <Button size="sm" variant="outline" type="button" onClick={() => window.history.back()}>
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              type="submit"
+              disabled={loading || !isKycComplete}
+              className={`font-bold px-5 transition-all ${
+                !isKycComplete
+                  ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed hover:bg-gray-300 dark:hover:bg-gray-700"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-emerald-600/20"
+              }`}
+            >
+              {loading
+                ? "Menyimpan & Mendaftarkan Biometrik KYC..."
+                : !isKycComplete
+                ? `🔒 Wajib 5 Pose KYC (${completedPosesCount}/5)`
+                : "✓ Simpan Karyawan Baru (5 Pose Terverifikasi)"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

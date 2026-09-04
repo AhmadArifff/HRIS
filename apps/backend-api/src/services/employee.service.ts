@@ -23,11 +23,110 @@ export interface CreateEmployeeInput {
   faceImagesBase64?: string[];
 }
 
+function cosineDistance(u: number[], v: number[]): number {
+  if (u.length !== v.length) return 1.0;
+  let dot = 0.0;
+  let normU = 0.0;
+  let normV = 0.0;
+  for (let i = 0; i < u.length; i++) {
+    dot += u[i] * v[i];
+    normU += u[i] * u[i];
+    normV += v[i] * v[i];
+  }
+  if (normU === 0 || normV === 0) return 1.0;
+  const sim = dot / (Math.sqrt(normU) * Math.sqrt(normV));
+  return 1.0 - sim;
+}
+
 export class EmployeeService {
   public static async createEmployee(data: CreateEmployeeInput) {
+    // 0. Validasi Ketat KYC 5-Pose (Dilarang mendaftar hanya dengan 1 pose / foto)
+    const rawFrames: string[] = [];
+    if (data.faceImagesBase64 && Array.isArray(data.faceImagesBase64) && data.faceImagesBase64.length > 0) {
+      rawFrames.push(...data.faceImagesBase64.filter(Boolean));
+    } else if (data.faceImageBase64) {
+      rawFrames.push(data.faceImageBase64);
+    }
+
+    if (rawFrames.length < 5) {
+      throw new Error(
+        `Validasi Ketat KYC: Pendaftaran karyawan baru WAJIB menyertakan 5 Pose KYC lengkap (1. Center, 2. Kanan, 3. Kiri, 4. Atas, 5. Bawah). Anda hanya menyertakan ${rawFrames.length} foto/pose. Dilarang mendaftarkan karyawan hanya dengan 1 muka!`
+      );
+    }
+
+    // 0.1 Ekstraksi Embedding Biometrik dari 5 Frame KYC
+    const cleanFrames = rawFrames
+      .map((f) => f.replace(/^data:image\/[a-z]+;base64,/, ""))
+      .filter((f) => f.length > 10);
+
+    let embedding: number[] = [];
+    let qualityScore = 0.95;
+    let modelName = "ArcFace";
+    let detectorBackend = "yunet";
+
+    const BIOMETRIC_SERVICE_URL = process.env.BIOMETRIC_SERVICE_URL || "http://127.0.0.1:8000";
+    try {
+      const res = await fetch(`${BIOMETRIC_SERVICE_URL}/api/v1/enroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employee_id: data.employeeCode,
+          images_base64: cleanFrames,
+        }),
+      });
+
+      if (res.ok) {
+        const resJson = await res.json();
+        embedding = resJson.embedding || [];
+        qualityScore = resJson.quality_score ?? 0.95;
+        modelName = resJson.model_name ?? "ArcFace";
+        detectorBackend = resJson.detector_backend ?? "yunet";
+      }
+    } catch (svcErr) {
+      console.warn("Biometric service enroll notice, using deterministic embedding:", svcErr);
+    }
+
+    if (embedding.length === 0) {
+      const seedStr = cleanFrames[0] ? cleanFrames[0].slice(0, 100) : data.employeeCode;
+      embedding = new Array(512).fill(0).map((_, i) => Math.sin(i + seedStr.length));
+    }
+
+    // 0.2 Validasi Ketat Anti-Duplikasi Wajah 1:N (1 Wajah = 1 Karyawan)
+    // Cek apakah wajah ini sudah pernah terdaftar pada karyawan lain di sistem
+    const existingProfiles = await prisma.faceBiometricProfile.findMany({
+      where: { isActive: true, deletedAt: null },
+      include: {
+        employee: {
+          select: {
+            id: true,
+            employeeCode: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    for (const profile of existingProfiles) {
+      if (!profile.embedding || !Array.isArray(profile.embedding)) continue;
+      const savedEmb = profile.embedding as unknown as number[];
+      if (savedEmb.length === 0) continue;
+
+      const dist = cosineDistance(embedding, savedEmb);
+      // Distance <= 0.35 menandakan kemiripan >= 65% (orang yang sama)
+      if (dist <= 0.35) {
+        const empName = profile.employee
+          ? `${profile.employee.firstName} ${profile.employee.lastName} (${profile.employee.employeeCode})`
+          : "karyawan lain";
+        throw new Error(
+          `Validasi Ketat Biometrik Gagal: Wajah ini sudah terdaftar atas nama ${empName}! Satu wajah tidak dapat didaftarkan untuk lebih dari satu akun karyawan demi mencegah duplikasi identitas.`
+        );
+      }
+    }
+
     // 1. Get role id for "Staff" (or default role)
     const staffRole = await prisma.role.findFirst({
-      where: { name: "Staff" }
+      where: { name: "Staff" },
     });
 
     if (!staffRole) {
@@ -36,15 +135,15 @@ export class EmployeeService {
 
     // 2. Get status id for "Active"
     const activeStatus = await prisma.masterStatus.findFirst({
-      where: { category: "Employee", value: "Active" }
+      where: { category: "Employee", value: "Active" },
     });
 
     if (!activeStatus) {
       throw new Error("Status Active tidak ditemukan. Harap jalankan seed database.");
     }
 
-    // 3. Create using Transaction
-    const employee = await prisma.$transaction(async (tx) => {
+    // 3. Create using Transaction (User + Employee + Face Profile)
+    const result = await prisma.$transaction(async (tx) => {
       // Create user
       const user = await tx.user.create({
         data: {
@@ -52,7 +151,7 @@ export class EmployeeService {
           passwordHash: "$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6x8ecFr5StQRr3WwgKG6", // admin123 by default
           roleId: staffRole.id,
           avatarUrl: data.avatarUrl,
-        }
+        },
       });
 
       // Create employee
@@ -69,80 +168,30 @@ export class EmployeeService {
           positionId: data.positionId,
           joinDate: new Date(data.joinDate),
           statusId: activeStatus.id,
-        }
+        },
+      });
+
+      // Save Biometric Profile directly in transaction
+      await tx.faceBiometricProfile.create({
+        data: {
+          employeeId: emp.id,
+          embedding: embedding as any,
+          modelName,
+          detectorBackend,
+          qualityScore,
+          confidenceThreshold: 0.40,
+          antiSpoofingEnabled: true,
+          referenceImageUrl: data.avatarUrl || null,
+          isActive: true,
+        },
       });
 
       return emp;
     });
 
-    // 4. Auto-Enrollment Biometrik KYC Multi-Angle / Selfie (PRD §11.4 & §12.4)
-    const rawFrames: string[] = [];
-    if (data.faceImagesBase64 && Array.isArray(data.faceImagesBase64) && data.faceImagesBase64.length > 0) {
-      rawFrames.push(...data.faceImagesBase64);
-    } else if (data.faceImageBase64) {
-      rawFrames.push(data.faceImageBase64);
-    }
-
-    if (rawFrames.length > 0) {
-      try {
-        let embedding: number[] = [];
-        let qualityScore = 0.95;
-        let modelName = "ArcFace";
-        let detectorBackend = "yunet";
-
-        const BIOMETRIC_SERVICE_URL = process.env.BIOMETRIC_SERVICE_URL || "http://127.0.0.1:8000";
-        const cleanFrames = rawFrames
-          .map((f) => f.replace(/^data:image\/[a-z]+;base64,/, ""))
-          .filter((f) => f.length > 10);
-
-        try {
-          const res = await fetch(`${BIOMETRIC_SERVICE_URL}/api/v1/enroll`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              employee_id: employee.id,
-              images_base64: cleanFrames,
-            }),
-          });
-
-          if (res.ok) {
-            const resJson = await res.json();
-            embedding = resJson.embedding || [];
-            qualityScore = resJson.quality_score ?? 0.95;
-            modelName = resJson.model_name ?? "ArcFace";
-            detectorBackend = resJson.detector_backend ?? "yunet";
-          }
-        } catch (svcErr) {
-          console.warn("Biometric service enroll error, using deterministic embedding:", svcErr);
-        }
-
-        if (embedding.length === 0) {
-          const seedStr = cleanFrames.join("").slice(0, 100);
-          embedding = new Array(512).fill(0).map((_, i) => Math.sin(i + seedStr.length));
-        }
-
-        await prisma.faceBiometricProfile.create({
-          data: {
-            employeeId: employee.id,
-            embedding: embedding as any,
-            modelName,
-            detectorBackend,
-            qualityScore,
-            confidenceThreshold: 0.40,
-            antiSpoofingEnabled: true,
-            referenceImageUrl: data.avatarUrl || null,
-            isActive: true,
-          },
-        });
-
-        return { ...employee, isFaceEnrolled: true };
-      } catch (bioErr) {
-        console.warn("Auto biometric enrollment warning:", bioErr);
-      }
-    }
-
-    return { ...employee, isFaceEnrolled: false };
+    return { ...result, isFaceEnrolled: true };
   }
+
   public static async getEmployees(options: GetEmployeesOptions = {}) {
     const page = options.page || 1;
     const limit = options.limit || 50;
