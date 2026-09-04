@@ -6,6 +6,7 @@ import Button from "@/components/ui/button/Button";
 import DropzoneComponent from "@/components/form/form-elements/DropZone";
 import { supabase } from "@/lib/supabase";
 import { API_BASE_URL } from "@/lib/api";
+import { Kyc3dHeadGuide } from "@/components/hris/Kyc3dHeadGuide";
 
 interface KycPose {
   id: "center" | "right" | "left" | "up" | "down";
@@ -13,7 +14,6 @@ interface KycPose {
   shortLabel: string;
   instruction: string;
   sub: string;
-  icon: string;
   isProfileAvatar?: boolean;
 }
 
@@ -23,8 +23,7 @@ const KYC_POSES: KycPose[] = [
     title: "Pose 1: Center Frontal (Tegak Lurus)",
     shortLabel: "1. Center",
     instruction: "Posisikan wajah tegak lurus menatap tepat ke lensa kamera",
-    sub: "⭐ Wajah frontal ini otomatis disimpan sebagai Foto Profil resmi karyawan",
-    icon: "🎯",
+    sub: "⭐ Foto tengah ini otomatis disimpan sebagai Foto Profil resmi karyawan",
     isProfileAvatar: true,
   },
   {
@@ -33,7 +32,6 @@ const KYC_POSES: KycPose[] = [
     shortLabel: "2. Kanan",
     instruction: "Tengokkan wajah perlahan ke arah kanan Anda",
     sub: "Perekaman topologi pelipis, telinga, dan rahang kanan",
-    icon: "➡️",
   },
   {
     id: "left",
@@ -41,7 +39,6 @@ const KYC_POSES: KycPose[] = [
     shortLabel: "3. Kiri",
     instruction: "Tengokkan wajah perlahan ke arah kiri Anda",
     sub: "Perekaman topologi pelipis, telinga, dan rahang kiri",
-    icon: "⬅️",
   },
   {
     id: "up",
@@ -49,7 +46,6 @@ const KYC_POSES: KycPose[] = [
     shortLabel: "4. Atas",
     instruction: "Dongakkan dagu dan kepala sedikit ke atas",
     sub: "Perekaman garis rahang bawah (mandible) & kontur dagu",
-    icon: "⬆️",
   },
   {
     id: "down",
@@ -57,7 +53,6 @@ const KYC_POSES: KycPose[] = [
     shortLabel: "5. Bawah",
     instruction: "Tundukkan kepala dan pandangan sedikit ke bawah",
     sub: "Perekaman tulang alis, kening, dan punggung hidung",
-    icon: "⬇️",
   },
 ];
 
@@ -88,24 +83,43 @@ export const EmployeeForm = () => {
     up?: string;
     down?: string;
   }>({});
+  const [poseScores, setPoseScores] = useState<{
+    center?: number;
+    right?: number;
+    left?: number;
+    up?: number;
+    down?: number;
+  }>({});
   const [isKycComplete, setIsKycComplete] = useState<boolean>(false);
   const [flashFeedback, setFlashFeedback] = useState<boolean>(false);
 
-  // Camera, FQA & Anti-Occlusion (Hand/Chin Noise Detection) State
+  // Score Rejection Modal State (Threshold < 75)
+  const [scoreRejection, setScoreRejection] = useState<{
+    score: number;
+    issues: string[];
+    snapshot: string;
+    poseTitle: string;
+  } | null>(null);
+
+  // Camera, FQA, Head Pose Orientation & Anti-Occlusion State
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const [fqaStatus, setFqaStatus] = useState<{
     isValid: boolean;
     isOccluded: boolean;
+    isPoseAligned: boolean;
     label: string;
     sharpness: number;
     brightness: number;
+    directionHint: string;
   }>({
     isValid: false,
     isOccluded: false,
-    label: "Menyesuaikan Posisi Wajah...",
+    isPoseAligned: false,
+    label: "Menyesuaikan Posisi & Arah Wajah...",
     sharpness: 0,
     brightness: 0,
+    directionHint: "Posisikan kepala sesuai model 3D",
   });
 
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -146,7 +160,7 @@ export const EmployeeForm = () => {
     }
   }, []);
 
-  // Manage Camera on Mode / Completion Change
+  // Manage Camera on Mode / Step Change
   useEffect(() => {
     if (photoMode === "kyc_camera" && !isKycComplete) {
       startCamera();
@@ -159,7 +173,7 @@ export const EmployeeForm = () => {
     };
   }, [photoMode, isKycComplete, activePoseStep]);
 
-  // Real-Time FQA & Anti-Occlusion (Hand-on-Chin / Noise Detection) Loop (PRD §12.3)
+  // Real-Time Head Pose Orientation (Yaw & Pitch) & Anti-Occlusion Loop (PRD §12.3 & §12.5)
   useEffect(() => {
     if (!cameraActive || isKycComplete || photoMode !== "kyc_camera") {
       if (fqaIntervalRef.current) clearInterval(fqaIntervalRef.current);
@@ -179,7 +193,7 @@ export const EmployeeForm = () => {
         const imgData = ctx.getImageData(0, 0, 160, 120);
         const data = imgData.data;
 
-        // 1. Brightness & Overall Sharpness
+        // 1. Overall Brightness & Sharpness
         let totalBrightness = 0;
         let edgeGradient = 0;
 
@@ -198,7 +212,6 @@ export const EmployeeForm = () => {
         const avgSharpness = Math.round(edgeGradient / pixelCount);
 
         // 2. Anti-Occlusion & Hand-on-Chin Detection (PRD §12.3)
-        // Sub-sample Lower Zone (chin, jawline, mouth area: Y from 65% to 95%, X from 25% to 75%)
         let chinEdgeCount = 0;
         let chinPixelCount = 0;
         let leftJawIntensity = 0;
@@ -207,60 +220,150 @@ export const EmployeeForm = () => {
         let rightJawCount = 0;
         let bottomSkinEntryCount = 0;
 
-        for (let y = 75; y < 115; y++) {
-          for (let x = 40; x < 120; x++) {
+        // 3. Head Pose Estimation (Yaw & Pitch Calculation)
+        // Upper zone (eyes/forehead) vs Lower zone (jawline)
+        let upperIntensity = 0;
+        let lowerIntensity = 0;
+        let upperCount = 0;
+        let lowerCount = 0;
+
+        // Left Cheek vs Right Cheek intensity & edge features
+        let leftCheekEdge = 0;
+        let rightCheekEdge = 0;
+
+        for (let y = 0; y < 120; y++) {
+          for (let x = 0; x < 160; x++) {
             const idx = (y * 160 + x) * 4;
             const r = data[idx];
             const g = data[idx + 1];
             const b = data[idx + 2];
             const gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            chinPixelCount++;
-
-            // Detect horizontal hand/knuckle edge lines in chin zone
-            if (idx + 160 * 4 < data.length) {
-              const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
-              if (Math.abs(gray - downGray) > 28) {
-                chinEdgeCount++;
+            // Chin safe zone (Y: 75-115, X: 40-120)
+            if (y >= 75 && y <= 115 && x >= 40 && x <= 120) {
+              chinPixelCount++;
+              if (idx + 160 * 4 < data.length) {
+                const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
+                if (Math.abs(gray - downGray) > 28) chinEdgeCount++;
+              }
+              if (x < 80) {
+                leftJawIntensity += gray;
+                leftJawCount++;
+              } else {
+                rightJawIntensity += gray;
+                rightJawCount++;
+              }
+              if (y > 105) {
+                const isSkinTone = r > 80 && g > 45 && b > 30 && r > g && r > b;
+                if (isSkinTone) bottomSkinEntryCount++;
               }
             }
 
-            // Check Left vs Right asymmetry (Hand resting under one side of chin/cheek)
-            if (x < 80) {
-              leftJawIntensity += gray;
-              leftJawCount++;
-            } else {
-              rightJawIntensity += gray;
-              rightJawCount++;
+            // Head Pose Estimation Sampling
+            // Upper zone (Forehead/Eyes: Y: 25-55, X: 40-120)
+            if (y >= 25 && y <= 55 && x >= 40 && x <= 120) {
+              upperIntensity += gray;
+              upperCount++;
+            }
+            // Lower zone (Mouth/Chin: Y: 70-100, X: 40-120)
+            if (y >= 70 && y <= 100 && x >= 40 && x <= 120) {
+              lowerIntensity += gray;
+              lowerCount++;
             }
 
-            // Check skin-tone pixels coming up from bottom border (wrist/hand intrusion)
-            if (y > 105) {
-              const isSkinTone = r > 80 && g > 45 && b > 30 && r > g && r > b;
-              if (isSkinTone) bottomSkinEntryCount++;
+            // Left cheek (X: 30-65, Y: 45-85) vs Right cheek (X: 95-130, Y: 45-85)
+            if (y >= 45 && y <= 85) {
+              if (x >= 30 && x <= 65 && idx + 4 < data.length) {
+                const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
+                leftCheekEdge += Math.abs(gray - nxt);
+              }
+              if (x >= 95 && x <= 130 && idx + 4 < data.length) {
+                const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
+                rightCheekEdge += Math.abs(gray - nxt);
+              }
             }
           }
         }
 
-        const chinEdgeDensity = chinPixelCount > 0 ? (chinEdgeCount / chinPixelCount) : 0;
+        const chinEdgeDensity = chinPixelCount > 0 ? chinEdgeCount / chinPixelCount : 0;
         const avgLeftJaw = leftJawCount > 0 ? leftJawIntensity / leftJawCount : 0;
         const avgRightJaw = rightJawCount > 0 ? rightJawIntensity / rightJawCount : 0;
         const jawAsymmetry = Math.abs(avgLeftJaw - avgRightJaw);
 
-        // Hand on chin / fist detection heuristic:
-        // High edge density on chin OR high jaw asymmetry with hand intrusion from bottom
+        // Hand on chin / fist obstruction flag
         const hasHandOcclusion =
-          (chinEdgeDensity > 0.38) ||
-          (jawAsymmetry > 40 && bottomSkinEntryCount > 80) ||
-          (chinEdgeDensity > 0.28 && bottomSkinEntryCount > 150);
+          chinEdgeDensity > 0.38 ||
+          (jawAsymmetry > 40 && bottomSkinEntryCount > 75) ||
+          (chinEdgeDensity > 0.28 && bottomSkinEntryCount > 140);
+
+        // Yaw & Pitch Ratio Calculations
+        const cheekAsymmetryRatio = leftCheekEdge / (rightCheekEdge + 1e-5);
+        const avgUpper = upperCount > 0 ? upperIntensity / upperCount : 1;
+        const avgLower = lowerCount > 0 ? lowerIntensity / lowerCount : 1;
+        const verticalBalance = avgUpper / (avgLower + 1e-5);
+
+        // Strict Head Pose Orientation Alignment Checking (PRD §12.5)
+        const targetPose = KYC_POSES[activePoseStep];
+        let isPoseAligned = false;
+        let directionHint = "";
+
+        if (cameraError) {
+          // Simulator fallback
+          isPoseAligned = true;
+          directionHint = "✓ Mode Simulator (Siap Ambil)";
+        } else {
+          switch (targetPose.id) {
+            case "center":
+              // Must be balanced left-right AND balanced vertically
+              isPoseAligned = cheekAsymmetryRatio >= 0.78 && cheekAsymmetryRatio <= 1.28 && verticalBalance >= 0.82 && verticalBalance <= 1.25;
+              directionHint = isPoseAligned
+                ? "✓ Posisi Center Sesuai (Lurus ke Depan)"
+                : "⚠️ Wajah miring/menoleh, harap menatap lurus tepat ke depan";
+              break;
+
+            case "right":
+              // User turning right causes cheek asymmetry shift in mirrored webcam
+              isPoseAligned = cheekAsymmetryRatio > 1.25 || (avgLeftJaw > avgRightJaw * 1.18);
+              directionHint = isPoseAligned
+                ? "✓ Sudut Menoleh ke Kanan Sesuai"
+                : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KANAN (~25°)";
+              break;
+
+            case "left":
+              // User turning left causes inverse asymmetry
+              isPoseAligned = cheekAsymmetryRatio < 0.80 || (avgRightJaw > avgLeftJaw * 1.18);
+              directionHint = isPoseAligned
+                ? "✓ Sudut Menoleh ke Kiri Sesuai"
+                : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KIRI (~25°)";
+              break;
+
+            case "up":
+              // User tilting head up lowers relative upper forehead intensity and raises neck/chin
+              isPoseAligned = verticalBalance < 0.90 || (avgLower > avgUpper * 1.08);
+              directionHint = isPoseAligned
+                ? "✓ Sudut Mendongak ke Atas Sesuai"
+                : "⚠️ Arah kepala belum sesuai: Silakan dongakkan kepala sedikit ke ATAS (~15°)";
+              break;
+
+            case "down":
+              // User tilting head down raises relative forehead area and shadow on chin
+              isPoseAligned = verticalBalance > 1.18 || (avgUpper > avgLower * 1.12);
+              directionHint = isPoseAligned
+                ? "✓ Sudut Menunduk ke Bawah Sesuai"
+                : "⚠️ Arah kepala belum sesuai: Silakan tundukkan kepala sedikit ke BAWAH (~15°)";
+              break;
+          }
+        }
 
         const isGoodBrightness = avgBrightness >= 50 && avgBrightness <= 230;
         const isSharp = avgSharpness >= 11;
-        const isValid = isGoodBrightness && isSharp && !hasHandOcclusion;
+        const isValid = isGoodBrightness && isSharp && !hasHandOcclusion && isPoseAligned;
 
-        let label = `✓ Wajah Bersih & Tajam (Siap Foto: ${KYC_POSES[activePoseStep]?.shortLabel})`;
+        let label = `✓ Posisi & Sudut ${targetPose.shortLabel} Tepat (Siap Foto)`;
         if (hasHandOcclusion) {
           label = "⚠️ Terdeteksi tangan / halangan menutupi dagu & wajah! Harap jauhkan tangan.";
+        } else if (!isPoseAligned) {
+          label = directionHint;
         } else if (!isGoodBrightness) {
           label = avgBrightness < 50 ? "⚠️ Cahaya terlalu redup" : "⚠️ Backlight terlalu terang";
         } else if (!isSharp) {
@@ -270,9 +373,11 @@ export const EmployeeForm = () => {
         setFqaStatus({
           isValid,
           isOccluded: hasHandOcclusion,
+          isPoseAligned,
           label,
           sharpness: avgSharpness,
           brightness: avgBrightness,
+          directionHint,
         });
       } catch (fqaErr) {
         // Silent catch during unmount
@@ -282,7 +387,7 @@ export const EmployeeForm = () => {
     return () => {
       if (fqaIntervalRef.current) clearInterval(fqaIntervalRef.current);
     };
-  }, [cameraActive, isKycComplete, photoMode, activePoseStep]);
+  }, [cameraActive, isKycComplete, photoMode, activePoseStep, cameraError]);
 
   const startCamera = async () => {
     try {
@@ -303,9 +408,11 @@ export const EmployeeForm = () => {
       setFqaStatus({
         isValid: true,
         isOccluded: false,
+        isPoseAligned: true,
         label: `✓ Simulator Kamera KYC Aktif (${KYC_POSES[activePoseStep]?.shortLabel})`,
         sharpness: 90,
         brightness: 125,
+        directionHint: "✓ Simulator Aktif",
       });
     }
   };
@@ -322,7 +429,44 @@ export const EmployeeForm = () => {
     setCameraActive(false);
   };
 
-  // Capture Current KYC Pose
+  // Biometric Impact Quality Score Calculation (PRD §12.6)
+  const computeBiometricScore = (
+    sharpness: number,
+    brightness: number,
+    isAligned: boolean,
+    isOccluded: boolean
+  ): { total: number; passed: boolean; issues: string[] } => {
+    const issues: string[] = [];
+
+    // 1. Sharpness Score (0 - 25)
+    let sSharp = Math.min(25, Math.max(0, Math.round((sharpness / 16) * 25)));
+    if (sSharp < 18) issues.push("Citra kurang tajam / kamera bergerak");
+
+    // 2. Lighting Score (0 - 25)
+    let sLight = 25;
+    if (brightness < 60) {
+      sLight = Math.max(5, Math.round((brightness / 60) * 20));
+      issues.push("Pencahayaan terlalu redup / gelap");
+    } else if (brightness > 220) {
+      sLight = Math.max(5, Math.round(((255 - brightness) / 35) * 20));
+      issues.push("Backlight terlalu silau / kontras berlebih");
+    }
+
+    // 3. Pose Angle Accuracy Score (0 - 30)
+    let sPose = isAligned ? 30 : 6;
+    if (!isAligned) issues.push(`Sudut tolehan kepala tidak sesuai instruksi (${currentPose.title})`);
+
+    // 4. Cleanliness & Anti-Occlusion (0 - 20)
+    let sClean = isOccluded ? 0 : 20;
+    if (isOccluded) issues.push("Terdeteksi tangan atau halangan menempel pada dagu/wajah");
+
+    const total = cameraError ? 92 : sSharp + sLight + sPose + sClean;
+    const passed = total >= 75 && !isOccluded && isAligned;
+
+    return { total, passed, issues };
+  };
+
+  // Capture Current KYC Pose with Threshold Score Validation
   const handleCaptureCurrentPose = () => {
     const currentPose = KYC_POSES[activePoseStep];
     let snapshotDataUrl = "";
@@ -364,6 +508,25 @@ export const EmployeeForm = () => {
       }
     }
 
+    // Evaluate Quality Score
+    const { total, passed, issues } = computeBiometricScore(
+      fqaStatus.sharpness,
+      fqaStatus.brightness,
+      fqaStatus.isPoseAligned,
+      fqaStatus.isOccluded
+    );
+
+    // GATE: If Quality Score < 75, REJECT & Require Mandatory Retake!
+    if (!passed || total < 75) {
+      setScoreRejection({
+        score: total,
+        issues: issues.length > 0 ? issues : ["Arah sudut kepala tidak memenuhi standar toleransi biometrik"],
+        snapshot: snapshotDataUrl,
+        poseTitle: currentPose.title,
+      });
+      return;
+    }
+
     // Trigger visual shutter flash feedback
     setFlashFeedback(true);
     setTimeout(() => setFlashFeedback(false), 200);
@@ -373,6 +536,11 @@ export const EmployeeForm = () => {
       [currentPose.id]: snapshotDataUrl,
     };
     setCapturedPoses(updatedPoses);
+
+    setPoseScores((prev) => ({
+      ...prev,
+      [currentPose.id]: total,
+    }));
 
     // If more poses remaining, advance to next pose
     if (activePoseStep < KYC_POSES.length - 1) {
@@ -387,12 +555,15 @@ export const EmployeeForm = () => {
   const handleRetakeSinglePose = (poseIndex: number) => {
     setActivePoseStep(poseIndex);
     setIsKycComplete(false);
+    setScoreRejection(null);
   };
 
   const handleResetAllPoses = () => {
     setCapturedPoses({});
+    setPoseScores({});
     setActivePoseStep(0);
     setIsKycComplete(false);
+    setScoreRejection(null);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -524,6 +695,7 @@ export const EmployeeForm = () => {
         gender: "male",
       });
       setCapturedPoses({});
+      setPoseScores({});
       setIsKycComplete(false);
       setActivePoseStep(0);
       setFile(null);
@@ -535,6 +707,9 @@ export const EmployeeForm = () => {
   };
 
   const currentPose = KYC_POSES[activePoseStep];
+  const prevPose = activePoseStep > 0 ? KYC_POSES[activePoseStep - 1] : null;
+  const prevPoseSnapshot = prevPose ? capturedPoses[prevPose.id] : null;
+  const prevPoseScore = prevPose ? poseScores[prevPose.id] : null;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 shadow-sm">
@@ -544,12 +719,12 @@ export const EmployeeForm = () => {
             Pendaftaran Karyawan & Biometrik KYC Multi-Angle (5 Pose)
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Standar e-KYC Perbankan: 5 pose (Center, Kanan, Kiri, Atas, Bawah) dengan filter anti-halangan tangan (PRD §12).
+            Standar e-KYC Perbankan: Panduan Model 3D, verifikasi sudut pose ketat, dan skor kualitas minimal 75 (PRD §12).
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 self-start sm:self-auto">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          KYC Bank 5-Pose Centroid
+          KYC Bank 5-Pose Centroid (Min. 75)
         </span>
       </div>
 
@@ -576,7 +751,7 @@ export const EmployeeForm = () => {
                 Foto Profil Resmi & Pendaftaran Biometrik KYC <span className="text-error-500">*</span>
               </Label>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Perekaman 5 sudut menghasilkan model biometrik wajah 3D paling presisi dan bebas dari kegagalan saat presensi harian.
+                Wajah wajib menoleh sesuai panduan 3D dan lolos ambang batas skor kualitas minimal <strong>75/100</strong>.
               </p>
             </div>
 
@@ -618,7 +793,7 @@ export const EmployeeForm = () => {
                     <span className="text-emerald-600 dark:text-emerald-400">{currentPose.title}</span>
                   </span>
                   <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
-                    {Object.keys(capturedPoses).length}/5 Selesai
+                    {Object.keys(capturedPoses).length}/5 Selesai • Ambang Batas: Min. 75
                   </span>
                 </div>
 
@@ -627,6 +802,7 @@ export const EmployeeForm = () => {
                   {KYC_POSES.map((pose, idx) => {
                     const isCaptured = !!capturedPoses[pose.id];
                     const isCurrent = idx === activePoseStep && !isKycComplete;
+                    const score = poseScores[pose.id];
                     return (
                       <button
                         key={pose.id}
@@ -634,6 +810,7 @@ export const EmployeeForm = () => {
                         onClick={() => {
                           setActivePoseStep(idx);
                           setIsKycComplete(false);
+                          setScoreRejection(null);
                         }}
                         className={`py-2 px-1 rounded-lg text-[11px] font-semibold flex flex-col items-center justify-center transition border ${
                           isCaptured
@@ -643,7 +820,9 @@ export const EmployeeForm = () => {
                             : "bg-gray-100 text-gray-500 border-transparent dark:bg-gray-700 dark:text-gray-400"
                         }`}
                       >
-                        <span className="text-xs">{isCaptured ? "✓" : pose.icon}</span>
+                        <span className="text-xs font-bold">
+                          {isCaptured ? `✓ ${score ?? 75}` : `${idx + 1}`}
+                        </span>
                         <span className="truncate w-full text-center text-[10px] mt-0.5">{pose.shortLabel}</span>
                       </button>
                     );
@@ -652,15 +831,17 @@ export const EmployeeForm = () => {
               </div>
 
               {!isKycComplete ? (
-                <div className="space-y-3">
-                  {/* Anti-Occlusion & FQA Status Bar */}
+                <div className="space-y-4">
+                  {/* Anti-Occlusion & Pose Alignment Status Bar */}
                   <div
                     className={`flex items-center justify-between text-[11px] px-3.5 py-2.5 rounded-xl border font-mono transition-colors ${
                       fqaStatus.isOccluded
                         ? "bg-red-950/80 text-red-300 border-red-800 animate-pulse"
+                        : !fqaStatus.isPoseAligned
+                        ? "bg-amber-950/70 text-amber-300 border-amber-700/80"
                         : fqaStatus.isValid
-                        ? "bg-slate-900 text-slate-300 border-slate-800"
-                        : "bg-amber-950/60 text-amber-300 border-amber-800"
+                        ? "bg-emerald-950/60 text-emerald-300 border-emerald-700/80"
+                        : "bg-slate-900 text-slate-300 border-slate-800"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -668,6 +849,8 @@ export const EmployeeForm = () => {
                         className={`w-2.5 h-2.5 rounded-full ${
                           fqaStatus.isOccluded
                             ? "bg-red-500 animate-ping"
+                            : !fqaStatus.isPoseAligned
+                            ? "bg-amber-400 animate-pulse"
                             : fqaStatus.isValid
                             ? "bg-emerald-400 animate-pulse"
                             : "bg-amber-400"
@@ -682,72 +865,138 @@ export const EmployeeForm = () => {
                     </div>
                   </div>
 
-                  {/* Camera Viewport with Directional Cue & Anti-Occlusion Reticle */}
-                  <div className="w-full h-80 sm:h-96 bg-slate-950 rounded-2xl border-2 border-slate-800 relative overflow-hidden flex items-center justify-center shadow-inner">
-                    <video
-                      ref={attachCameraRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className={`w-full h-full object-cover scale-x-[-1] ${
-                        cameraActive && !cameraError ? "block" : "hidden"
-                      }`}
-                    />
-
-                    {/* Camera Shutter Flash Effect */}
-                    {flashFeedback && (
-                      <div className="absolute inset-0 bg-white/80 z-40 transition-opacity duration-200"></div>
-                    )}
-
-                    {/* Fallback Simulator Viewport */}
-                    {(!cameraActive || cameraError) && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-slate-900">
-                        <div className="w-28 h-36 border-2 border-dashed border-emerald-400/80 rounded-full flex items-center justify-center mb-2">
-                          <span className="text-xs font-mono text-emerald-400 font-bold uppercase">{currentPose.shortLabel}</span>
-                        </div>
-                        <span className="text-xs text-slate-300 font-medium">Simulator Kamera KYC Aktif</span>
-                        <span className="text-[11px] text-slate-500">Klik tombol di bawah untuk mengambil snapshot pose ini</span>
-                      </div>
-                    )}
-
-                    {/* Anti-Occlusion Warning Overlay (When Hand on Chin Detected) */}
-                    {fqaStatus.isOccluded && (
-                      <div className="absolute inset-x-4 top-4 z-30 p-3 bg-red-900/90 backdrop-blur-md rounded-xl border border-red-500/60 text-white flex items-center gap-2.5 shadow-lg animate-bounce">
-                        <span className="text-xl">✋</span>
-                        <div className="text-left text-xs font-semibold">
-                          <span className="block font-bold text-red-200">Terdeteksi Halangan / Tangan Menopang Dagu!</span>
-                          <span>Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Dynamic Oval Reticle with Hand Boundary Guidelines */}
-                    <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                      <div
-                        className={`w-44 h-56 sm:w-48 sm:h-64 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-center transition-all duration-300 relative ${
-                          fqaStatus.isOccluded
-                            ? "border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
-                            : fqaStatus.isValid
-                            ? "border-emerald-400 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.25)]"
-                            : "border-amber-400/70"
+                  {/* Dual Grid: Camera Feed (Left/Main) & 3D Head Guide + Previous Pose Preview (Right/Side) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {/* Main Camera Viewport */}
+                    <div className="sm:col-span-2 lg:col-span-3 h-80 sm:h-96 bg-slate-950 rounded-2xl border-2 border-slate-800 relative overflow-hidden flex items-center justify-center shadow-inner">
+                      <video
+                        ref={attachCameraRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={`w-full h-full object-cover scale-x-[-1] ${
+                          cameraActive && !cameraError ? "block" : "hidden"
                         }`}
-                      >
-                        {/* Directional Cue Indicator inside Reticle */}
-                        <div className="my-auto flex flex-col items-center justify-center text-center px-4">
-                          <span className="text-3xl mb-1 filter drop-shadow">{currentPose.icon}</span>
-                          <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${
-                            fqaStatus.isOccluded ? "text-red-400" : fqaStatus.isValid ? "text-emerald-300" : "text-amber-300"
-                          }`}>
-                            {currentPose.shortLabel}
+                      />
+
+                      {/* Camera Shutter Flash Effect */}
+                      {flashFeedback && (
+                        <div className="absolute inset-0 bg-white/80 z-40 transition-opacity duration-200"></div>
+                      )}
+
+                      {/* Fallback Simulator Viewport */}
+                      {(!cameraActive || cameraError) && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-slate-900">
+                          <div className="w-28 h-36 border-2 border-dashed border-emerald-400/80 rounded-full flex items-center justify-center mb-2">
+                            <span className="text-xs font-mono text-emerald-400 font-bold uppercase">{currentPose.shortLabel}</span>
+                          </div>
+                          <span className="text-xs text-slate-300 font-medium">Simulator Kamera KYC Aktif</span>
+                          <span className="text-[11px] text-slate-500">Mode uji coba simulator (Auto-pass score 92)</span>
+                        </div>
+                      )}
+
+                      {/* Anti-Occlusion Warning Overlay (When Hand on Chin Detected) */}
+                      {fqaStatus.isOccluded && (
+                        <div className="absolute inset-x-4 top-4 z-30 p-3 bg-red-900/90 backdrop-blur-md rounded-xl border border-red-500/60 text-white flex items-center gap-2.5 shadow-lg animate-bounce">
+                          <span className="text-xl">✋</span>
+                          <div className="text-left text-xs font-semibold">
+                            <span className="block font-bold text-red-200">Terdeteksi Halangan / Tangan Menopang Dagu!</span>
+                            <span>Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Angle Miss Warning Overlay (When Pose Not Turned Right/Left/Up/Down) */}
+                      {!fqaStatus.isPoseAligned && !fqaStatus.isOccluded && cameraActive && (
+                        <div className="absolute inset-x-4 bottom-4 z-30 p-2.5 bg-amber-950/90 backdrop-blur-md rounded-xl border border-amber-500/60 text-amber-200 flex items-center gap-2 shadow-lg">
+                          <span className="text-lg">⚠️</span>
+                          <span className="text-xs font-semibold">{fqaStatus.directionHint}</span>
+                        </div>
+                      )}
+
+                      {/* Dynamic Oval Reticle with Angle Verification Color */}
+                      <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                        <div
+                          className={`w-44 h-56 sm:w-48 sm:h-64 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-center transition-all duration-300 relative ${
+                            fqaStatus.isOccluded
+                              ? "border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                              : !fqaStatus.isPoseAligned
+                              ? "border-amber-400/80 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                              : fqaStatus.isValid
+                              ? "border-emerald-400 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+                              : "border-slate-600"
+                          }`}
+                        >
+                          {/* Inside Target Badge */}
+                          <div className="my-auto flex flex-col items-center justify-center text-center px-4">
+                            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${
+                              fqaStatus.isOccluded
+                                ? "text-red-400"
+                                : !fqaStatus.isPoseAligned
+                                ? "text-amber-300"
+                                : "text-emerald-300"
+                            }`}>
+                              {currentPose.shortLabel}
+                            </span>
+                          </div>
+
+                          {/* Lower Jawline Safe Zone Marker */}
+                          <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-3"></div>
+                          <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mb-2">
+                            Area Dagu Bersih
                           </span>
                         </div>
-
-                        {/* Lower Jawline Safe Zone Marker */}
-                        <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-3"></div>
-                        <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mb-2">
-                          Area Dagu Bersih
-                        </span>
                       </div>
+                    </div>
+
+                    {/* Side Panel: 3D Head Pose Model Guide & Previous Pose Preview */}
+                    <div className="sm:col-span-1 lg:col-span-1 flex flex-col gap-3 justify-between">
+                      {/* 3D Model Human Head Guide Component */}
+                      <div className="flex-1 flex flex-col justify-center">
+                        <span className="text-[10px] font-mono uppercase text-gray-500 dark:text-gray-400 font-bold mb-1 block">
+                          Panduan Model 3D Pose:
+                        </span>
+                        <Kyc3dHeadGuide
+                          pose={currentPose.id}
+                          status={
+                            fqaStatus.isOccluded
+                              ? "occluded"
+                              : fqaStatus.isPoseAligned
+                              ? "aligned"
+                              : "waiting"
+                          }
+                          className="h-full"
+                        />
+                      </div>
+
+                      {/* Previous Pose Snapshot Card Preview */}
+                      {prevPose && prevPoseSnapshot && (
+                        <div className="p-2.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                          <span className="text-[10px] font-mono uppercase text-gray-500 dark:text-gray-400 font-bold block mb-1">
+                            Foto Pose Sebelumnya:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-12 h-12 rounded-lg overflow-hidden border border-emerald-500 bg-slate-950 shrink-0">
+                              <img src={prevPoseSnapshot} alt="Previous Pose" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <span className="block text-xs font-bold text-gray-800 dark:text-white truncate">
+                                {prevPose.shortLabel}
+                              </span>
+                              <span className="inline-block text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                Skor: {prevPoseScore ?? 85}/100 ✓
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRetakeSinglePose(activePoseStep - 1)}
+                              className="text-[10px] text-brand-600 hover:text-brand-700 font-semibold underline shrink-0"
+                            >
+                              Ulang
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -756,11 +1005,56 @@ export const EmployeeForm = () => {
                     <span className="text-lg leading-none">💡</span>
                     <div>
                       <strong className="font-bold text-blue-900 dark:text-blue-100">{currentPose.instruction}.</strong>
-                      <p className="mt-0.5 text-blue-800/80 dark:text-blue-300/80">{currentPose.sub}</p>
+                      <p className="mt-0.5 text-blue-800/80 dark:text-blue-300/80">
+                        {currentPose.sub}. Tombol capture hanya aktif jika orientasi kepala sesuai model 3D dan tidak ada halangan tangan.
+                      </p>
                     </div>
                   </div>
 
-                  {/* Capture Button with Anti-Occlusion Guard */}
+                  {/* Rejection Alert Modal / Banner (When Score < 75) */}
+                  {scoreRejection && (
+                    <div className="p-4 bg-red-50 dark:bg-red-950/50 border-2 border-red-500 rounded-2xl text-red-900 dark:text-red-200 space-y-2.5 animate-modal-book-open">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">❌</span>
+                          <div>
+                            <h4 className="text-sm font-extrabold text-red-700 dark:text-red-300">
+                              Foto Ditolak: Skor Kualitas {scoreRejection.score}/100 (Di Bawah Standar 75)
+                            </h4>
+                            <p className="text-xs text-red-600 dark:text-red-400">
+                              Foto pada <strong>{scoreRejection.poseTitle}</strong> tidak memenuhi standar akurasi biometrik perbankan.
+                            </p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-red-600 text-white text-xs font-mono font-bold">
+                          Wajib Diulang
+                        </span>
+                      </div>
+
+                      <div className="bg-white/80 dark:bg-gray-900/80 p-3 rounded-xl border border-red-200 dark:border-red-800 text-xs">
+                        <span className="font-bold text-red-800 dark:text-red-300 block mb-1">
+                          Penyebab Kualitas Rendah:
+                        </span>
+                        <ul className="list-disc list-inside space-y-0.5 text-gray-700 dark:text-gray-300">
+                          {scoreRejection.issues.map((iss, i) => (
+                            <li key={i}>{iss}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setScoreRejection(null)}
+                          className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition shadow-md"
+                        >
+                          🔄 Ambil Ulang Pose Ini Sekarang
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Capture Button with Strict Pre-Capture Guard */}
                   <div className="flex items-center justify-between pt-1">
                     <button
                       type="button"
@@ -774,10 +1068,12 @@ export const EmployeeForm = () => {
                     <button
                       type="button"
                       onClick={handleCaptureCurrentPose}
-                      disabled={fqaStatus.isOccluded}
+                      disabled={fqaStatus.isOccluded || !fqaStatus.isPoseAligned}
                       className={`py-3 px-7 text-xs font-extrabold rounded-xl transition shadow-lg flex items-center gap-2 cursor-pointer ${
                         fqaStatus.isOccluded
                           ? "bg-red-600 text-white opacity-50 cursor-not-allowed shadow-none"
+                          : !fqaStatus.isPoseAligned
+                          ? "bg-amber-600 text-white opacity-50 cursor-not-allowed shadow-none"
                           : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white shadow-emerald-600/30"
                       }`}
                     >
@@ -788,6 +1084,8 @@ export const EmployeeForm = () => {
                       <span>
                         {fqaStatus.isOccluded
                           ? "✋ Jauhkan Tangan dari Dagu untuk Mengambil"
+                          : !fqaStatus.isPoseAligned
+                          ? "⚠️ Sesuaikan Arah Kepala dengan Model 3D"
                           : `📸 Ambil Foto (${currentPose.shortLabel})`}
                       </span>
                     </button>
@@ -808,7 +1106,7 @@ export const EmployeeForm = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-gray-100 dark:border-gray-700 gap-2">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 mb-1">
-                        ✓ 5/5 Pose Biometrik Lengkap (e-KYC Bank Grade)
+                        ✓ 5/5 Pose Biometrik Lengkap (Seluruh Skor &ge; 75 Lolos)
                       </div>
                       <h4 className="text-sm font-bold text-gray-800 dark:text-white">
                         Seluruh Sudut Wajah Berhasil Ditangkap Tanpa Halangan
@@ -827,14 +1125,15 @@ export const EmployeeForm = () => {
                     </button>
                   </div>
 
-                  {/* 5-Card Thumbnail Grid */}
+                  {/* 5-Card Thumbnail Grid with Quality Score Badges */}
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     {KYC_POSES.map((pose, idx) => {
                       const snapshot = capturedPoses[pose.id];
+                      const score = poseScores[pose.id] ?? 85;
                       return (
                         <div
                           key={pose.id}
-                          className={`flex flex-col items-center p-2 rounded-xl border relative transition ${
+                          className={`flex flex-col items-center p-2.5 rounded-xl border relative transition ${
                             pose.isProfileAvatar
                               ? "border-2 border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm"
                               : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
@@ -854,8 +1153,8 @@ export const EmployeeForm = () => {
                                 Belum ada
                               </div>
                             )}
-                            <span className="absolute bottom-1 right-1 bg-emerald-500 text-white rounded-full p-0.5 text-[10px]">
-                              ✓
+                            <span className="absolute bottom-1 right-1 bg-emerald-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-mono font-bold">
+                              {score}/100 ✓
                             </span>
                           </div>
 

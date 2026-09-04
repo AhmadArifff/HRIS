@@ -1960,3 +1960,130 @@ Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifi
    $$\vec{c} = \frac{\sum_{i=1}^{5} \vec{v}_i}{\left\| \sum_{i=1}^{5} \vec{v}_i \right\|}$$
 5. Vektor centroid $\vec{c}$ berdimensi 512 disimpan ke tabel `face_biometric_profiles`, menghasilkan profil wajah 3D adaptif yang dapat mengenali karyawan bahkan saat karyawan bergerak atau menoleh saat presensi masuk.
 
+---
+
+### 12.5 Pre-Capture Head Pose Yaw & Pitch Angle Lock (Penguncian Ketat Arah Pose Kepala)
+
+#### 12.5.1 Latar Belakang Masalah (Miss-Detection Prevention)
+Pada implementasi awal, pengguna menemukan kelemahan di mana pose tolehan (kanan, kiri, mendongak, menunduk) tetap dapat diambil saat wajah pengguna masih berada pada posisi tengah (*center frontal*). Hal ini menyebabkan data biometrik sudut multi-angle menjadi redundan (semua pose hanya merekam wajah lurus) sehingga gagal memenuhi fungsi adaptif 3D biometrik perbankan.
+
+#### 12.5.2 Algoritma Deteksi Rotasi Kepala Real-Time (Canvas FQA Loop - 350ms)
+Untuk mencegah hal tersebut, sistem mengimplementasikan algoritma estimasi rotasi kepala (*Head Pose Estimation*) deterministik pada canvas beresolusi $160 \times 120$ piksel:
+
+1. **Estimasi Sudut Yaw (Tolehan Horisontal Kiri / Kanan):**
+   - Mengukur rasio gradien tepi asimetri pipi kiri ($X \in [30, 65]$) terhadap pipi kanan ($X \in [95, 130]$):
+     $$R_{\text{yaw}} = \frac{\sum |G_{\text{left\_cheek}}|}{\sum |G_{\text{right\_cheek}}| + \epsilon}$$
+   - Pengguna menoleh ke **Kanan**: Menghasilkan pergeseran kontur pipi dan rahang pada feed kamera cermin (*mirrored display*), dengan kondisi valid:
+     $$R_{\text{yaw}} > 1.25 \quad \text{atau} \quad \bar{I}_{\text{left\_jaw}} > 1.18 \times \bar{I}_{\text{right\_jaw}}$$
+   - Pengguna menoleh ke **Kiri**: Menghasilkan pergeseran sebaliknya:
+     $$R_{\text{yaw}} < 0.80 \quad \text{atau} \quad \bar{I}_{\text{right\_jaw}} > 1.18 \times \bar{I}_{\text{left\_jaw}}$$
+2. **Estimasi Sudut Pitch (Dongakan Vertikal Atas / Bawah):**
+   - Mengukur rasio keseimbangan pencahayaan vertikal antara dahi bagian atas ($Y \in [20, 50]$) dan rahang bawah/leher ($Y \in [80, 110]$):
+     $$R_{\text{pitch}} = \frac{\bar{I}_{\text{forehead}}}{\bar{I}_{\text{jaw}} + \epsilon}$$
+   - Pengguna mendongak ke **Atas**: Bidang leher dan dagu mendominasi pantulan cahaya, sedangkan dahi mereduksi area:
+     $$R_{\text{pitch}} < 0.90 \quad \text{atau} \quad \bar{I}_{\text{jaw}} > 1.08 \times \bar{I}_{\text{forehead}}$$
+   - Pengguna menunduk ke **Bawah**: Bidang kening dan dahi mendominasi bidang pandang kamera:
+     $$R_{\text{pitch}} > 1.18 \quad \text{atau} \quad \bar{I}_{\text{forehead}} > 1.12 \times \bar{I}_{\text{jaw}}$$
+3. **Penguncian Tombol Capture (Strict Pre-Capture Guard Clause):**
+   - Jika arah kepala pengguna tidak sesuai dengan target pose langkah aktif:
+     - Flag `isPoseAligned = false`.
+     - Tombol **Ambil Foto** seketika **TERKUNCI & DINONAKTIFKAN** (`disabled = true`, `cursor-not-allowed`, `opacity-50`).
+     - Label tombol dan status bar menampilkan peringatan terarah:
+       - Hadap Kanan: `⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KANAN (~25°)`
+       - Hadap Kiri: `⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KIRI (~25°)`
+       - Dongak Atas: `⚠️ Arah kepala belum sesuai: Silakan dongakkan kepala sedikit ke ATAS (~15°)`
+       - Tunduk Bawah: `⚠️ Arah kepala belum sesuai: Silakan tundukkan kepala sedikit ke BAWAH (~15°)`
+       - Center: `⚠️ Wajah miring/menoleh, harap menatap lurus tepat ke depan`
+
+---
+
+### 12.6 Biometric Impact Quality Score Engine (Ambang Batas Kelayakan ≥ 75/100 & Mandatory Retake)
+
+Setiap foto yang diambil melalui modul pendaftaran wajah KYC dievaluasi secara kuantitatif melalui formula **Biometric Quality Score Engine (0 - 100)**:
+
+$$\text{Score}_{\text{total}} = S_{\text{sharpness}} + S_{\text{lighting}} + S_{\text{pose}} + S_{\text{cleanliness}}$$
+
+#### 12.6.1 Rincian Bobot Komponen Penilaian:
+1. **$S_{\text{sharpness}}$ — Ketajaman Citra (Bobot Maks. 25 Poin):**
+   - Mengukur variansi matriks Laplacian $Var(L)$.
+   - Skor: $\min\left(25, \max\left(0, \text{round}\left(\frac{\text{sharpness}}{16} \times 25\right)\right)\right)$.
+   - Jika $S_{\text{sharpness}} < 18$, dicatat masalah: *"Citra kurang tajam / kamera bergoyang"*.
+2. **$S_{\text{lighting}}$ — Pencahayaan Optimal (Bobot Maks. 25 Poin):**
+   - Nilai kecerahan optimal berada di rentang $60 - 220$ (Skala $0 - 255$).
+   - Jika kecerahan $< 60$: Skor diturunkan proporsional ($5 - 20$) dengan catatan: *"Pencahayaan terlalu redup / gelap"*.
+   - Jika kecerahan $> 220$: Skor diturunkan proporsional ($5 - 20$) dengan catatan: *"Backlight silau / kontras berlebih"*.
+3. **$S_{\text{pose}}$ — Akurasi Sudut Rotasi Pose (Bobot Maks. 30 Poin):**
+   - Menjadi pilar penentu validitas pose:
+     - Jika rotasi kepala sesuai instruksi (`isAligned = true`): Mendapat **30 Poin Penuh**.
+     - Jika rotasi kepala tidak sesuai (misal: pengguna curang tetap menghadap center saat diminta pose menoleh): Hanya mendapat **6 Poin**.
+   - Catatan masalah: *"Sudut tolehan kepala tidak sesuai instruksi pose"*.
+4. **$S_{\text{cleanliness}}$ — Kebersihan Dagu & Anti-Occlusion (Bobot Maks. 20 Poin):**
+   - Jika bebas dari tangan atau objek menempel (`isOccluded = false`): Mendapat **20 Poin Penuh**.
+   - Jika terdeteksi tangan/objek menopang dagu (`isOccluded = true`): Mendapat **0 Poin**.
+
+#### 12.6.2 Kebijakan Ambang Batas Kelayakan Minimal (Strict 75/100 Threshold):
+- **Syarat Kelulusan:** $\text{Score}_{\text{total}} \ge 75 \quad \land \quad \neg\text{isOccluded} \quad \land \quad \text{isAligned}$.
+- **Alur Penolakan Otomatis (Auto-Rejection & Mandatory Retake):**
+  - Apabila total skor $< 75$:
+    1. Foto snapshot **SEKETIKA DIBATALKAN & TIDAK DISIMPAN** ke dalam antrean pendaftaran.
+    2. Sistem memunculkan banner dialog peringatan merah:
+       > **❌ Foto Ditolak: Skor Kualitas [Skor]/100 (Di Bawah Standar 75)**  
+       > *Foto pada [Nama Pose] tidak memenuhi standar akurasi biometrik perbankan.*  
+       > **Penyebab Kualitas Rendah:**  
+       > - [Daftar isu spesifik, misal: "Sudut tolehan kepala tidak sesuai instruksi"]  
+       > - [Tombol: **🔄 Ambil Ulang Pose Ini Sekarang**]
+    3. Pengguna **WAJIB MENGULANG** pengambilan foto pose tersebut sampai memperoleh skor minimal $\ge 75$.
+
+---
+
+### 12.7 Standar Visual Model 3D Human Mesh Guide (Peniadaan Emoticon)
+
+#### 12.7.1 Larangan Penggunaan Emoticon Grafis
+Penggunaan emoticon / emoji kartun (seperti `🙂`, `👉`, `👆`) **resmi ditiadakan dan dilarang** pada seluruh modul biometrik. Alasan:
+*   Mengesankan aplikasi amatir (*toy application*), tidak mencerminkan kredibilitas sistem enterprise berstandar perbankan.
+*   Emoticon kartun bersifat 2D datar sehingga ambigu dan tidak dapat menunjukkan kedalaman rotasi perspektif 3D yang tepat kepada karyawan.
+
+#### 12.7.2 Spesifikasi Komponen Model 3D (`Kyc3dHeadGuide.tsx`)
+Komponen panduan visual dibangun menggunakan proyeksi ortografis 3D geometrik kepala manusia:
+1. **Anatomi Visual 3D Human Silhouette:**
+   - Menampilkan struktur kubah tempurung kepala (*cranium*), pelipis, kontur pipi, lekukan telinga, jembatan hidung, bibir, dan rahang bawah (*mandible*).
+   - Menampilkan garis kontur meridian topologi (*3D topo wireframe mesh*) dan panah vektor rotasi berarah (*directional curved rotation arrow*).
+2. **Visualisasi Spesifik per Pose:**
+   - **Center:** Proyeksi simetris frontal dengan garis meridian tengah dan kontur mata sejajar.
+   - **Right:** Proyeksi profil tolehan kanan, cuping hidung menonjol ke kanan, telinga kiri terlihat dominan, panah rotasi melengkung ke kanan.
+   - **Left:** Proyeksi profil tolehan kiri, cuping hidung menonjol ke kiri, telinga kanan terlihat dominan, panah rotasi melengkung ke kiri.
+   - **Up:** Proyeksi dongakan atas, pembesaran area dagu & leher, lubang hidung terlihat dari bawah (*nostril tilt*), panah vertikal ke atas.
+   - **Down:** Proyeksi tundukan bawah, perluasan bidang dahi & alis mata (*brow ridge*), panah vertikal ke bawah.
+3. **Indikator Status Reaktif 4-Tema:**
+   - **Sky Blue (`#38bdf8` - Waiting):** Menunggu pengguna memposisikan kepala sesuai model 3D.
+   - **Emerald Green (`#10b981` - Aligned):** Kepala telah menoleh dengan sudut presisi, siap dipindai.
+   - **Crimson Red (`#ef4444` - Occluded):** Terdeteksi tangan menempel pada dagu / wajah.
+   - **Cyan (`#06b6d4` - Captured):** Pose telah berhasil diambil dengan skor kelayakan $\ge 75$.
+
+---
+
+### 12.8 Pratinjau Snapshot Pose Sebelumnya & Indikator Riwayat Pengambilan Foto
+
+Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/karyawan:
+
+1. **Kartu Pratinjau Pose Sebelumnya (Previous Pose Snapshot Card):**
+   - Terletak di panel kanan samping model 3D, tepat di bawah model kepala.
+   - Menampilkan thumbnail citra berbingkai hijau emerald dari pose yang baru saja diambil pada langkah sebelumnya.
+   - Menampilkan badge skor kualitas yang diraih (misal: `Skor: 88/100 ✓`).
+   - Menyediakan tombol cepat **"Ulang"** (*Single-Pose Retake*) yang memungkinkan pengguna kembali mengambil ulang pose tersebut tanpa harus mengulang dari awal langkah 1.
+2. **Indikator Stepper 5-Pose Dinamis:**
+   - Menampilkan rekap skor kelayakan pada setiap tombol langkah di bagian atas (misal: `✓ 88`, `✓ 92`, `✓ 85`).
+   - Memberikan navigasi langsung (*direct jump*) ke pose mana pun yang ingin ditinjau atau diambil ulang.
+
+---
+
+### 12.9 Matriks Verifikasi & Kepatuhan Fitur KYC Biometrik 5-Pose
+
+| Komponen Fitur | Spesifikasi Awal | Standar Baru (Seksi 12.5 - 12.8) | Dampak Keamanan & Akurasi |
+| :--- | :--- | :--- | :--- |
+| **Validasi Pose Tolehan** | Menghadap center tetap bisa diambil | **Kunci Sudut Yaw & Pitch** (Center, Kanan, Kiri, Atas, Bawah wajib sesuai model 3D) | Menjamin keaslian data 5 sudut profil wajah 3D |
+| **Ambang Batas Kelayakan** | Tidak ada evaluasi kuantitatif | **Minimal Skor 75/100** (Jika $< 75$, foto ditolak & wajib retake) | Mencegah citra buram atau pose palsu masuk database |
+| **Panduan Arah Pose** | Emoticon 2D kartun (`👉`, `🙂`) | **Asset Model 3D Manusia Geometrik** ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)) | Tampilan profesional perbankan, instruksi tolehan akurat |
+| **Pratinjau Pose Sebelumnya** | Belum tersedia | **Thumbnail Pratinjau + Badge Skor** + Tombol Ambil Ulang cepat | Pengguna dapat mengevaluasi kualitas foto sebelum lanjut |
+| **Deteksi Halangan Tangan** | Hanya pengecekan reticle dasar | **Anti-Occlusion Filter** (Segmentasi dagu & deteksi intrusi tangan) | Menghilangkan derau objek asing pada proses ekstraksi |
+
