@@ -117,13 +117,7 @@ export const enrollFace = async (req: Request, res: Response): Promise<void> => 
     }
 
     if (!employee) {
-      if (employeeId === "EMP-001" || employeeId === "f47ac10b-58cc-4372-a567-0e02b2c3d479" || employeeId === "EMP-002") {
-        employee = { id: employeeId, firstName: "Budi", lastName: "Santoso", employeeCode: employeeId };
-      }
-    }
-
-    if (!employee) {
-      sendResult(res, 404, Result.fail("Karyawan tidak ditemukan"));
+      sendResult(res, 404, Result.fail("Karyawan tidak ditemukan di database. Pastikan Employee ID atau Employee Code yang dikirim valid."));
       return;
     }
 
@@ -438,53 +432,12 @@ export const verifyFaceLogin = async (req: Request, res: Response): Promise<void
   try {
     const { employeeId, selfieBase64, faceDescriptor } = req.body;
 
-    if (!employeeId) {
-      sendResult(res, 400, Result.fail("Employee ID wajib disertakan"));
+    if (!selfieBase64 && !faceDescriptor) {
+      sendResult(res, 400, Result.fail("Foto selfie atau face descriptor wajib disertakan untuk verifikasi wajah"));
       return;
     }
 
-    // Check if enrolled
-    const cached = await getCachedBiometricEmbedding(employeeId);
-    let savedEmbedding: number[] | null = cached?.embedding || null;
-    let confidenceThreshold = cached?.threshold || 0.40;
-
-    if (!savedEmbedding) {
-      try {
-        const profile = await prisma.faceBiometricProfile.findFirst({
-          where: {
-            OR: [
-              { employeeId },
-              { employee: { employeeCode: employeeId } },
-            ],
-            isActive: true,
-            deletedAt: null,
-          },
-        });
-        if (profile && profile.embedding) {
-          savedEmbedding = profile.embedding as unknown as number[];
-          confidenceThreshold = profile.confidenceThreshold || 0.40;
-          await setCachedBiometricEmbedding(employeeId, {
-            embedding: savedEmbedding,
-            threshold: confidenceThreshold,
-          });
-        }
-      } catch (dbErr: any) {
-        console.warn("DB offline during verifyFaceLogin lookup:", dbErr.message);
-      }
-    }
-
-    if (!savedEmbedding) {
-      sendResult(
-        res,
-        403,
-        Result.fail(
-          "Wajah Anda belum terdaftar di sistem biometrik. Silakan masuk menggunakan Akun/PIN untuk melakukan pendaftaran wajah."
-        )
-      );
-      return;
-    }
-
-    // Verify 1:1 match
+    // --- Step 1: Extract live embedding from selfie ---
     let liveEmbedding: number[] = [];
     if (selfieBase64) {
       try {
@@ -495,6 +448,10 @@ export const verifyFaceLogin = async (req: Request, res: Response): Promise<void
         });
         if (svcRes.ok) {
           const svcData = await svcRes.json();
+          if (svcData.is_real === false) {
+            sendResult(res, 403, Result.fail("⚠️ Terdeteksi manipulasi foto / rekaman layar (Anti-Spoofing). Login ditolak."));
+            return;
+          }
           liveEmbedding = svcData.embedding;
         }
       } catch (svcErr) {
@@ -507,51 +464,151 @@ export const verifyFaceLogin = async (req: Request, res: Response): Promise<void
     }
 
     if (liveEmbedding.length === 0) {
-      liveEmbedding = [...savedEmbedding];
-    }
-
-    const distance = cosineDistance(liveEmbedding, savedEmbedding);
-    const similarityScore = Math.max(0, Math.min(100, Number(((1 - distance) * 100).toFixed(1))));
-    const isMatch = distance <= confidenceThreshold;
-
-    if (!isMatch) {
-      sendResult(
-        res,
-        401,
-        Result.fail("Verifikasi wajah gagal: Wajah tidak cocok dengan profil biometrik akun Anda")
-      );
+      sendResult(res, 422, Result.fail("Gagal mengekstrak fitur biometrik dari foto wajah. Pastikan wajah terlihat jelas dan pencahayaan memadai."));
       return;
     }
 
-    // Fetch employee data for login session
+    // --- Step 2: Determine mode — 1:1 Verification or 1:N Identification ---
+    let matchedEmployeeId: string | null = null;
+    let matchDistance = 1.0;
+    let matchThreshold = 0.40;
+
+    if (employeeId) {
+      // ===== MODE 1:1 VERIFICATION (employeeId provided) =====
+      const cached = await getCachedBiometricEmbedding(employeeId);
+      let savedEmbedding: number[] | null = cached?.embedding || null;
+      let confidenceThreshold = cached?.threshold || 0.40;
+
+      if (!savedEmbedding) {
+        try {
+          const profile = await prisma.faceBiometricProfile.findFirst({
+            where: {
+              OR: [
+                { employeeId },
+                { employee: { employeeCode: employeeId } },
+              ],
+              isActive: true,
+              deletedAt: null,
+            },
+          });
+          if (profile && profile.embedding) {
+            savedEmbedding = profile.embedding as unknown as number[];
+            confidenceThreshold = profile.confidenceThreshold || 0.40;
+            await setCachedBiometricEmbedding(employeeId, {
+              embedding: savedEmbedding,
+              threshold: confidenceThreshold,
+            });
+          }
+        } catch (dbErr: any) {
+          console.warn("DB error during 1:1 verifyFaceLogin lookup:", dbErr.message);
+        }
+      }
+
+      if (!savedEmbedding) {
+        sendResult(res, 403, Result.fail(
+          "Wajah Anda belum terdaftar di sistem biometrik. Silakan lakukan pendaftaran wajah (e-KYC) terlebih dahulu."
+        ));
+        return;
+      }
+
+      matchDistance = cosineDistance(liveEmbedding, savedEmbedding);
+      matchThreshold = confidenceThreshold;
+
+      if (matchDistance > matchThreshold) {
+        sendResult(res, 401, Result.fail(
+          `Verifikasi wajah gagal: Wajah tidak cocok dengan profil biometrik akun Anda (Kemiripan: ${Math.round((1 - matchDistance) * 100)}%, Batas: ${Math.round((1 - matchThreshold) * 100)}%).`
+        ));
+        return;
+      }
+
+      matchedEmployeeId = employeeId;
+
+    } else {
+      // ===== MODE 1:N IDENTIFICATION (no employeeId — search ALL profiles) =====
+      let allProfiles: any[] = [];
+      try {
+        allProfiles = await prisma.faceBiometricProfile.findMany({
+          where: { isActive: true, deletedAt: null },
+          select: {
+            id: true,
+            employeeId: true,
+            embedding: true,
+            confidenceThreshold: true,
+          },
+        });
+      } catch (dbErr: any) {
+        console.warn("DB error during 1:N identification lookup:", dbErr.message);
+        sendResult(res, 503, Result.fail("Database tidak tersedia untuk identifikasi wajah. Silakan coba lagi."));
+        return;
+      }
+
+      if (allProfiles.length === 0) {
+        sendResult(res, 404, Result.fail(
+          "Belum ada profil biometrik terdaftar di sistem. Silakan daftarkan wajah terlebih dahulu melalui Admin Dashboard."
+        ));
+        return;
+      }
+
+      // Find best match across all profiles
+      let bestDistance = 1.0;
+      let bestProfileEmployeeId: string | null = null;
+      let bestThreshold = 0.40;
+
+      for (const profile of allProfiles) {
+        if (!profile.embedding || !Array.isArray(profile.embedding)) continue;
+        const savedEmb = profile.embedding as unknown as number[];
+        if (savedEmb.length === 0) continue;
+
+        const dist = cosineDistance(liveEmbedding, savedEmb);
+        const threshold = profile.confidenceThreshold || 0.40;
+
+        if (dist < bestDistance) {
+          bestDistance = dist;
+          bestProfileEmployeeId = profile.employeeId;
+          bestThreshold = threshold;
+        }
+      }
+
+      if (!bestProfileEmployeeId || bestDistance > bestThreshold) {
+        const simPercent = bestDistance < 1.0 ? Math.round((1 - bestDistance) * 100) : 0;
+        sendResult(res, 401, Result.fail(
+          `Wajah tidak dikenali oleh sistem. Tidak ada profil biometrik yang cocok dengan wajah Anda (Kemiripan tertinggi: ${simPercent}%). Pastikan wajah Anda sudah terdaftar melalui e-KYC.`
+        ));
+        return;
+      }
+
+      matchedEmployeeId = bestProfileEmployeeId;
+      matchDistance = bestDistance;
+      matchThreshold = bestThreshold;
+    }
+
+    // --- Step 3: Fetch employee data for the matched profile ---
+    const similarityScore = Math.max(0, Math.min(100, Number(((1 - matchDistance) * 100).toFixed(1))));
+
     let employee: any = null;
     try {
       employee = await prisma.employee.findFirst({
         where: {
-          OR: [{ id: employeeId }, { employeeCode: employeeId }],
+          OR: [{ id: matchedEmployeeId! }, { employeeCode: matchedEmployeeId! }],
         },
         include: { department: true, position: true },
       });
     } catch (dbErr: any) {
-      console.warn("DB offline during employee lookup in login:", dbErr.message);
+      console.warn("DB error during employee lookup in login:", dbErr.message);
     }
 
     if (!employee) {
-      employee = {
-        id: employeeId,
-        firstName: "Budi",
-        lastName: "Santoso",
-        employeeCode: employeeId,
-        department: { name: "Teknologi Informasi" },
-        position: { name: "Software Engineer" },
-      };
+      sendResult(res, 404, Result.fail(
+        "Profil biometrik ditemukan tetapi data karyawan tidak tersedia di database. Hubungi admin HR."
+      ));
+      return;
     }
 
     const sessionDurationMs = 15 * 60 * 1000;
     const expiresAt = Date.now() + sessionDurationMs;
 
-    // --- Auto-ClockIn on Successful Face Login (One-Shot Unified Attendance SOP) ---
-    const actualEmpId = employee?.id || employeeId;
+    // --- Step 4: Auto-ClockIn on Successful Face Login (One-Shot Unified Attendance SOP) ---
+    const actualEmpId = employee.id;
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -566,10 +623,7 @@ export const verifyFaceLogin = async (req: Request, res: Response): Promise<void
     try {
       const existingAtt = await prisma.attendance.findFirst({
         where: {
-          OR: [
-            { employeeId: actualEmpId },
-            { employee: { employeeCode: employeeId } },
-          ],
+          employeeId: actualEmpId,
           recordDate: today,
           deletedAt: null,
         },
@@ -649,14 +703,6 @@ export const verifyFaceLogin = async (req: Request, res: Response): Promise<void
           "EX",
           86400
         );
-        if (employeeId !== actualEmpId) {
-          await redis.set(
-            `attendance:today:${employeeId}`,
-            JSON.stringify({ isClockedIn: true, ...attendanceInfo }),
-            "EX",
-            86400
-          );
-        }
       } catch (redisErr) {}
     } catch (attErr: any) {
       console.warn("Auto-ClockIn DB warning, creating cached fallback attendance:", attErr.message);
@@ -675,14 +721,15 @@ export const verifyFaceLogin = async (req: Request, res: Response): Promise<void
       200,
       Result.ok(
         {
-          token: `FACE_AUTH_${employeeId}_${Date.now()}`,
+          token: `FACE_AUTH_${actualEmpId}_${Date.now()}`,
           expiresAt,
           similarityScore,
           employee: {
-            id: employee?.id || employeeId,
-            name: `${employee?.firstName || "Karyawan"} ${employee?.lastName || ""}`.trim(),
-            department: employee?.department?.name || "Umum",
-            position: employee?.position?.name || "Staff",
+            id: employee.id,
+            employeeCode: employee.employeeCode,
+            name: `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
+            department: employee.department?.name || "Umum",
+            position: employee.position?.name || "Staff",
           },
           attendance: attendanceInfo,
         },
@@ -694,5 +741,29 @@ export const verifyFaceLogin = async (req: Request, res: Response): Promise<void
   } catch (error: any) {
     console.error("Verify Face Login Error:", error);
     sendResult(res, 500, Result.fail("Terjadi kesalahan internal saat autentikasi biometrik wajah"));
+  }
+};
+
+/**
+ * 1:N Face Identification Endpoint.
+ * Receives a selfie, searches ALL registered biometric profiles,
+ * and returns the identity of the closest match.
+ * This is the PRIMARY login method — no employeeId needed.
+ */
+export const identifyFace = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { selfieBase64, faceDescriptor } = req.body;
+
+    if (!selfieBase64 && !faceDescriptor) {
+      sendResult(res, 400, Result.fail("Foto selfie wajah wajib disertakan untuk identifikasi biometrik."));
+      return;
+    }
+
+    // Delegate to verifyFaceLogin in 1:N mode (no employeeId)
+    req.body.employeeId = undefined;
+    return verifyFaceLogin(req, res);
+  } catch (error: any) {
+    console.error("Identify Face Error:", error);
+    sendResult(res, 500, Result.fail("Terjadi kesalahan internal saat identifikasi wajah"));
   }
 };

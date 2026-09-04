@@ -19,8 +19,8 @@ export default function AttendancePage() {
   const [successMetrics, setSuccessMetrics] = useState<{ similarityScore?: number; distance?: number } | null>(null);
 
   // Active Employee Identity & Biometric Status
-  const [employeeId, setEmployeeId] = useState("EMP-001");
-  const [employeeName, setEmployeeName] = useState("Budi Santoso");
+  const [employeeId, setEmployeeId] = useState("");
+  const [employeeName, setEmployeeName] = useState("Karyawan");
   const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null);
   const [biometricModel, setBiometricModel] = useState<string>("ArcFace");
   const [loadingStatus, setLoadingStatus] = useState(true);
@@ -48,8 +48,8 @@ export default function AttendancePage() {
 
   // Check enrolled biometric status and today's attendance status
   useEffect(() => {
-    const savedId = typeof window !== "undefined" ? localStorage.getItem("current_employee_id") || "EMP-001" : "EMP-001";
-    const savedName = typeof window !== "undefined" ? localStorage.getItem("current_employee_name") || "Budi Santoso" : "Budi Santoso";
+    const savedId = typeof window !== "undefined" ? (localStorage.getItem("current_employee_id") || sessionStorage.getItem("hris_employee_id") || "") : "";
+    const savedName = typeof window !== "undefined" ? (localStorage.getItem("current_employee_name") || sessionStorage.getItem("hris_employee_name") || "Karyawan") : "Karyawan";
     setEmployeeId(savedId);
     setEmployeeName(savedName);
 

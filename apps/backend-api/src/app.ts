@@ -29,6 +29,7 @@ import {
   resetBiometricProfile,
   testVerifyBiometric,
   verifyFaceLogin,
+  identifyFace,
 } from "./controllers/biometric.controller";
 import { loginAdmin } from "./controllers/auth.controller";
 
@@ -59,6 +60,7 @@ app.post("/api/auth/login", loginAdmin);
 app.post("/api/biometrics/enroll", attendanceLimiter, enrollFace);
 app.post("/api/biometrics/test-verify", attendanceLimiter, testVerifyBiometric);
 app.post("/api/biometrics/verify-login", attendanceLimiter, verifyFaceLogin);
+app.post("/api/biometrics/identify", attendanceLimiter, identifyFace);
 app.get("/api/biometrics/status/:employeeId", getBiometricStatus);
 app.delete("/api/biometrics/:employeeId", resetBiometricProfile);
 

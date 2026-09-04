@@ -14,7 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   timeRemainingFormatted: "",
-  employeeInfo: { id: "EMP-001", name: "Budi Santoso", position: "Software Engineer", department: "IT" },
+  employeeInfo: { id: "", name: "Karyawan", position: "Staff", department: "Umum" },
   logout: () => {},
 });
 
@@ -148,33 +148,14 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
     setCameraActive(false);
   };
 
-  // Real 1:1 Face Authentication against Backend
+  // Real 1:N Face Identification against Backend (Single API Call)
   const handleFaceScanLogin = async () => {
     setIsScanning(true);
     setNotEnrolledNotice(false);
-    addToast("info", "Memproses Biometrik", "Pindaian struktur biometrik wajah sedang diverifikasi dengan AI 1:1...");
-
-    const targetEmpId = typeof window !== "undefined"
-      ? localStorage.getItem("current_employee_id") || "EMP-001"
-      : "EMP-001";
+    addToast("info", "Memproses Biometrik", "Pindaian struktur biometrik wajah sedang diverifikasi dengan AI 1:N...");
 
     try {
-      // 1. Verify enrollment status first
-      const statusRes = await fetch(`${API_BASE_URL}/api/biometrics/status/${targetEmpId}`);
-      const statusJson = await statusRes.json().catch(() => ({}));
-
-      if (!statusJson?.data?.isEnrolled) {
-        setIsScanning(false);
-        setNotEnrolledNotice(true);
-        addToast(
-          "warning",
-          "Wajah Belum Terdaftar",
-          "Akun Anda belum memiliki data biometrik wajah terdaftar. Silakan lakukan pendaftaran wajah e-KYC terlebih dahulu."
-        );
-        return;
-      }
-
-      // 2. Capture live selfie from camera
+      // 1. Capture live selfie from camera
       let selfieBase64 = "";
       if (videoElementRef.current) {
         const video = videoElementRef.current;
@@ -188,34 +169,41 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
 
-      // 3. Call 1:1 Verification Login
-      const loginRes = await fetch(`${API_BASE_URL}/api/biometrics/verify-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeId: targetEmpId,
-          selfieBase64,
-        }),
-      });
-
-      const loginJson = await loginRes.json();
-
-      if (!loginJson.isSuccess && !loginJson.success) {
-        throw new Error(loginJson.message || loginJson.error || "Wajah tidak cocok dengan profil biometrik Anda");
+      if (!selfieBase64) {
+        throw new Error("Gagal menangkap gambar dari kamera. Pastikan kamera aktif dan wajah terlihat jelas.");
       }
 
-      const empData = loginJson.data?.employee || {
-        id: targetEmpId,
-        name: "Budi Santoso",
-        position: "Software Engineer",
-        department: "IT",
-      };
+      // 2. Single API Call: 1:N Face Identification + Auto-ClockIn
+      const identifyRes = await fetch(`${API_BASE_URL}/api/biometrics/identify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selfieBase64 }),
+      });
+
+      const identifyJson = await identifyRes.json();
+
+      if (!identifyRes.ok || (!identifyJson.isSuccess && !identifyJson.success)) {
+        const errorMsg = identifyJson.message || identifyJson.error || "Wajah tidak dikenali oleh sistem biometrik.";
+        
+        // Check if user is not enrolled
+        if (identifyRes.status === 404 || identifyRes.status === 403) {
+          setNotEnrolledNotice(true);
+        }
+        
+        throw new Error(errorMsg);
+      }
+
+      // 3. Extract identified employee data from response
+      const empData = identifyJson.data?.employee;
+      if (!empData || !empData.id) {
+        throw new Error("Respons identifikasi tidak mengandung data karyawan yang valid.");
+      }
 
       const sessionDurationMs = 15 * 60 * 1000;
       const expiresAt = Date.now() + sessionDurationMs;
 
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("hris_session_token", loginJson.data?.token || `EMP_FACE_TOKEN_${Date.now()}`);
+        sessionStorage.setItem("hris_session_token", identifyJson.data?.token || `EMP_FACE_TOKEN_${Date.now()}`);
         sessionStorage.setItem("hris_role", "employee");
         sessionStorage.setItem("hris_session_expires", String(expiresAt));
         sessionStorage.setItem("hris_employee_id", empData.id);
@@ -224,12 +212,10 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
         localStorage.setItem("current_employee_name", empData.name);
 
         // One-Shot Unified Attendance: Record in sessionStorage
-        if (loginJson.data?.attendance?.clockedIn) {
+        const attendanceInfo = identifyJson.data?.attendance;
+        if (attendanceInfo?.autoClockedIn || attendanceInfo?.isAlreadyClockedIn) {
           sessionStorage.setItem("hris_today_clocked_in", "true");
-          sessionStorage.setItem(
-            "hris_clock_in_time",
-            loginJson.data.attendance.clockInTime || new Date().toISOString()
-          );
+          sessionStorage.setItem("hris_clock_in_time", attendanceInfo.clockIn || new Date().toISOString());
         }
       }
 
@@ -237,15 +223,15 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsScanning(false);
       setFaceVerified(true);
 
-      const attendanceInfo = loginJson.data?.attendance;
-      const attMsg = attendanceInfo?.isNewClockIn
-        ? ` ✓ Presensi masuk otomatis tercatat (${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })})!`
-        : (attendanceInfo?.clockedIn ? ` (Presensi masuk hari ini sudah aktif)` : "");
+      const attendanceInfo = identifyJson.data?.attendance;
+      const attMsg = attendanceInfo?.autoClockedIn
+        ? ` ✓ Presensi masuk otomatis tercatat (${attendanceInfo.clockInFormatted || new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })})!`
+        : (attendanceInfo?.isAlreadyClockedIn ? ` (Presensi masuk hari ini sudah aktif)` : "");
 
       addToast(
         "success",
         "Wajah Terverifikasi & Presensi Tercatat!",
-        `✓ Selamat datang, ${empData.name}. Kemiripan: ${loginJson.data?.similarityScore ?? 96}%.${attMsg}`
+        `✓ Selamat datang, ${empData.name}. Kemiripan: ${identifyJson.data?.similarityScore ?? 96}%.${attMsg}`
       );
 
       setTimeout(() => {
@@ -266,11 +252,11 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
   // Credential / Demo Login Fallback (Without pretending face was verified)
   const handleCredentialLogin = () => {
     const targetEmpId = typeof window !== "undefined"
-      ? localStorage.getItem("current_employee_id") || "EMP-001"
-      : "EMP-001";
+      ? localStorage.getItem("current_employee_id") || ""
+      : "";
     const targetName = typeof window !== "undefined"
-      ? localStorage.getItem("current_employee_name") || "Budi Santoso"
-      : "Budi Santoso";
+      ? localStorage.getItem("current_employee_name") || "Karyawan"
+      : "Karyawan";
 
     const sessionDurationMs = 15 * 60 * 1000;
     const expiresAt = Date.now() + sessionDurationMs;
@@ -309,10 +295,10 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const employeeInfo = {
-    id: typeof window !== "undefined" ? sessionStorage.getItem("hris_employee_id") || "EMP-001" : "EMP-001",
-    name: typeof window !== "undefined" ? sessionStorage.getItem("hris_employee_name") || "Budi Santoso" : "Budi Santoso",
-    position: "Software Engineer",
-    department: "IT & Software",
+    id: typeof window !== "undefined" ? sessionStorage.getItem("hris_employee_id") || "" : "",
+    name: typeof window !== "undefined" ? sessionStorage.getItem("hris_employee_name") || "Karyawan" : "Karyawan",
+    position: "Staff",
+    department: "Umum",
   };
 
   if (isEnrollRoute) {
@@ -476,7 +462,7 @@ export const FaceAuthGuard: React.FC<{ children: React.ReactNode }> = ({ childre
               <span>⚠️ Wajah Belum Terdaftar di Sistem</span>
             </div>
             <p className="text-[11px] text-amber-300/80 leading-relaxed">
-              Akun <strong>{typeof window !== "undefined" ? localStorage.getItem("current_employee_name") || "Budi Santoso" : "Budi Santoso"}</strong> belum memiliki profil biometrik. Anda harus mendaftarkan wajah terlebih dahulu melalui protokol e-KYC.
+              Akun <strong>{typeof window !== "undefined" ? localStorage.getItem("current_employee_name") || "Anda" : "Anda"}</strong> belum memiliki profil biometrik. Anda harus mendaftarkan wajah terlebih dahulu melalui protokol e-KYC.
             </p>
             <div className="flex gap-2 pt-1 justify-center">
               <a

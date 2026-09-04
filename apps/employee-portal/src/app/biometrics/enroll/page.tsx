@@ -107,8 +107,8 @@ export default function BiometricEnrollPage() {
   const [showConsentModal, setShowConsentModal] = useState(true);
 
   // Active Employee Identity
-  const [employeeId, setEmployeeId] = useState("EMP-001");
-  const [employeeName, setEmployeeName] = useState("Budi Santoso");
+  const [employeeId, setEmployeeId] = useState("");
+  const [employeeName, setEmployeeName] = useState("Karyawan");
 
   // Real-time quality & boundary meters
   const [illuminationStatus, setIlluminationStatus] = useState<"good" | "dark" | "bright">("good");
@@ -121,8 +121,8 @@ export default function BiometricEnrollPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedId = localStorage.getItem("current_employee_id") || "EMP-001";
-      const savedName = localStorage.getItem("current_employee_name") || "Budi Santoso";
+      const savedId = localStorage.getItem("current_employee_id") || sessionStorage.getItem("hris_employee_id") || "";
+      const savedName = localStorage.getItem("current_employee_name") || sessionStorage.getItem("hris_employee_name") || "Karyawan";
       setEmployeeId(savedId);
       setEmployeeName(savedName);
     }

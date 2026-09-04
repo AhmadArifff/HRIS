@@ -260,27 +260,9 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
         },
       });
     } catch (dbErr: any) {
-      console.warn("DB offline during employee lookup in clockIn, using fallback lookup:", dbErr.message);
-      // Fallback known employees
-      if (employeeId === "EMP-001" || employeeId === "f47ac10b-58cc-4372-a567-0e02b2c3d479") {
-        employee = {
-          id: employeeId,
-          employeeCode: "EMP-001",
-          firstName: "Budi",
-          lastName: "Santoso",
-          statusId: "status-active",
-          faceDescriptor: null,
-        };
-      } else if (employeeId === "EMP-002") {
-        employee = {
-          id: employeeId,
-          employeeCode: "EMP-002",
-          firstName: "Siti",
-          lastName: "Aminah",
-          statusId: "status-active",
-          faceDescriptor: null,
-        };
-      }
+      console.error("DB error during employee lookup in clockIn:", dbErr.message);
+      sendResult(res, 503, Result.fail("Database tidak tersedia. Silakan coba lagi atau gunakan Presensi Manual Darurat."));
+      return;
     }
 
     if (!employee) {

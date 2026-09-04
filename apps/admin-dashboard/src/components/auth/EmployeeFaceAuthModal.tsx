@@ -209,9 +209,9 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
       if (res.ok && resJson.success && resJson.data?.employee) {
         const emp = resJson.data.employee;
         const empData = {
-          id: emp.code || emp.id || "EMP-001",
-          name: emp.name || "Budi Santoso",
-          position: emp.position || "Software Engineer",
+          id: emp.code || emp.id || emp.employeeCode || "",
+          name: emp.name || "Karyawan",
+          position: emp.position || "Staff",
         };
 
         setIsScanning(false);
@@ -244,34 +244,13 @@ export const EmployeeFaceAuthModal: React.FC<EmployeeFaceAuthModalProps> = ({ is
       console.warn("Backend verify-login API warning, using fallback verification:", apiErr);
     }
 
-    // Fallback Simulator Authentication jika backend service lokal offline
-    setTimeout(() => {
-      setIsScanning(false);
-      setFaceVerified(true);
-      const empData = { id: "EMP-001", name: "Budi Santoso", position: "Software Engineer" };
-      setVerifiedEmployee(empData);
-
-      const expiresAt = Date.now() + 15 * 60 * 1000;
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("hris_session_token", `EMP_FACE_TOKEN_${Date.now()}`);
-        sessionStorage.setItem("hris_role", "employee");
-        sessionStorage.setItem("hris_session_expires", String(expiresAt));
-        sessionStorage.setItem("hris_employee_id", empData.id);
-        sessionStorage.setItem("hris_employee_name", empData.name);
-        sessionStorage.setItem("hris_today_clocked_in", "true");
-      }
-
-      addToast(
-        "success",
-        "Autentikasi Wajah Berhasil!",
-        `✓ Identitas: ${empData.name} (${empData.id}). Sesi Token 15-Menit aktif.`
-      );
-
-      setTimeout(() => {
-        stopCamera();
-        window.location.assign("http://localhost:3001");
-      }, 1200);
-    }, 1500);
+    // API call failed — show error instead of fake authentication
+    setIsScanning(false);
+    addToast(
+      "error",
+      "Verifikasi Gagal",
+      "Layanan biometrik tidak merespons. Pastikan backend API aktif dan coba lagi."
+    );
   };
 
   if (!isOpen) return null;
