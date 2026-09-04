@@ -5,7 +5,7 @@ import { KycThreeAvatar } from "./KycThreeAvatar";
 export interface Kyc3dHeadGuideProps {
   pose: "center" | "right" | "left" | "up" | "down";
   status: "waiting" | "aligned" | "occluded" | "captured" | "not_centered";
-  occlusionZone?: "chin" | "forehead" | "object" | "none";
+  occlusionZone?: "chin" | "forehead" | "object" | "phone" | "none";
   className?: string;
 }
 

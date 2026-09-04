@@ -2308,4 +2308,29 @@ graph TD
    - **Employee Portal (`apps/employee-portal`):**
      - Menggantikan teks statis "Budi Santoso" pada banner selamat datang `page.tsx` dengan pembacaan dinamis dari sesi karyawan yang sedang aktif (`sessionStorage.getItem("hris_employee_name")`).
 
-
+#### 12.11.7 Perisai Oklusi Ponsel/Benda Padat Gelap & Deteksi Vermilion Bibir Asli (Dark Solid Phone & True Lip Vermilion Anti-Occlusion Shield)
+1. **Latar Belakang Masalah (Root Cause Vulnerability):**
+   - Pada pemindaian pose KYC (khususnya Pose 4 - Mendongak Atas +15°), jika pengguna memegang smartphone berwarna hitam pekat di depan mulut dan dagu, aturan lama mengklasifikasikan piksel hitam pekat (`gray < 65`, RGB rendah) sebagai rambut wajah/janggot (`isDarkHair`).
+   - Akibatnya, `isNaturalFeature = isSkinTone || isDarkHair` bernilai tinggi, dan tangan pengguna yang memegang ponsel di area dagu menyuplai piksel kulit (`chinSkinCount >= 70`), sehingga pose keliru dianggap valid (`✓ SUDUT ROTASI TEPAT`) meskipun area bibir dan dagu tertutup total oleh benda asing.
+2. **Karakterisasi Spektral & Metrik Oklusi Baru (`EmployeeForm.tsx`):**
+   - **Piksel Vermilion Bibir Manusia (`isLipPixel`):**
+     Memanfaatkan pigmen hemoglobin vermilion alami bibir manusia:
+     $$r > 68 \quad \land \quad r > 1.14 \times g \quad \land \quad r > 1.25 \times b \quad \land \quad 40 \le \text{gray} \le 200$$
+   - **Piksel Permukaan Ponsel/Benda Padat Gelap (`isDarkPhonePixel`):**
+     Mendeteksi material matte/kaca hitam dengan dispersi warna netral/achromatic:
+     $$\text{gray} < 65 \quad \land \quad r, g, b < 75 \quad \land \quad |r - g| \le 18 \quad \land \quad |g - b| \le 18 \quad \land \quad |r - b| \le 20$$
+   - **Metrik Analisis Zona Oral Core & Dagu ($10 \times 10$ Pixel Grid):**
+     - `mouthLipCount`: Jumlah piksel bibir alami pada zona mulut.
+     - `mouthDarkObjectCount`: Jumlah piksel benda padat gelap pada zona mulut.
+     - `chinDarkObjectCount`: Jumlah piksel benda padat gelap pada area dagu mandibula.
+     - `oralCoreDarkCount` & `oralCoreLipCount`: Evaluasi khusus pada zona pusat stomion ($X \in [68, 92], Y \in [68, 86]$).
+3. **Logika Perlindungan & Pemicu Oklusi Ponsel (`isOralBlockedByPhone` & `isVerticalPhoneSlab`):**
+   - `isOralBlockedByPhone`: Terpicu jika inti oral memiliki $\ge 25$ piksel terevaluasi, didominasi oleh objek gelap ($\ge 14$ piksel) atau benda asing ($\ge 16$ piksel), dan tidak terdapat kontur bibir alami (`oralCoreLipCount < 5`).
+   - `isVerticalPhoneSlab`: Terpicu jika terdapat lempengan vertikal objek gelap menutupi mulut ($\ge 16$ piksel) dan dagu ($\ge 16$ piksel) secara kontinu dengan defisit bibir (`mouthLipCount < 5`).
+   - `isMouthHandSkinBlocked`: Terpicu jika mulut tertutup tangan/kulit asing (`mouthSkinCount > 35`) tanpa ada bibir terlihat (`mouthLipCount < 3`).
+4. **Intervensi UI/UX & Penguncian Sistem KYC:**
+   - Ketika terdeteksi, `fqaStatus.isOccluded` diaktifkan dengan `occlusionZone = "phone"`.
+   - Wireframe kamera berubah merah menyala dengan status peringatan:
+     > *"✋ Terdeteksi ponsel / objek menutupi area mulut & dagu! Harap jauhkan benda dari wajah."*
+   - Model 3D panduan (`KycThreeAvatar.tsx`) menampilkan badge peringatan `[✋ TERHALANG PONSEL / OBJEK]`.
+   - **Pose Alignment Hard Lock:** Variabel `isPoseAligned` otomatis dipaksa `false`. Tombol shutter foto dikunci rapat, mencegah pendaftaran biometrik yang cacat atau terhalang objek.

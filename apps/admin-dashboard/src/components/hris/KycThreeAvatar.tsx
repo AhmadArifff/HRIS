@@ -6,7 +6,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 export interface KycThreeAvatarProps {
   pose: "center" | "right" | "left" | "up" | "down";
   status?: "waiting" | "aligned" | "occluded" | "captured" | "not_centered";
-  occlusionZone?: "chin" | "forehead" | "object" | "none";
+  occlusionZone?: "chin" | "forehead" | "object" | "phone" | "none";
   className?: string;
   showReticle?: boolean;
 }
@@ -43,12 +43,14 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
           color: "#ef4444",
           border: "border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]",
           label:
-            occlusionZone === "forehead"
+            occlusionZone === "phone"
+              ? "✋ TERHALANG PONSEL / OBJEK"
+              : occlusionZone === "forehead"
               ? "✋ TANGAN MENUTUPI DAHI"
               : occlusionZone === "chin"
               ? "✋ TANGAN MENUTUPI DAGU"
               : occlusionZone === "object"
-              ? "✋ TERHALANG BENDA"
+              ? "✋ TERHALANG BENDA / CANGKIR"
               : "✋ TERHALANG OBJEK / TANGAN",
           badgeBg: "bg-red-950/90 border-red-500/80 text-red-300",
         };

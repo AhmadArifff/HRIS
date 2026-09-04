@@ -528,7 +528,7 @@ export const EmployeeForm = () => {
     isValid: boolean;
     isFaceCentered: boolean;
     isOccluded: boolean;
-    occlusionZone: "none" | "chin" | "forehead" | "object";
+    occlusionZone: "none" | "chin" | "forehead" | "object" | "phone";
     isPoseAligned: boolean;
     label: string;
     sharpness: number;
@@ -642,19 +642,22 @@ export const EmployeeForm = () => {
         let rightCoreSkin = 0;
 
         // 3. Anti-Occlusion & Multi-Zone Hand / Object Obstruction Detection (PRD §12.3)
-        // Zone A: Chin & Jaw (Y: 86-114, X: 48-112)
+        // Zone A: Chin & Jaw (Y: 82-98, X: 52-108)
         let chinEdgeCount = 0;
         let chinPixelCount = 0;
         let chinSkinCount = 0;
         let chinWhiteObjectCount = 0;
+        let chinDarkObjectCount = 0;
         let chinForeignCount = 0;
         let bottomSkinEntryCount = 0;
 
         // Zone Mouth & Lips (Y: 64-90, X: 54-106)
         let mouthPixelCount = 0;
         let mouthSkinCount = 0;
+        let mouthLipCount = 0;
         let mouthEdgeCount = 0;
         let mouthWhiteObjectCount = 0;
+        let mouthDarkObjectCount = 0;
         let mouthForeignCount = 0;
 
         // Zone B: Forehead & Brow (Upper Third: Y: 18-50, X: 50-110)
@@ -693,6 +696,9 @@ export const EmployeeForm = () => {
         let oralCorePixels = 0;
         let oralCoreNaturalCount = 0;
         let oralCoreWhiteCount = 0;
+        let oralCoreDarkCount = 0;
+        let oralCoreForeignCount = 0;
+        let oralCoreLipCount = 0;
 
         for (let y = 0; y < 120; y++) {
           for (let x = 0; x < 160; x++) {
@@ -705,9 +711,30 @@ export const EmployeeForm = () => {
             // Dark Hair vs Skin-Tone Distinction (Anti-False-Positive for Bangs, Mustache, Beard & Hairline)
             const isDarkHair = gray < 65 || (r < 75 && g < 70 && b < 70);
 
+            // Natural Lip Vermilion Hue (Hemoglobin concentration in lips across all human ethnicities)
+            // Distinct from dark phone/plastic and non-lip facial skin
+            const isLipPixel =
+              r > 68 &&
+              r > g * 1.14 &&
+              r > b * 1.25 &&
+              gray >= 40 &&
+              gray <= 200;
+
+            // Dark Solid Object / Smartphone Screen & Case:
+            // Neutral, low chroma, very dark, not skin and not lips
+            const isDarkPhonePixel =
+              gray < 65 &&
+              r < 75 &&
+              g < 75 &&
+              b < 75 &&
+              Math.abs(r - g) <= 18 &&
+              Math.abs(g - b) <= 18 &&
+              Math.abs(r - b) <= 20;
+
             // Robust Hemoglobin-based Skin-Tone Detection
             const isSkinTone =
               !isDarkHair &&
+              !isDarkPhonePixel &&
               r > 75 &&
               g > 45 &&
               b > 30 &&
@@ -717,21 +744,19 @@ export const EmployeeForm = () => {
               r - b >= 25 &&
               gray >= 60;
 
-            // Artificial Object Detection (White ceramic mug, cup, paper, surgical mask, mobile phone)
-            // Human skin strictly requires high red-to-blue difference (r - b >= 25).
-            // A white/light ceramic cup or paper has high luminance and low saturation:
+            // Artificial Object Detection (White ceramic mug, cup, paper, surgical mask)
             const isWhiteObject =
               gray > 125 &&
               Math.abs(r - g) <= 16 &&
               Math.abs(g - b) <= 16 &&
               Math.abs(r - b) <= 18;
 
-            // Foreign object: Must NEVER include room background walls (green walls, blue curtains, painted doors).
-            // Background walls are physically outside or behind the user.
+            // Foreign non-skin, non-hair, non-lip artificial object (smartphone, mug, mask, card)
             const isForeignObject =
               !isSkinTone &&
               !isDarkHair &&
-              isWhiteObject;
+              !isLipPixel &&
+              (isWhiteObject || isDarkPhonePixel);
 
             // Step 1: Reticle Oval Core Sampling (Center at 80, 60)
             if (y >= 28 && y <= 92 && x >= 48 && x <= 112) {
@@ -746,7 +771,9 @@ export const EmployeeForm = () => {
             if (y >= 64 && y <= 90 && x >= 54 && x <= 106) {
               mouthPixelCount++;
               if (isSkinTone) mouthSkinCount++;
+              if (isLipPixel) mouthLipCount++;
               if (isWhiteObject) mouthWhiteObjectCount++;
+              if (isDarkPhonePixel) mouthDarkObjectCount++;
               if (isForeignObject) mouthForeignCount++;
               if (idx + 160 * 4 < data.length) {
                 const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
@@ -755,23 +782,32 @@ export const EmployeeForm = () => {
             }
 
             // Step 2B: Inner Oral Core (Strictly central: X: 68-92, Y: 68-86)
-            // Immune to room background walls. Tests if mug/cup is held directly over the mouth/chin.
+            // Guaranteed inside face silhouette. Background room walls CANNOT reach here!
             if (y >= 68 && y <= 86 && x >= 68 && x <= 92) {
               oralCorePixels++;
-              if (isSkinTone || isDarkHair) {
+              if (isSkinTone || isLipPixel) {
                 oralCoreNaturalCount++;
+              }
+              if (isLipPixel) {
+                oralCoreLipCount++;
               }
               if (isWhiteObject) {
                 oralCoreWhiteCount++;
               }
+              if (isDarkPhonePixel) {
+                oralCoreDarkCount++;
+              }
+              if (!isSkinTone && !isLipPixel && (isWhiteObject || isDarkPhonePixel || (!isDarkHair && Math.abs(r - b) < 18))) {
+                oralCoreForeignCount++;
+              }
             }
 
             // Step 3: Chin & Lower Jaw Anatomical Zone (Y: 82-98, X: 52-108)
-            // Tightened boundary avoids sampling black shirt collars and neck clothing
             if (y >= 82 && y <= 98 && x >= 52 && x <= 108) {
               chinPixelCount++;
               if (isSkinTone) chinSkinCount++;
               if (isWhiteObject) chinWhiteObjectCount++;
+              if (isDarkPhonePixel) chinDarkObjectCount++;
               if (isForeignObject) chinForeignCount++;
               if (idx + 160 * 4 < data.length) {
                 const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
@@ -889,37 +925,56 @@ export const EmployeeForm = () => {
         const chinEdgeDensity = chinPixelCount > 0 ? chinEdgeCount / chinPixelCount : 0;
 
         // A. Hand Covering Mouth or Chin:
+        // 1. Hand covering mouth (skin present in mouth zone, but natural lip vermilion covered):
+        const isMouthHandSkinBlocked = mouthSkinCount > 35 && mouthLipCount < 3 && oralCorePixels >= 25;
+        // 2. Hand fingers / palm edge density over mouth or chin:
         const isMouthCovered = mouthSkinRatio > 0.65 && mouthPixelCount > 60 && mouthEdgeCount < 20;
         const hasMouthFingers = mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.38;
         const hasChinHand = (chinEdgeDensity > 0.22 && chinSkinCount > 55) || (bottomSkinEntryCount > 65 && chinSkinCount > 75);
-        const hasChinHandOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand);
+        const hasChinHandOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand || isMouthHandSkinBlocked);
 
-        // B. Object Covering Mouth or Chin (Mug, Cup, Mask, Phone, Document):
-        // In an unobstructed face, the central oral core has healthy natural skin / facial hair / lips (> 45%).
-        // A real cup, mug, or mask held directly over the mouth/chin suppresses natural features (< 30%)
-        // AND introduces a dense cluster of white/ceramic/mask pixels (oralCoreWhiteCount >= 15).
+        // B. Object Covering Mouth or Chin (Smartphone, Mug, Cup, Mask, Document):
         const oralCoreNaturalRatio = oralCorePixels > 0 ? oralCoreNaturalCount / oralCorePixels : 1;
+
+        // 1. Black/Dark Smartphone or Dark Solid Object in oral core:
+        const isOralBlockedByPhone =
+          oralCorePixels >= 25 &&
+          (oralCoreDarkCount >= 14 || oralCoreForeignCount >= 16) &&
+          oralCoreLipCount < 5;
+
+        // 2. Continuous Vertical Smartphone Slab (spanning across mouth and chin):
+        const isVerticalPhoneSlab =
+          mouthDarkObjectCount >= 16 &&
+          chinDarkObjectCount >= 16 &&
+          mouthLipCount < 5;
+
+        // 3. Ceramic Cup / Mug / Paper / White Mask:
         const isOralBlockedByCup =
           oralCorePixels >= 30 &&
           oralCoreNaturalRatio < 0.30 &&
           oralCoreWhiteCount >= 15;
 
-        // Outer mouth & chin checks: require dense white ceramic/mask clusters across both mouth & chin
-        // combined with suppressed oral core natural features, completely immune to room background walls.
+        // 4. Broad mouth & chin object cluster:
         const isMouthAndChinBlocked =
           mouthPixelCount > 50 &&
           chinPixelCount > 40 &&
-          mouthWhiteObjectCount > 25 &&
-          chinWhiteObjectCount > 20 &&
-          oralCoreNaturalRatio < 0.38;
+          (mouthWhiteObjectCount > 25 || mouthDarkObjectCount > 25) &&
+          (chinWhiteObjectCount > 20 || chinDarkObjectCount > 20) &&
+          oralCoreNaturalRatio < 0.40;
 
         const isChinObjectConfirmed =
-          chinWhiteObjectCount > 35 &&
-          chinSkinRatio < 0.18 &&
-          oralCoreNaturalRatio < 0.35;
+          (chinWhiteObjectCount > 35 || chinDarkObjectCount > 35) &&
+          chinSkinRatio < 0.20 &&
+          oralCoreNaturalRatio < 0.38;
 
         const hasObjectOcclusion =
-          isFacePresent && (isOralBlockedByCup || isMouthAndChinBlocked || isChinObjectConfirmed);
+          isFacePresent && (
+            isOralBlockedByPhone ||
+            isVerticalPhoneSlab ||
+            isOralBlockedByCup ||
+            isMouthAndChinBlocked ||
+            isChinObjectConfirmed
+          );
 
         // C. Zone Forehead, Brows, Eyes, & Crown:
         const foreheadIntraSkinDensity = foreheadSkinCount > 0 ? foreheadIntraSkinEdgeCount / foreheadSkinCount : 0;
@@ -962,9 +1017,11 @@ export const EmployeeForm = () => {
         const hasHandOcclusion = hasChinHandOcclusion || hasForeheadOcclusion;
         const hasAnyOcclusion = hasHandOcclusion || hasObjectOcclusion;
 
-        let occlusionZone: "none" | "chin" | "forehead" | "object" = "none";
+        let occlusionZone: "none" | "chin" | "forehead" | "object" | "phone" = "none";
         if (hasForeheadOcclusion) {
           occlusionZone = "forehead";
+        } else if (isOralBlockedByPhone || isVerticalPhoneSlab) {
+          occlusionZone = "phone";
         } else if (hasObjectOcclusion) {
           occlusionZone = "object";
         } else if (hasChinHandOcclusion) {
@@ -997,7 +1054,9 @@ export const EmployeeForm = () => {
           // CRITICAL: Any occlusion immediately voids pose alignment!
           isPoseAligned = false;
           directionHint =
-            occlusionZone === "object"
+            occlusionZone === "phone"
+              ? "✋ Singkirkan ponsel / objek yang menutupi mulut & dagu"
+              : occlusionZone === "object"
               ? "✋ Singkirkan cangkir / benda yang menutupi wajah"
               : occlusionZone === "forehead"
               ? "✋ Jauhkan tangan dari area dahi dan mata"
@@ -1018,7 +1077,6 @@ export const EmployeeForm = () => {
 
             case "right":
               // Mirrored camera: Turning right presents right cheek on the left side of frame
-              // Must have real turning asymmetry without occlusion voids
               isPoseAligned =
                 (leftCoreSkin > rightCoreSkin * 1.08 && internalCheekRatio > 1.06) ||
                 (leftCheekSkinCount > rightCheekSkinCount * 1.10 && leftCoreSkin > rightCoreSkin * 1.05) ||
@@ -1043,7 +1101,10 @@ export const EmployeeForm = () => {
 
             case "up":
               isPoseAligned =
-                chinSkinCount >= 70 &&
+                !hasAnyOcclusion &&
+                chinDarkObjectCount < 18 &&
+                oralCoreDarkCount < 12 &&
+                chinSkinCount >= 50 &&
                 (verticalBalance < 1.15 || avgLower > avgUpper * 0.90 || chinSkinCount > 90 || lowerCount > upperCount * 0.85);
               directionHint = isPoseAligned
                 ? "✓ Sudut Mendongak ke Atas Sesuai"
@@ -1052,6 +1113,7 @@ export const EmployeeForm = () => {
 
             case "down":
               isPoseAligned =
+                !hasAnyOcclusion &&
                 foreheadSkinCount >= 60 &&
                 (verticalBalance > 0.85 || avgUpper > avgLower * 0.95 || foreheadSkinCount > chinSkinCount * 0.85);
               directionHint = isPoseAligned
@@ -1070,6 +1132,8 @@ export const EmployeeForm = () => {
           label = "⚠️ Wajah belum terdeteksi. Posisikan wajah Anda tepat di dalam bingkai oval!";
         } else if (hasForeheadOcclusion) {
           label = "✋ Terdeteksi tangan / benda menutupi dahi atau mata! Harap bersihkan area dahi.";
+        } else if (occlusionZone === "phone") {
+          label = "✋ Terdeteksi ponsel / objek menutupi area mulut & dagu! Harap jauhkan benda dari wajah.";
         } else if (hasObjectOcclusion) {
           label = "✋ Terdeteksi benda / cangkir menutupi mulut atau dagu! Harap jauhkan benda dari wajah.";
         } else if (hasChinHandOcclusion) {
