@@ -327,22 +327,6 @@ export const EmployeeForm = () => {
         let minFaceY = 120;
         let maxFaceY = 0;
 
-        // 6. Hijab (Kerudung) & Demographic Biometric Classifiers
-        // A. Sub-mandibular Neck Zone (Y: 96-118, X: 52-108)
-        let neckSkinCount = 0;
-        let neckFabricCount = 0;
-
-        // B. Crown & Hairline Zone (Y: 4-24, X: 50-110)
-        let crownDarkHairCount = 0;
-        let crownFabricCount = 0;
-
-        // C. Lateral Shoulder Hair Drape Zone (Y: 65-115, X: 15-45 & X: 115-145)
-        let lateralHairDrapeCount = 0;
-
-        // D. Lip Chromaticity (Natural female vermilion contrast)
-        let totalLipChroma = 0;
-        let lipChromaCount = 0;
-
         for (let y = 0; y < 120; y++) {
           for (let x = 0; x < 160; x++) {
             const idx = (y * 160 + x) * 4;
@@ -550,7 +534,7 @@ export const EmployeeForm = () => {
               }
             }
 
-            // Step 10: Facial Centroid, Bounding Box & Demographic Tracking Sampling
+            // Step 10: Facial Centroid & Bounding Box Accumulation
             if (isSkinTone || isLipPixel) {
               sumFaceX += x;
               sumFaceY += y;
@@ -559,37 +543,6 @@ export const EmployeeForm = () => {
               if (x > maxFaceX) maxFaceX = x;
               if (y < minFaceY) minFaceY = y;
               if (y > maxFaceY) maxFaceY = y;
-            }
-
-            // Sub-mandibular Neck Zone (Y: 96-118, X: 52-108)
-            if (y >= 96 && y <= 118 && x >= 52 && x <= 108) {
-              if (isSkinTone) {
-                neckSkinCount++;
-              } else if (!isDarkHair && (isWhiteObject || Math.abs(r - g) < 25 || (r > 55 && g > 45 && b > 35))) {
-                neckFabricCount++;
-              }
-            }
-
-            // Crown Hairline Zone (Y: 4-24, X: 50-110)
-            if (y >= 4 && y <= 24 && x >= 50 && x <= 110) {
-              if (isDarkHair) {
-                crownDarkHairCount++;
-              } else if (!isSkinTone && (isWhiteObject || Math.abs(r - g) < 22 || gray > 70)) {
-                crownFabricCount++;
-              }
-            }
-
-            // Lateral Shoulder Hair Drape (Y: 65-115, X: 15-45 & X: 115-145)
-            if (y >= 65 && y <= 115 && ((x >= 15 && x <= 45) || (x >= 115 && x <= 145))) {
-              if (isDarkHair) {
-                lateralHairDrapeCount++;
-              }
-            }
-
-            // Lip Chromaticity (Natural female vermilion contrast)
-            if (isLipPixel) {
-              totalLipChroma += (r - (g + b) / 2);
-              lipChromaCount++;
             }
           }
         }
@@ -610,8 +563,10 @@ export const EmployeeForm = () => {
         const isMouthHandSkinBlocked = mouthSkinCount > 35 && mouthLipCount < 3 && oralCorePixels >= 25;
         // 2. Hand fingers / palm edge density over mouth or chin:
         const isMouthCovered = mouthSkinRatio > 0.65 && mouthPixelCount > 60 && mouthEdgeCount < 20;
-        const hasMouthFingers = mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.38;
-        const hasChinHand = (chinEdgeDensity > 0.22 && chinSkinCount > 55) || (bottomSkinEntryCount > 65 && chinSkinCount > 75);
+        const hasMouthFingers = mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.38 && mouthLipCount < 5;
+        const hasChinHand =
+          ((chinEdgeDensity > 0.26 && chinSkinCount > 65) || (bottomSkinEntryCount > 85 && chinSkinCount > 85)) &&
+          mouthLipCount < 6;
         const hasChinHandOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand || isMouthHandSkinBlocked);
 
         // B. Object Covering Mouth or Chin (Smartphone, Mug, Cup, Mask, Document):
@@ -894,49 +849,197 @@ export const EmployeeForm = () => {
         }
         setFaceTrack(currentTrack);
 
-        // 2. Real-Time Biometric Demographics & Hijab Classifier
-        // A female wearing a hijab:
-        // - Neck is covered with fabric cloth (neckSkinCount < 25, neckFabricCount > 20)
-        // - Hair is completely tucked into the hijab (crownDarkHairCount < 40, crownFabricCount > 20)
-        // - No hair draping down ("data rambut tidak menjuntai")
-        const isWearingHijab =
-          isFacePresent &&
-          neckSkinCount < 25 &&
-          (neckFabricCount > 20 || crownFabricCount > 20);
-
-        // A female without hijab with long draping hair:
-        const hasDrapingHair = isFacePresent && lateralHairDrapeCount > 55;
-
-        // Lip chromaticity average
-        const avgLipChroma = lipChromaCount > 0 ? totalLipChroma / lipChromaCount : 0;
-
+        // 2. Anatomical Multi-Factor Biometric Demographics & Hijab Classifier
         let analyzedGender: "FEMALE" | "MALE" = "MALE";
-        let genderConfidence = 94;
+        let genderConfidence = 95;
+        let isHijabWearer = false;
 
-        if (isWearingHijab) {
-          // HIJAB CONFIRMED -> Definite female classification!
-          analyzedGender = "FEMALE";
-          genderConfidence = 98;
-        } else if (hasDrapingHair) {
-          // Long hair draping on shoulders -> Female
-          analyzedGender = "FEMALE";
-          genderConfidence = 93;
-        } else if (neckSkinCount > 35 && crownDarkHairCount > 40 && !isWearingHijab) {
-          // Exposed bare neck skin + short hair on crown -> Male
-          analyzedGender = "MALE";
-          genderConfidence = 95;
-        } else if (avgLipChroma > 24) {
-          // Higher lip coloration/contrast
-          analyzedGender = "FEMALE";
-          genderConfidence = 88;
-        } else {
-          // Fallback to form selection if available, else morphology
-          if (formData.gender?.toLowerCase() === "female" || formData.gender?.toLowerCase() === "perempuan") {
+        if (isFacePresent && faceSkinPixels >= 90) {
+          const cx = Math.round(sumFaceX / faceSkinPixels);
+          const cy = Math.round(sumFaceY / faceSkinPixels);
+          const faceW = Math.max(30, maxFaceX - minFaceX);
+          const faceH = Math.max(40, maxFaceY - minFaceY);
+          const chinY = maxFaceY;
+          const foreheadY = minFaceY;
+          const mouthY = Math.round(chinY - faceH * 0.22);
+
+          // A. FACTOR 1: Crown Hair Sampling (Directly above forehead: Y in [foreheadY - 22, foreheadY + 2])
+          let crownDarkHairCount = 0;
+          const crownStartY = Math.max(0, foreheadY - 22);
+          const crownEndY = Math.min(119, foreheadY + 2);
+          const crownStartX = Math.max(0, cx - 24);
+          const crownEndX = Math.min(159, cx + 24);
+
+          for (let cy_y = crownStartY; cy_y <= crownEndY; cy_y++) {
+            for (let cx_x = crownStartX; cx_x <= crownEndX; cx_x++) {
+              const idx = (cy_y * 160 + cx_x) * 4;
+              const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+              const isDarkHair = gray < 68 || (r < 75 && g < 72 && b < 72);
+              if (isDarkHair) crownDarkHairCount++;
+            }
+          }
+
+          // B. FACTOR 2: Sub-mandibular Throat Skin (Immediately below chin: Y in [chinY + 2, chinY + 16])
+          // Critical: Sample right below chin before reaching shirt collar!
+          let throatSkinCount = 0;
+          let throatFabricCount = 0;
+          const throatStartY = chinY + 2;
+          const throatEndY = Math.min(119, chinY + 16);
+          const throatStartX = Math.max(0, cx - 18);
+          const throatEndX = Math.min(159, cx + 18);
+
+          for (let ty = throatStartY; ty <= throatEndY; ty++) {
+            for (let tx = throatStartX; tx <= throatEndX; tx++) {
+              const idx = (ty * 160 + tx) * 4;
+              const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+              const isDark = gray < 65 || (r < 75 && g < 70 && b < 70);
+              const isSkin = !isDark && r > 75 && g > 45 && b > 30 && r > g && g > b && (r - g) >= 10 && (r - b) >= 20 && gray >= 55;
+              if (isSkin) {
+                throatSkinCount++;
+              } else if (!isDark && (r > 60 && g > 50 && b > 40)) {
+                throatFabricCount++;
+              }
+            }
+          }
+
+          // C. FACTOR 3: Lateral Shoulder Hair Drape ("Rambut Menjuntai" for non-hijab female)
+          let lateralHairDrapeCount = 0;
+          const drapeStartY = Math.max(0, mouthY - 4);
+          const drapeEndY = Math.min(119, chinY + 24);
+          const leftDrapeStartX = Math.max(0, minFaceX - 25);
+          const leftDrapeEndX = Math.max(0, minFaceX - 3);
+          const rightDrapeStartX = Math.min(159, maxFaceX + 3);
+          const rightDrapeEndX = Math.min(159, maxFaceX + 25);
+
+          for (let dy = drapeStartY; dy <= drapeEndY; dy++) {
+            for (let dx = leftDrapeStartX; dx <= leftDrapeEndX; dx++) {
+              const idx = (dy * 160 + dx) * 4;
+              const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+              if (gray < 68 || (r < 75 && g < 72 && b < 72)) lateralHairDrapeCount++;
+            }
+            for (let dx = rightDrapeStartX; dx <= rightDrapeEndX; dx++) {
+              const idx = (dy * 160 + dx) * 4;
+              const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+              if (gray < 68 || (r < 75 && g < 72 && b < 72)) lateralHairDrapeCount++;
+            }
+          }
+
+          // D. FACTOR 4: Perioral Hair / Stubble Shadow (Philtrum / Upper Lip)
+          let philtrumLuminance = 0;
+          let philtrumPixels = 0;
+          const philtrumStartY = Math.max(0, mouthY - 10);
+          const philtrumEndY = Math.max(0, mouthY - 2);
+          const philtrumStartX = Math.max(0, cx - 12);
+          const philtrumEndX = Math.min(159, cx + 12);
+
+          for (let py = philtrumStartY; py <= philtrumEndY; py++) {
+            for (let px = philtrumStartX; px <= philtrumEndX; px++) {
+              const idx = (py * 160 + px) * 4;
+              const gray = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+              philtrumLuminance += gray;
+              philtrumPixels++;
+            }
+          }
+
+          let cheekLuminance = 0;
+          let cheekPixels = 0;
+          for (const offX of [-16, -14, -12, 12, 14, 16]) {
+            const chX = cx + offX;
+            if (chX >= 0 && chX < 160) {
+              const idx = (cy * 160 + chX) * 4;
+              const gray = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+              cheekLuminance += gray;
+              cheekPixels++;
+            }
+          }
+          const avgPhiltrum = philtrumPixels > 0 ? philtrumLuminance / philtrumPixels : 100;
+          const avgCheek = cheekPixels > 0 ? cheekLuminance / cheekPixels : 100;
+          const hasPerioralStubble = avgPhiltrum < avgCheek * 0.88;
+
+          // E. FACTOR 5: Jaw Squareness Ratio (Width at mouth level vs cheek width)
+          let mouthLevelMinX = 160;
+          let mouthLevelMaxX = 0;
+          for (let mx = 0; mx < 160; mx++) {
+            const idx = (mouthY * 160 + mx) * 4;
+            const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            const isDark = gray < 65 || (r < 75 && g < 70 && b < 70);
+            const isSkin = !isDark && r > 75 && g > 45 && b > 30 && r > g && g > b;
+            if (isSkin) {
+              if (mx < mouthLevelMinX) mouthLevelMinX = mx;
+              if (mx > mouthLevelMaxX) mouthLevelMaxX = mx;
+            }
+          }
+          const jawWidth = Math.max(10, mouthLevelMaxX - mouthLevelMinX);
+          const isSquareJaw = jawWidth / (faceW + 1e-5) >= 0.78;
+
+          // --- MULTI-FACTOR WEIGHTED SCORING MATRIX ---
+          let malePoints = 0;
+          let femalePoints = 0;
+
+          // Crown Hair Evidence:
+          // A male has short hair on top of head (crownDarkHairCount >= 20).
+          // A hijab wearer has 0 hair on crown.
+          if (crownDarkHairCount >= 20) {
+            malePoints += 4;
+          }
+
+          // Throat Skin Evidence:
+          // A male has exposed bare skin on throat right under chin (throatSkinCount >= 12).
+          // A hijab wearer has cloth covering the throat right under chin (throatSkinCount < 5).
+          if (throatSkinCount >= 12) {
+            malePoints += 4;
+          }
+
+          // True Hijab Verification (Strict Dual Requirement):
+          // Must have ZERO/minimal throat skin under chin AND ZERO/minimal hair on crown!
+          // If the user has dark hair on crown, or has bare throat skin, they are NOT wearing hijab!
+          isHijabWearer = throatSkinCount < 5 && crownDarkHairCount < 10 && throatFabricCount >= 8;
+
+          if (isHijabWearer) {
+            femalePoints += 15; // Decisive female indicator for hijab
+          }
+
+          // Lateral Draping Hair Evidence ("Rambut Menjuntai" for non-hijab female):
+          if (lateralHairDrapeCount >= 45) {
+            femalePoints += 5; // Long hair draping onto shoulders
+          }
+
+          // Perioral Stubble Evidence:
+          if (hasPerioralStubble) {
+            malePoints += 2;
+          }
+
+          // Jawline Shape Evidence:
+          if (isSquareJaw) {
+            malePoints += 1;
+          } else {
+            femalePoints += 1;
+          }
+
+          // Decision:
+          if (isHijabWearer) {
             analyzedGender = "FEMALE";
-            genderConfidence = 90;
+            genderConfidence = 98;
+          } else if (femalePoints > malePoints) {
+            analyzedGender = "FEMALE";
+            genderConfidence = Math.min(97, 85 + (femalePoints - malePoints) * 3);
           } else {
             analyzedGender = "MALE";
-            genderConfidence = 89;
+            genderConfidence = Math.min(99, 88 + (malePoints - femalePoints) * 2);
+          }
+        } else {
+          // Fallback if face is not fully detected
+          if (formData.gender?.toLowerCase() === "female" || formData.gender?.toLowerCase() === "perempuan") {
+            analyzedGender = "FEMALE";
+            genderConfidence = 88;
+          } else {
+            analyzedGender = "MALE";
+            genderConfidence = 88;
           }
         }
 
@@ -951,7 +1054,7 @@ export const EmployeeForm = () => {
         setBiometricAnalysis({
           gender: analyzedGender,
           genderConfidence,
-          hasHijab: isWearingHijab,
+          hasHijab: isHijabWearer,
           ageGroup: "ADULT (20-35)",
           detectionScore,
         });

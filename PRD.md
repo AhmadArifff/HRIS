@@ -2369,14 +2369,14 @@ graph TD
 5. **Pelacakan Wajah Dinamis & Klasifikasi Demografis Hijab/Kerudung (Dynamic Face Tracking & Hijab Classifier):**
    - **Dynamic Real-Time Face Tracking:**
      - Menghitung *centroid* wajah $(c_x, c_y)$ dan *bounding box* dari piksel kulit/wajah di canvas sampling $160 \times 120$.
-     - Mengonversi koordinat terbalik akibat video cermin (`scale-x-[-1]`):
-       $$x_{\text{screen}} = (1 - c_x / 160) \times 100\%, \quad y_{\text{screen}} = (c_y / 120) \times 100\%$$
-     - Menggunakan *Exponential Moving Average* (EMA) smoothing untuk pergerakan mulus bebas jitter.
-     - Seluruh 42 titik biometrik, faset poligon 3D, jalur konstelasi, dan berkas strip laser secara dinamis mengikuti pergerakan, jarak, dan skala kepala pengguna secara langsung, bukan terpaku statis di tengah oval.
-   - **Klasifikasi Gender & Deteksi Hijab/Kerudung Riil:**
-     - Mengatasi permasalahan di mana pengguna perempuan yang mengenakan kerudung/hijab sebelumnya salah diklasifikasikan sebagai `MALE` karena ketiadaan data rambut menjuntai (*draping hair*).
-     - Menganalisis zona sub-mandibular leher ($Y \in [96, 118]$) dan mahkota kepala ($Y \in [4, 24]$):
-       - Pengguna berhijab: Leher tertutup kain (`neckSkinCount < 25`, `neckFabricCount > 20`) dan mahkota kepala tertutup rapi oleh kain jilbab (`crownDarkHairCount < 40`, `crownFabricCount > 20`), tanpa helai rambut menjuntai.
-       - Ketika kriteria terpenuhi, sistem secara deterministik mengklasifikasikan gender sebagai **`FEMALE`** dengan confidence tinggi ($\ge 98\%$) dan menyematkan badge `[HIJAB]`.
-       - Sebaliknya, jika terdeteksi kulit leher terbuka (`neckSkinCount > 35`) dan rambut pendek di mahkota kepala, sistem mengklasifikasikan sebagai **`MALE`**.
-
+     - Konversi koordinat terbalik: `x_screen = (1 - c_x / 160) * 100%`, `y_screen = (c_y / 120) * 100%`.
+     - EMA smoothing untuk pergerakan mulus bebas jitter.
+   - **Klasifikasi Gender & Deteksi Hijab/Kerudung Riil Multi-Faktor:**
+     - Menggunakan model antropometri multi-faktor berbasis posisi landmark wajah dinamis (bukan koordinat statis):
+       1. **Rambut Mahkota Kepala (Crown Hair):** Disampling tepat di atas dahi pengguna ($Y \in [\max(0, \text{foreheadY} - 22), \text{foreheadY} + 2]$). Pria memiliki rambut hitam pendek berdensitas tinggi (`crownDarkHairCount \ge 20`). Pengguna berhijab memiliki kain halus tanpa helai rambut terbuka (`crownDarkHairCount < 10`).
+       2. **Kulit Tenggorokan Sub-Mandibular:** Disampling tepat di bawah tulang dagu ($Y \in [\text{chinY} + 2, \text{chinY} + 16]$) sebelum kerah baju. Pria memiliki kulit tenggorokan terbuka (`throatSkinCount \ge 12`). Pengguna berhijab memiliki kain jilbab rapat di bawah dagu (`throatSkinCount < 5`).
+       3. **Validasi Mutlak Hijab (Strict Dual Criteria):** Hijab hanya tervalidasi jika kedua syarat terpenuhi sekaligus: **tanpa kulit leher** (`throatSkinCount < 5`) **DAN tanpa rambut di dahi** (`crownDarkHairCount < 10`). Jika pengguna memiliki rambut di kepala atau leher terbuka, sistem menolak status hijab.
+       4. **Juntaian Rambut di Bahu (Lateral Shoulder Hair Drape):** Wanita tanpa hijab teridentifikasi melalui juntaian rambut panjang di kedua sisi pundak ($X$ lateral, $Y \in [\text{mouthY}, \text{chinY} + 24]$, `lateralHairDrapeCount \ge 45`).
+       5. **Bayangan Kumis / Stubble & Rahang:** Rasio luminansi filtrum bibir atas terhadap pipi mendeteksi folikel kumis pria (`avgPhiltrum < 0.88 * avgCheek`), serta rasio lebar mandibula rahang persegi (`jawWidth / faceW \ge 0.78`).
+       6. **Pencegahan Alarm Palsu Oklusi Tangan:** Ambang batas tangan di dagu mensyaratkan ketiadaan kontur bibir alami (`mouthLipCount < 6`), sehingga kulit leher pria saat mendekat ke kamera tidak memicu peringatan tangan palsu.
+     - Hasil deterministik: Klasifikasi `FEMALE` + badge `[HIJAB]` jika syarat terpenuhi, atau `MALE` jika terdapat rambut dahi atau kulit leher terbuka.
