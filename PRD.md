@@ -1479,3 +1479,30 @@ QA menguji pengalihan model biometrik dari panel admin:
     *   Kalkulasi pencahayaan ruang warna LAB dan normalisasi kontras adaptif CLAHE.
     *   Kontrak skema respon FQA dan health check service FastAPI.
 *   **Monorepo Turbo Build Validation:** Seluruh 5 package (`@hris/database`, `backend-api`, `admin-dashboard`, `employee-portal`, `@hris/biometric-service`) lolos kompilasi tanpa type error.
+
+---
+
+### 9.5 Kebijakan Privasi Data Biometrik (Kepatuhan UU PDP No. 27/2022 & GDPR)
+Data representasi wajah diklasifikasikan sebagai **Data Pribadi Spesifik / Sensitif**. Sistem HRISCorp.dev menerapkan protokol tata kelola data ketat:
+1.  **Explicit Biometric Consent Gate:** Karyawan wajib menyetujui pernyataan persetujuan pemrosesan biometrik secara sadar sebelum sensor kamera diaktifkan di `/biometrics/enroll`.
+2.  **No Raw Facial Image Storage:** Sistem tidak menyimpan foto wajah mentah beresolusi tinggi di server. Yang disimpan di Supabase PostgreSQL hanyalah vektor matematis $512$-dimensi non-reversibel (tidak dapat dikonstruksi ulang menjadi foto wajah asli).
+3.  **Right to Erasure (Hak Penghapusan Data):** Karyawan atau Admin HR memiliki hak mutlak untuk mereset dan menghapus seluruh catatan profil vektor biometrik melalui endpoint `DELETE /api/biometrics/:employeeId`.
+4.  **Data-at-Rest & In-Transit Security:** Seluruh transmisi snapshot menggunakan HTTPS TLS 1.3 dan penyimpanan vektor di Supabase dilindungi oleh Row Level Security (RLS) serta enkripsi database.
+
+---
+
+### 9.6 SOP Absensi Manual Darurat (Emergency Geotagged Fallback & HR Override)
+Untuk menjamin kontinuitas bisnis saat terjadi kendala teknis (kamera ponsel rusak, perangkat non-WebRTC, atau pemadaman listrik):
+1.  **Trigger Kondisi Darurat:** Jika proses verifikasi wajah gagal $\ge 3$ kali berturut-turut atau kamera tidak terdeteksi, portal karyawan memunculkan opsi *"Ajukan Absensi Darurat"*.
+2.  **Input Geotagging & Alasan:** Karyawan mengirimkan koordinat lokasi GPS aktual dan menuliskan alasan darurat (contoh: *"Kamera retak, verifikasi gagal"*).
+3.  **Status Pending Approval:** Kehadiran tercatat dengan metode `emergency_manual` dan status audit `Menunggu Persetujuan HR`.
+4.  **Otorisasi Admin:** Admin HR dapat memvalidasi dan menyetujui absensi darurat dari tabel absensi di Admin Dashboard.
+
+---
+
+### 9.7 Panduan Standar Atribut Wajah & Aksesoris
+Untuk menjamin akurasi ArcFace $\ge 99.8\%$ dan meminimalkan False Rejection:
+*   **Kacamata:** Kacamata minus/silinder dengan lensa bening **diperbolehkan**. Kacamata hitam (*sunglasses*) atau lensa dengan pantulan cahaya kuat **wajib dilepas** saat enrollment dan verifikasi.
+*   **Hijab & Penutup Kepala:** Penggunaan jilbab/hijab **sangat didukung**. Area dahi, alis, kedua mata, hidung, dan bibir wajib terlihat jelas tanpa tertutup kain cadar saat proses capture.
+*   **Masker Medis:** Masker kesehatan wajib diturunkan sesaat selama proses verifikasi absensi berlangsung.
+*   **Pencahayaan:** Hindari berdiri tepat membelakangi jendela/lampu (*backlight* ekstrim). Algoritma CLAHE akan mengoreksi deviasi cahaya normal, namun pencahayaan merata dianjurkan.

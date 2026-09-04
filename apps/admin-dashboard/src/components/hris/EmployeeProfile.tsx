@@ -7,6 +7,7 @@ import Badge from "../ui/badge/Badge";
 import { Modal } from "../ui/modal";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 import { API_BASE_URL } from "@/lib/api";
+import { ShieldCheck, User, AlertTriangle, Check } from "lucide-react";
 
 interface EmployeeData {
   id: string;
@@ -174,8 +175,8 @@ export const EmployeeProfile = () => {
                 className="h-full w-full object-cover rounded-full"
               />
               {isEnrolled && (
-                <span className="absolute bottom-0 right-0 w-5 h-5 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center text-[10px] text-white" title="Biometrik Aktif">
-                  ✓
+                <span className="absolute bottom-0 right-0 w-5 h-5 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center text-white" title="Biometrik Aktif">
+                  <Check className="w-3 h-3" strokeWidth={3} />
                 </span>
               )}
             </div>
@@ -214,8 +215,8 @@ export const EmployeeProfile = () => {
       <div className="p-5 border border-gray-200 rounded-2xl bg-white dark:bg-white/[0.03] dark:border-gray-800 lg:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${isEnrolled ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"}`}>
-              {isEnrolled ? "🛡️" : "👤"}
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isEnrolled ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"}`}>
+              {isEnrolled ? <ShieldCheck className="w-5 h-5" /> : <User className="w-5 h-5" />}
             </div>
             <div>
               <h3 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
@@ -365,8 +366,8 @@ export const EmployeeProfile = () => {
       <Modal isOpen={isResetModalOpen} onClose={() => setIsResetModalOpen(false)}>
         <div className="p-6">
           <div className="flex items-center gap-3 text-rose-600 mb-4">
-            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center text-lg">
-              ⚠️
+            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
+              <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white">Reset Profil Biometrik Wajah?</h3>

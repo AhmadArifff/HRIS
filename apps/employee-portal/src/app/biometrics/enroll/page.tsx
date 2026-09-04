@@ -36,6 +36,10 @@ export default function BiometricEnrollPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successData, setSuccessData] = useState<BiometricSuccessData | null>(null);
 
+  // UU PDP Consent Gate state
+  const [consentAgreed, setConsentAgreed] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(true);
+
   // Real-time quality meters
   const [illuminationStatus, setIlluminationStatus] = useState<"good" | "dark" | "bright">("good");
 
@@ -59,7 +63,6 @@ export default function BiometricEnrollPage() {
   }, []);
 
   useEffect(() => {
-    startCamera();
     const currentVideo = videoRef.current;
     return () => {
       if (currentVideo && currentVideo.srcObject) {
@@ -67,7 +70,7 @@ export default function BiometricEnrollPage() {
         tracks.forEach((track) => track.stop());
       }
     };
-  }, [startCamera]);
+  }, []);
 
   // 2. Real-Time Canvas Brightness Analyser (Anti-Noise Pre-filtering)
   useEffect(() => {
@@ -109,20 +112,21 @@ export default function BiometricEnrollPage() {
     return () => clearInterval(interval);
   }, [cameraActive]);
 
-  // 3. Capture Current Pose Frame
+  // 3. Capture Current Pose Frame with 640x480 Client-Side Compression
   const handleCapturePose = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current) return;
 
     const video = videoRef.current;
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    // Standardize to 640x480 JPEG 0.85 to keep frame payload < 100KB (PRD §9)
+    canvas.width = 640;
+    canvas.height = 480;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const base64 = canvas.toDataURL("image/jpeg", 0.9);
+    ctx.drawImage(video, 0, 0, 640, 480);
+    const base64 = canvas.toDataURL("image/jpeg", 0.85);
 
     const updated = [...capturedFrames, base64];
     setCapturedFrames(updated);
@@ -223,7 +227,61 @@ export default function BiometricEnrollPage() {
   const activeStep = STEPS[currentStep];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 sm:p-8">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 sm:p-8 relative">
+      {/* Biometric Privacy Consent Gate (UU PDP No. 27/2022) */}
+      {showConsentModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 text-white shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center gap-3 text-emerald-400">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                <ShieldCheck size={28} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Persetujuan Data Biometrik</h3>
+                <p className="text-xs text-slate-400">Kepatuhan UU PDP No. 27/2022 & Standar Keamanan HRIS</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-800/60 rounded-2xl p-4 text-xs text-slate-300 space-y-3 border border-slate-700/50 max-h-60 overflow-y-auto">
+              <p>
+                Sebelum mengaktifkan kamera, harap pelajari hak dan perlindungan privasi data biometrik Anda:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-slate-300">
+                <li><strong className="text-white">Hanya Vektor Numerik:</strong> Sistem tidak menyimpan foto wajah mentah Anda di server, melainkan representasi matematis satu arah (vektor 512-dimensi ArcFace).</li>
+                <li><strong className="text-white">Tujuan Terbatas:</strong> Vektor ini digunakan secara eksklusif untuk verifikasi kehadiran kerja resmi perusahaan.</li>
+                <li><strong className="text-white">Hak Penghapusan (Right to Erasure):</strong> Anda berhak mengajukan reset atau penghapusan data biometrik kapan saja melalui tim HR.</li>
+                <li><strong className="text-white">Panduan Aksesoris:</strong> Kacamata minus bening dan jilbab diperbolehkan. Buka masker dan kacamata hitam.</li>
+              </ul>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={consentAgreed}
+                onChange={(e) => setConsentAgreed(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900"
+              />
+              <span className="text-xs text-slate-300 leading-relaxed">
+                Saya telah membaca dan menyetujui pemrosesan data biometrik wajah saya untuk keperluan verifikasi absensi perusahaan sesuai ketentuan UU PDP No. 27/2022.
+              </span>
+            </label>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                disabled={!consentAgreed}
+                onClick={() => {
+                  setShowConsentModal(false);
+                  startCamera();
+                }}
+                className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-500/20"
+              >
+                Setujui & Buka Kamera
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="text-center mb-6">

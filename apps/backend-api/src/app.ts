@@ -4,7 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import { errorHandler } from "./middlewares/errorHandler";
-import { globalLimiter } from "./middlewares/rateLimiter";
+import { globalLimiter, attendanceLimiter } from "./middlewares/rateLimiter";
 import { checkHealth } from "./controllers/health.controller";
 import { getRedisStats } from "./controllers/infrastructure.controller";
 import { getEmployees, getEmployeeById, createEmployee } from "./controllers/employee.controller";
@@ -27,11 +27,11 @@ import { enrollFace, getBiometricStatus, resetBiometricProfile } from "./control
 
 const app: Application = express();
 
-// 1. Security & Global Middlewares
+// 1. Security & Global Middlewares (PRD §1 & §9 - 5mb safe payload limit)
 app.use(helmet());
 app.use(cors({ origin: "*" }));
-app.use(express.json({ limit: "20mb" }));
-app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(morgan("dev"));
 
 // 2. Global Rate Limiter
@@ -42,7 +42,7 @@ app.get("/api/health", checkHealth);
 app.get("/api/infrastructure/redis", getRedisStats);
 
 // Biometrics & Face Recognition
-app.post("/api/biometrics/enroll", enrollFace);
+app.post("/api/biometrics/enroll", attendanceLimiter, enrollFace);
 app.get("/api/biometrics/status/:employeeId", getBiometricStatus);
 app.delete("/api/biometrics/:employeeId", resetBiometricProfile);
 
@@ -64,7 +64,7 @@ app.delete("/api/positions/:id", deletePosition);
 
 // Time & Attendance
 app.get("/api/attendance", getAttendances);
-app.post("/api/attendance/clock-in", clockIn);
+app.post("/api/attendance/clock-in", attendanceLimiter, clockIn);
 
 // Leave Requests
 app.get("/api/leave", getLeaveRequests);

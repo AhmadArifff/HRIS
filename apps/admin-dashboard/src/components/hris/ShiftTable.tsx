@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Badge from "../ui/badge/Badge";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
+import { Clock } from "lucide-react";
 
 export interface MasterShift {
   id: string;
@@ -269,7 +270,7 @@ export const ShiftTable: React.FC = () => {
                         <td className="px-6 py-4 font-mono font-semibold text-gray-700 dark:text-gray-300">{s.endTime}</td>
                         <td className="px-6 py-4 text-center">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 font-mono">
-                            ⏱️ {s.totalWorkHours} Jam
+                            <Clock className="w-3.5 h-3.5 mr-1" /> {s.totalWorkHours} Jam
                           </span>
                         </td>
                         <td className="px-6 py-4">

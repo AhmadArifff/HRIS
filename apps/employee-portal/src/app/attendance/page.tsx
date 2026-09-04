@@ -17,6 +17,12 @@ export default function AttendancePage() {
   const [clockInStatus, setClockInStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Emergency Attendance state (PRD §9.6)
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [emergencyReason, setEmergencyReason] = useState("");
+  const [isSubmittingEmergency, setIsSubmittingEmergency] = useState(false);
+  const [emergencySuccess, setEmergencySuccess] = useState(false);
+
   // 1. Get GPS Location
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -27,11 +33,21 @@ export default function AttendancePage() {
             lng: position.coords.longitude,
           });
         },
-        (error) => {
+        () => {
           setErrorMessage("Mohon izinkan akses lokasi untuk absensi.");
         }
       );
     }
+  }, []);
+
+  // WebRTC Camera Lifecycle cleanup
+  useEffect(() => {
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
   }, []);
 
   // 2. Load Face API Models
@@ -147,6 +163,60 @@ export default function AttendancePage() {
       setClockInStatus("error");
     }
   };
+  const handleEmergencyClockIn = async () => {
+    if (!emergencyReason.trim()) {
+      setErrorMessage("Silakan masukkan alasan presensi darurat.");
+      return;
+    }
+    setIsSubmittingEmergency(true);
+    setErrorMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/attendance/clock-in`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employeeId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+          isEmergencyManual: true,
+          emergencyReason: emergencyReason.trim(),
+          locationInLatlng: location ? `${location.lat},${location.lng}` : null,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.isSuccess || data.success) {
+        setEmergencySuccess(true);
+        setShowEmergencyModal(false);
+      } else {
+        throw new Error(data.message || data.error || "Gagal mengajukan presensi darurat");
+      }
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "Terjadi kesalahan server");
+    } finally {
+      setIsSubmittingEmergency(false);
+    }
+  };
+
+  if (emergencySuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 text-center max-w-sm w-full animate-in zoom-in-95">
+          <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 size={40} />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Presensi Darurat Diajukan</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            Presensi manual Anda dengan koordinat GPS telah terekam dan sedang menunggu persetujuan tim HR.
+          </p>
+          <button 
+            onClick={() => (window.location.href = "/")}
+            className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium"
+          >
+            Kembali ke Beranda
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (clockInStatus === "success") {
     return (
@@ -169,7 +239,58 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 relative">
+      {/* Emergency Fallback Modal (PRD §9.6) */}
+      {showEmergencyModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3 text-amber-600">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center">
+                <Clock size={22} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Presensi Manual Darurat</h3>
+                <p className="text-xs text-gray-500">Kamera rusak / kendala biometrik di lapangan</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Presensi manual darurat mencatat waktu dan koordinat GPS Anda, serta memerlukan verifikasi manual oleh HR:
+            </p>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Alasan Presensi Darurat *</label>
+              <textarea
+                value={emergencyReason}
+                onChange={(e) => setEmergencyReason(e.target.value)}
+                placeholder="Contoh: Kamera ponsel rusak / layar retak / verifikasi berulang kali gagal..."
+                rows={3}
+                className="w-full text-xs p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-brand-500 resize-none text-gray-800"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowEmergencyModal(false)}
+                disabled={isSubmittingEmergency}
+                className="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-xl"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleEmergencyClockIn}
+                disabled={isSubmittingEmergency || !emergencyReason.trim()}
+                className="px-4 py-2 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl transition"
+              >
+                {isSubmittingEmergency ? "Mengirim..." : "Kirim Presensi Darurat"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-brand-600 pt-12 pb-6 px-6 text-white rounded-b-[2.5rem] shadow-md">
         <h1 className="text-2xl font-bold">Clock In</h1>
@@ -178,31 +299,14 @@ export default function AttendancePage() {
 
       <div className="px-6 -mt-6">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-          
-          {/* Face Enrollment Quick Link */}
-          <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100 rounded-xl">
-            <div className="text-xs">
-              <p className="font-bold text-cyan-950">Belum daftarkan wajah resmi?</p>
-              <p className="text-cyan-700 text-[11px]">Daftarkan 3 pose wajah untuk presensi berakurasi tinggi.</p>
+          <div className="flex items-center justify-between text-sm text-gray-500 border-b border-gray-100 pb-3">
+            <div className="flex items-center gap-1.5">
+              <MapPin size={16} className="text-brand-600" />
+              <span>{location ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : "Mencari Lokasi..."}</span>
             </div>
-            <a
-              href="/biometrics/enroll"
-              className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-xs font-semibold shrink-0 transition shadow-sm"
-            >
-              Daftar Wajah
-            </a>
-          </div>
-
-          {/* Location Status */}
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-            <div className={`p-2 rounded-full ${location ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-              <MapPin size={20} />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Lokasi Saat Ini</p>
-              <p className="text-xs text-gray-500">
-                {location ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : "Mencari koordinat..."}
-              </p>
+            <div className="flex items-center gap-1.5">
+              <Clock size={16} className="text-brand-600" />
+              <span>08:00 - 17:00</span>
             </div>
           </div>
 
@@ -272,6 +376,15 @@ export default function AttendancePage() {
               <Clock size={22} />
             )}
             Clock In Sekarang
+          </button>
+
+          {/* Emergency Fallback Trigger (PRD §9.6) */}
+          <button
+            type="button"
+            onClick={() => setShowEmergencyModal(true)}
+            className="w-full text-center text-xs font-semibold text-gray-500 hover:text-brand-600 transition pt-1"
+          >
+            Kendala Kamera? Ajukan Presensi Darurat (Izin / HR Override)
           </button>
         </div>
       </div>

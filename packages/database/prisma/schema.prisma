@@ -203,6 +203,7 @@ model Attendance {
   isFaceVerified      Boolean?  @default(false) @map("is_face_verified")
   isSpoofDetected     Boolean?  @default(false) @map("is_spoof_detected")
   verificationMethod  String?   @default("deepface_arcface") @map("verification_method")
+  notes               String?   @map("notes")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   deletedAt           DateTime? @map("deleted_at")

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { Check, X, AlertTriangle, Info } from "lucide-react";
 
 export interface ToastMessage {
   id: string;
@@ -125,22 +126,22 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
       <div className="shrink-0 pt-0.5">
         {isSuccess && (
           <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold text-sm">
-            ✓
+            <Check className="w-4 h-4" strokeWidth={2.5} />
           </div>
         )}
         {isError && (
           <div className="w-8 h-8 rounded-xl bg-rose-500/10 dark:bg-rose-500/20 text-rose-500 flex items-center justify-center font-bold text-sm">
-            ✕
+            <X className="w-4 h-4" strokeWidth={2.5} />
           </div>
         )}
         {isWarning && (
           <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-sm">
-            ⚠️
+            <AlertTriangle className="w-4 h-4" strokeWidth={2.5} />
           </div>
         )}
         {!isSuccess && !isError && !isWarning && (
           <div className="w-8 h-8 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 text-brand-500 flex items-center justify-center font-bold text-sm">
-            ℹ
+            <Info className="w-4 h-4" strokeWidth={2.5} />
           </div>
         )}
       </div>
@@ -156,7 +157,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: (id: string) => void }
         onClick={triggerClose}
         className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs p-1"
       >
-        ✕
+        <X className="w-3.5 h-3.5" />
       </button>
 
       {/* Limit Progress Strip Bar Line (Countdown Animation 100% -> 0%) */}

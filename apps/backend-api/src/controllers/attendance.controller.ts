@@ -1,6 +1,35 @@
 import { Request, Response } from "express";
 import { prisma } from "@hris/database";
 import { Result, sendResult } from "../utils/Result";
+import { redis } from "../config/redis";
+
+const REDIS_BIOMETRIC_TTL = 86400; // 24 hours
+
+export async function getCachedBiometricEmbedding(employeeId: string): Promise<{ embedding: number[]; threshold: number } | null> {
+  try {
+    const raw = await redis.get(`biometric:embedding:${employeeId}`);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.warn("Redis get biometric cache error:", err);
+  }
+  return null;
+}
+
+export async function setCachedBiometricEmbedding(employeeId: string, data: { embedding: number[]; threshold: number }): Promise<void> {
+  try {
+    await redis.set(`biometric:embedding:${employeeId}`, JSON.stringify(data), "EX", REDIS_BIOMETRIC_TTL);
+  } catch (err) {
+    console.warn("Redis set biometric cache error:", err);
+  }
+}
+
+export async function invalidateCachedBiometricEmbedding(employeeId: string): Promise<void> {
+  try {
+    await redis.del(`biometric:embedding:${employeeId}`);
+  } catch (err) {
+    console.warn("Redis del biometric cache error:", err);
+  }
+}
 
 // Helper for Euclidean distance (legacy 128-d)
 function euclideanDistance(desc1: number[], desc2: number[]): number {
@@ -89,23 +118,110 @@ export const getAttendances = async (req: Request, res: Response): Promise<void>
 
 export const clockIn = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { employeeId, faceDescriptor, selfieBase64, locationInLatlng } = req.body;
+    const {
+      employeeId,
+      faceDescriptor,
+      selfieBase64,
+      locationInLatlng,
+      isEmergencyManual,
+      emergencyReason,
+    } = req.body;
 
-    if (!employeeId || (!faceDescriptor && !selfieBase64)) {
+    if (!employeeId) {
+      sendResult(res, 400, Result.fail("Employee ID wajib diisi"));
+      return;
+    }
+
+    // --- 1. EMERGENCY MANUAL CLOCK-IN FALLBACK (PRD §9.6) ---
+    if (isEmergencyManual) {
+      if (!emergencyReason || emergencyReason.trim().length === 0) {
+        sendResult(res, 400, Result.fail("Alasan absensi darurat wajib diisi"));
+        return;
+      }
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      const existingToday = await prisma.attendance.findFirst({
+        where: { employeeId, recordDate: today, deletedAt: null },
+      });
+
+      if (existingToday && existingToday.clockIn) {
+        sendResult(res, 400, Result.fail("Anda sudah melakukan absensi hari ini"));
+        return;
+      }
+
+      const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+      });
+
+      if (!employee) {
+        sendResult(res, 404, Result.fail("Karyawan tidak ditemukan"));
+        return;
+      }
+
+      let shift = await prisma.shiftMaster.findFirst({
+        where: { isActive: true },
+      });
+
+      if (!shift) {
+        shift = await prisma.shiftMaster.create({
+          data: {
+            name: "Shift Reguler",
+            startTime: new Date("1970-01-01T08:00:00Z"),
+            endTime: new Date("1970-01-01T17:00:00Z"),
+            totalWorkHours: 8.0,
+            toleranceMinutes: 15,
+            isActive: true,
+          },
+        });
+      }
+
+      const emergencyAttendance = await prisma.attendance.create({
+        data: {
+          employeeId,
+          shiftId: shift.id,
+          recordDate: today,
+          clockIn: now,
+          locationInLatlng: locationInLatlng || null,
+          statusId: employee.statusId,
+          notes: `[Absensi Darurat] ${emergencyReason.trim()}`,
+          isLate: false,
+          lateDurationMinutes: 0,
+          isFaceVerified: false,
+          faceSimilarityScore: null,
+          isSpoofDetected: false,
+          verificationMethod: "emergency_manual",
+        },
+      });
+
+      sendResult(
+        res,
+        201,
+        Result.ok(
+          {
+            attendanceId: emergencyAttendance.id,
+            clockIn: emergencyAttendance.clockIn,
+            isFaceVerified: false,
+            verificationMethod: "emergency_manual",
+            status: "Menunggu Persetujuan HR",
+          },
+          "Presensi darurat berhasil diajukan dan sedang menunggu verifikasi HR"
+        )
+      );
+      return;
+    }
+
+    if (!faceDescriptor && !selfieBase64) {
       sendResult(res, 400, Result.fail("Employee ID dan Foto/Descriptor Wajah wajib diisi"));
       return;
     }
 
-    // 1. Fetch Employee and Active Biometric Profile
+    // 2. Fetch Employee
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
       include: {
         status: true,
-        biometricProfiles: {
-          where: { isActive: true, deletedAt: null },
-          orderBy: { registeredAt: "desc" },
-          take: 1,
-        },
       },
     });
 
@@ -119,11 +235,31 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
     let isSpoofDetected = false;
     let verificationMethod = "deepface_arcface";
 
-    // 2. Biometric Verification
-    const activeProfile = employee.biometricProfiles[0];
+    // 3. Biometric Verification with Redis Caching Layer (PRD §8 & §9)
+    let savedEmbedding: number[] | null = null;
+    let confidenceThreshold = 0.40;
 
-    if (activeProfile && activeProfile.embedding) {
-      const savedEmbedding = activeProfile.embedding as number[];
+    const cachedBiometric = await getCachedBiometricEmbedding(employeeId);
+    if (cachedBiometric && Array.isArray(cachedBiometric.embedding)) {
+      savedEmbedding = cachedBiometric.embedding;
+      confidenceThreshold = cachedBiometric.threshold || 0.40;
+    } else {
+      const activeProfile = await prisma.faceBiometricProfile.findFirst({
+        where: { employeeId, isActive: true, deletedAt: null },
+        orderBy: { registeredAt: "desc" },
+      });
+
+      if (activeProfile && activeProfile.embedding) {
+        savedEmbedding = activeProfile.embedding as number[];
+        confidenceThreshold = activeProfile.confidenceThreshold || 0.40;
+        await setCachedBiometricEmbedding(employeeId, {
+          embedding: savedEmbedding,
+          threshold: confidenceThreshold,
+        });
+      }
+    }
+
+    if (savedEmbedding) {
       let queryEmbedding: number[] = [];
 
       // Check if selfieBase64 provided -> call DeepFace Biometric Service
@@ -167,7 +303,7 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
           distance = cosineDistance(queryEmbedding.slice(0, commonLen), savedEmbedding.slice(0, commonLen));
         }
 
-        const threshold = activeProfile.confidenceThreshold || 0.40;
+        const threshold = confidenceThreshold || 0.40;
         if (distance > threshold) {
           sendResult(
             res,

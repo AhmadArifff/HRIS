@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Badge from "../ui/badge/Badge";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 import { API_BASE_URL } from "@/lib/api";
+import { Clock, LogOut, CheckCircle2, AlertTriangle } from "lucide-react";
 
 export interface AttendanceRecord {
   id: string;
@@ -261,17 +262,19 @@ export const AttendanceTable: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         {record.lateDurationMinutes > 0 ? (
-                          <span className="inline-flex items-center text-xs font-medium text-error-600 dark:text-error-400">
-                            ⏱️ Telat +{record.lateDurationMinutes} Menit
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-error-600 dark:text-error-400">
+                            <Clock className="w-3.5 h-3.5" /> Telat +{record.lateDurationMinutes} Menit
                           </span>
                         ) : null}
                         {record.earlyLeaveMinutes > 0 ? (
-                          <span className="inline-flex items-center text-xs font-medium text-warning-600 dark:text-warning-400">
-                            🏃 Pulang Awal {record.earlyLeaveMinutes} Menit
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-warning-600 dark:text-warning-400">
+                            <LogOut className="w-3.5 h-3.5" /> Pulang Awal {record.earlyLeaveMinutes} Menit
                           </span>
                         ) : null}
                         {record.lateDurationMinutes === 0 && record.earlyLeaveMinutes === 0 && record.status === "Hadir" ? (
-                          <span className="text-xs text-success-600 dark:text-success-400">✓ Tepat Waktu</span>
+                          <span className="inline-flex items-center gap-1 text-xs text-success-600 dark:text-success-400">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Tepat Waktu
+                          </span>
                         ) : null}
                         {record.status === "Mangkir" || record.status === "Izin" ? (
                           <span className="text-xs text-gray-400">-</span>
@@ -308,7 +311,7 @@ export const AttendanceTable: React.FC = () => {
                         </div>
                       ) : record.isSpoofDetected ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded">
-                          ⚠️ Spoof Alert
+                          <AlertTriangle className="w-3.5 h-3.5" /> Spoof Alert
                         </span>
                       ) : (
                         <span className="inline-flex items-center text-xs text-gray-400">

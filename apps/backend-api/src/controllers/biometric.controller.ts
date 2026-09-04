@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma, Prisma } from "@hris/database";
 import { Result, sendResult } from "../utils/Result";
+import { setCachedBiometricEmbedding, invalidateCachedBiometricEmbedding } from "./attendance.controller";
 
 const BIOMETRIC_SERVICE_URL = process.env.BIOMETRIC_SERVICE_URL || "http://127.0.0.1:5005";
 
@@ -164,6 +165,12 @@ export const enrollFace = async (req: Request, res: Response): Promise<void> => 
       data: { faceDescriptor: embedding },
     });
 
+    // Update Redis Biometric Cache Layer (PRD §8 & §9)
+    await setCachedBiometricEmbedding(employeeId, {
+      embedding,
+      threshold: newProfile.confidenceThreshold || 0.40,
+    });
+
     sendResult(
       res,
       201,
@@ -202,6 +209,9 @@ export const resetBiometricProfile = async (req: Request, res: Response): Promis
       where: { id: employeeId },
       data: { faceDescriptor: Prisma.JsonNull },
     });
+
+    // Invalidate Redis Biometric Cache Layer
+    await invalidateCachedBiometricEmbedding(employeeId);
 
     sendResult(res, 200, Result.ok(null, "Profil biometrik karyawan berhasil di-reset"));
   } catch (error: any) {
