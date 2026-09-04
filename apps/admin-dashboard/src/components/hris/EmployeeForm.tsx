@@ -56,6 +56,93 @@ const KYC_POSES: KycPose[] = [
   },
 ];
 
+interface FacialGuideConfig {
+  leftEye: { x: number; y: number };
+  rightEye: { x: number; y: number };
+  leftBrow: string;
+  rightBrow: string;
+  eyeline: string;
+  nosePath: string;
+  noseTip: { x: number; y: number };
+  mouthPath: string;
+  poseHintText: string;
+  arrowPath?: string;
+}
+
+const getFacialGuideCoordinates = (poseId: string): FacialGuideConfig => {
+  switch (poseId) {
+    case "right":
+      // Menoleh ke kanan (~25°): di feed kamera cermin, wajah berputar ke kiri layar
+      return {
+        leftEye: { x: 58, y: 96 },
+        rightEye: { x: 104, y: 98 },
+        leftBrow: "M 44,82 Q 58,76 72,83",
+        rightBrow: "M 92,86 Q 104,80 118,84",
+        eyeline: "M 38,98 L 122,100",
+        nosePath: "M 84,84 Q 72,112 68,142",
+        noseTip: { x: 68, y: 142 },
+        mouthPath: "M 62,185 Q 78,188 98,184",
+        poseHintText: "ARAH TOLEHAN KANAN",
+        arrowPath: "M 88,118 Q 70,118 56,126",
+      };
+    case "left":
+      // Menoleh ke kiri (~25°): di feed kamera cermin, wajah berputar ke kanan layar
+      return {
+        leftEye: { x: 88, y: 98 },
+        rightEye: { x: 134, y: 96 },
+        leftBrow: "M 74,84 Q 88,80 100,86",
+        rightBrow: "M 120,83 Q 134,76 148,82",
+        eyeline: "M 70,100 L 154,98",
+        nosePath: "M 108,84 Q 120,112 124,142",
+        noseTip: { x: 124, y: 142 },
+        mouthPath: "M 94,184 Q 114,188 130,185",
+        poseHintText: "ARAH TOLEHAN KIRI",
+        arrowPath: "M 104,118 Q 122,118 136,126",
+      };
+    case "up":
+      // Mendongak ke atas (~15°): fitur wajah bergeser naik
+      return {
+        leftEye: { x: 66, y: 80 },
+        rightEye: { x: 126, y: 80 },
+        leftBrow: "M 50,66 Q 66,58 82,66",
+        rightBrow: "M 110,66 Q 126,58 142,66",
+        eyeline: "M 40,80 L 152,80",
+        nosePath: "M 96,68 L 96,122",
+        noseTip: { x: 96, y: 122 },
+        mouthPath: "M 74,166 Q 96,172 118,166",
+        poseHintText: "DONGAKKAN KE ATAS",
+        arrowPath: "M 96,106 L 96,86",
+      };
+    case "down":
+      // Menunduk ke bawah (~15°): fitur wajah bergeser turun
+      return {
+        leftEye: { x: 66, y: 106 },
+        rightEye: { x: 126, y: 106 },
+        leftBrow: "M 50,90 Q 66,82 82,90",
+        rightBrow: "M 110,90 Q 126,82 142,90",
+        eyeline: "M 40,106 L 152,106",
+        nosePath: "M 96,90 L 96,158",
+        noseTip: { x: 96, y: 158 },
+        mouthPath: "M 74,196 Q 96,202 118,196",
+        poseHintText: "TUNDUKKAN KE BAWAH",
+        arrowPath: "M 96,134 L 96,154",
+      };
+    default:
+      // Center: posisi frontal tegak lurus
+      return {
+        leftEye: { x: 66, y: 92 },
+        rightEye: { x: 126, y: 92 },
+        leftBrow: "M 50,76 Q 66,68 82,76",
+        rightBrow: "M 110,76 Q 126,68 142,76",
+        eyeline: "M 40,92 L 152,92",
+        nosePath: "M 96,76 L 96,142",
+        noseTip: { x: 96, y: 142 },
+        mouthPath: "M 74,184 Q 96,190 118,184",
+        poseHintText: "CENTER FRONTAL",
+      };
+  }
+};
+
 export const EmployeeForm = () => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -434,18 +521,26 @@ export const EmployeeForm = () => {
         const crownSkinDensity = crownPixelCount > 0 ? crownSkinCount / crownPixelCount : 0;
         const eyeEdgeRatio = Math.min(leftEyeEdge, rightEyeEdge) / (Math.max(leftEyeEdge, rightEyeEdge) + 1e-5);
         const maxEyeEdge = Math.max(leftEyeEdge, rightEyeEdge);
-        const isOcularOccluded = maxEyeEdge > 300 && eyeEdgeRatio < 0.38;
+
+        // Ocular Asymmetry Check (ONLY evaluated on Center frontal pose!)
+        // On turn poses (left/right), one eye naturally hides behind nose bridge (3D perspective),
+        // which must NEVER trigger a false hand occlusion warning!
+        const isOcularOccluded =
+          targetPose.id === "center" &&
+          maxEyeEdge > 300 &&
+          eyeEdgeRatio < 0.36;
 
         const hasTempleHandBridge =
-          (leftTempleSkinCount > 45 || rightTempleSkinCount > 45) &&
-          (eyeEdgeRatio < 0.50 || foreheadIntraSkinDensity > 0.03 || foreheadSkinCount > 200);
+          targetPose.id === "center" &&
+          (leftTempleSkinCount > 55 || rightTempleSkinCount > 55) &&
+          (eyeEdgeRatio < 0.48 || foreheadIntraSkinDensity > 0.03 || foreheadSkinCount > 220);
 
         const hasForeheadOcclusion =
           isFacePresent &&
-          (foreheadIntraSkinDensity > 0.08 ||
+          (foreheadIntraSkinDensity > 0.10 ||
             isOcularOccluded ||
             hasTempleHandBridge ||
-            (crownSkinDensity > 0.60 && foreheadSkinCount > 120));
+            (crownSkinDensity > 0.65 && foreheadSkinCount > 140));
 
         const hasHandOcclusion = hasChinOcclusion || hasForeheadOcclusion;
         let occlusionZone: "none" | "chin" | "forehead" = "none";
@@ -498,10 +593,11 @@ export const EmployeeForm = () => {
             case "right":
               // Mirrored camera: Turning right presents right cheek on the left side of frame
               isPoseAligned =
-                leftCoreSkin > rightCoreSkin * 1.15 ||
-                leftCheekSkinCount > rightCheekSkinCount * 1.20 ||
-                leftEyeEdge > rightEyeEdge * 1.25 ||
-                internalCheekRatio > 1.25;
+                leftCoreSkin > rightCoreSkin * 1.08 ||
+                leftCheekSkinCount > rightCheekSkinCount * 1.10 ||
+                leftEyeEdge > rightEyeEdge * 1.12 ||
+                internalCheekRatio > 1.12 ||
+                rightCoreSkin < leftCoreSkin * 0.92;
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kanan Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KANAN (~25°)";
@@ -510,24 +606,32 @@ export const EmployeeForm = () => {
             case "left":
               // Mirrored camera: Turning left presents left cheek on the right side of frame
               isPoseAligned =
-                rightCoreSkin > leftCoreSkin * 1.15 ||
-                rightCheekSkinCount > leftCheekSkinCount * 1.20 ||
-                rightEyeEdge > leftEyeEdge * 1.25 ||
-                internalCheekRatio < 0.80;
+                rightCoreSkin > leftCoreSkin * 1.08 ||
+                rightCheekSkinCount > leftCheekSkinCount * 1.10 ||
+                rightEyeEdge > leftEyeEdge * 1.12 ||
+                internalCheekRatio < 0.88 ||
+                leftCoreSkin < rightCoreSkin * 0.92;
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kiri Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KIRI (~25°)";
               break;
 
             case "up":
-              isPoseAligned = verticalBalance < 1.08 || avgLower > avgUpper * 0.95 || chinSkinCount > 140;
+              isPoseAligned =
+                verticalBalance < 1.15 ||
+                avgLower > avgUpper * 0.90 ||
+                chinSkinCount > 90 ||
+                lowerCount > upperCount * 0.85;
               directionHint = isPoseAligned
                 ? "✓ Sudut Mendongak ke Atas Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan dongakkan kepala sedikit ke ATAS (~15°)";
               break;
 
             case "down":
-              isPoseAligned = verticalBalance > 0.90 || avgUpper > avgLower * 1.05;
+              isPoseAligned =
+                verticalBalance > 0.85 ||
+                avgUpper > avgLower * 0.95 ||
+                foreheadSkinCount > chinSkinCount * 0.85;
               directionHint = isPoseAligned
                 ? "✓ Sudut Menunduk ke Bawah Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan tundukkan kepala sedikit ke BAWAH (~15°)";
@@ -1131,7 +1235,7 @@ export const EmployeeForm = () => {
                       {/* Dynamic Oval Reticle with Centering & Angle Verification Color */}
                       <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
                         <div
-                          className={`w-44 h-56 sm:w-48 sm:h-64 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-center transition-all duration-300 relative ${
+                          className={`w-44 h-56 sm:w-48 sm:h-64 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-between py-2 transition-all duration-300 relative overflow-hidden ${
                             !fqaStatus.isFaceCentered
                               ? "border-amber-400/80 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                               : fqaStatus.isOccluded
@@ -1144,31 +1248,197 @@ export const EmployeeForm = () => {
                           }`}
                         >
                           {/* Upper Forehead Safe Zone Marker */}
-                          <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mt-2">
-                            Area Dahi & Alis Bersih
-                          </span>
-                          <div className="w-28 h-0.5 border-b border-dashed border-white/40 mt-1 mb-auto"></div>
+                          <div className="z-10 flex flex-col items-center">
+                            <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400">
+                              Area Dahi & Alis Bersih
+                            </span>
+                            <div className="w-28 h-0.5 border-b border-dashed border-white/40 mt-0.5"></div>
+                          </div>
+
+                          {/* Dynamic In-Camera Facial Feature Alignment Grid (Eyebrows, Eyes, Nose, Mouth) */}
+                          {(() => {
+                            const guide = getFacialGuideCoordinates(currentPose.id);
+                            const guideColor = fqaStatus.isOccluded
+                              ? "#ef4444"
+                              : fqaStatus.isValid
+                              ? "#10b981"
+                              : !fqaStatus.isPoseAligned
+                              ? "#fbbf24"
+                              : "#38bdf8";
+
+                            return (
+                              <svg
+                                className="absolute inset-0 w-full h-full pointer-events-none transition-all duration-300 z-0"
+                                viewBox="0 0 192 256"
+                                fill="none"
+                              >
+                                {/* Alis Kiri & Kanan */}
+                                <path
+                                  d={guide.leftBrow}
+                                  stroke={guideColor}
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.5"}
+                                />
+                                <path
+                                  d={guide.rightBrow}
+                                  stroke={guideColor}
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.5"}
+                                />
+
+                                {/* Eyeline Axis (Garis Horizontal Level Mata) */}
+                                <line
+                                  x1="34"
+                                  y1={guide.leftEye.y}
+                                  x2="158"
+                                  y2={guide.rightEye.y}
+                                  stroke={guideColor}
+                                  strokeWidth="1"
+                                  strokeDasharray="2 3"
+                                  strokeOpacity={fqaStatus.isValid ? "0.8" : "0.35"}
+                                />
+
+                                {/* Target Mata Kiri: Lingkaran & Titik Pupil */}
+                                <ellipse
+                                  cx={guide.leftEye.x}
+                                  cy={guide.leftEye.y}
+                                  rx="9"
+                                  ry="6"
+                                  stroke={guideColor}
+                                  strokeWidth="1.4"
+                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
+                                />
+                                <circle
+                                  cx={guide.leftEye.x}
+                                  cy={guide.leftEye.y}
+                                  r="2"
+                                  fill={guideColor}
+                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
+                                />
+
+                                {/* Target Mata Kanan: Lingkaran & Titik Pupil */}
+                                <ellipse
+                                  cx={guide.rightEye.x}
+                                  cy={guide.rightEye.y}
+                                  rx="9"
+                                  ry="6"
+                                  stroke={guideColor}
+                                  strokeWidth="1.4"
+                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
+                                />
+                                <circle
+                                  cx={guide.rightEye.x}
+                                  cy={guide.rightEye.y}
+                                  r="2"
+                                  fill={guideColor}
+                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.6"}
+                                />
+
+                                {/* Garis Batang Hidung (Nose Bridge Meridian) */}
+                                <path
+                                  d={guide.nosePath}
+                                  stroke={guideColor}
+                                  strokeWidth="1.6"
+                                  strokeDasharray="3 2"
+                                  strokeLinecap="round"
+                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.5"}
+                                />
+                                {/* Titik Cuping Hidung */}
+                                <path
+                                  d={`M ${guide.noseTip.x - 7},${guide.noseTip.y} Q ${guide.noseTip.x},${guide.noseTip.y + 4} ${guide.noseTip.x + 7},${guide.noseTip.y}`}
+                                  stroke={guideColor}
+                                  strokeWidth="1.6"
+                                  strokeLinecap="round"
+                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
+                                />
+
+                                {/* Garis Bibir/Mulut (Mouth Target Line) */}
+                                <path
+                                  d={guide.mouthPath}
+                                  stroke={guideColor}
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
+                                />
+
+                                {/* Label Panduan Anatomi */}
+                                <text
+                                  x="96"
+                                  y={guide.leftEye.y - 12}
+                                  textAnchor="middle"
+                                  fill={guideColor}
+                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
+                                  fontSize="7"
+                                  fontFamily="monospace"
+                                  letterSpacing="0.8"
+                                >
+                                  ALIS & MATA
+                                </text>
+
+                                <text
+                                  x={guide.noseTip.x > 96 ? guide.noseTip.x + 15 : guide.noseTip.x - 15}
+                                  y={guide.noseTip.y}
+                                  textAnchor="middle"
+                                  fill={guideColor}
+                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
+                                  fontSize="6.5"
+                                  fontFamily="monospace"
+                                >
+                                  HIDUNG
+                                </text>
+
+                                <text
+                                  x="96"
+                                  y={currentPose.id === "down" ? 212 : 202}
+                                  textAnchor="middle"
+                                  fill={guideColor}
+                                  fillOpacity={fqaStatus.isValid ? "0.9" : "0.55"}
+                                  fontSize="6.5"
+                                  fontFamily="monospace"
+                                  letterSpacing="0.8"
+                                >
+                                  BIBIR & DAGU
+                                </text>
+
+                                {/* Panah Arah Tolehan (Bila ada) */}
+                                {guide.arrowPath && (
+                                  <path
+                                    d={guide.arrowPath}
+                                    stroke={guideColor}
+                                    strokeWidth="1.6"
+                                    strokeLinecap="round"
+                                    strokeDasharray="2 2"
+                                    strokeOpacity="0.75"
+                                  />
+                                )}
+                              </svg>
+                            );
+                          })()}
 
                           {/* Inside Target Badge */}
-                          <div className="my-auto flex flex-col items-center justify-center text-center px-4">
-                            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${
+                          <div className="z-10 flex flex-col items-center justify-center text-center px-4">
+                            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded backdrop-blur-sm ${
                               !fqaStatus.isFaceCentered
-                                ? "text-amber-300"
+                                ? "text-amber-300 bg-amber-950/60"
                                 : fqaStatus.isOccluded
-                                ? "text-red-400"
+                                ? "text-red-400 bg-red-950/60"
                                 : !fqaStatus.isPoseAligned
-                                ? "text-amber-300"
-                                : "text-emerald-300"
+                                ? "text-amber-300 bg-amber-950/60"
+                                : "text-emerald-300 bg-emerald-950/60"
                             }`}>
                               {!fqaStatus.isFaceCentered ? "Posisikan di Oval" : currentPose.shortLabel}
                             </span>
                           </div>
 
                           {/* Lower Jawline Safe Zone Marker */}
-                          <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-1"></div>
-                          <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mb-2">
-                            Area Dagu Bersih
-                          </span>
+                          <div className="z-10 flex flex-col items-center">
+                            <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-0.5"></div>
+                            <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400">
+                              Area Dagu Bersih
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

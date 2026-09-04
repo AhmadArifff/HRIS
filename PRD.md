@@ -1945,17 +1945,16 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
   3. **Tangan Menopang Dagu / Rahang:** Mendeteksi kombinasi lipatan tepi dagu horizontal tajam (`chinEdgeDensity > 0.20 && chinSkinCount > 60`) atau intrusi pergelangan tangan masif dari bawah reticle (`bottomSkinEntryCount > 80 && chinSkinCount > 100`).
 - **Respons Sistem:** Flag `hasChinOcclusion = true`, `occlusionZone = "chin"`.
 
-#### 12.3.2 Kasus Solusi Hambatan Wajah Atas (Upper Face: Forehead, Brow, Eyes, & Crown) & Eliminasi False Turn
-- **Latar Belakang Masalah:**
-  - Pengguna menaruh tangan di dahi/kening dan menutupi mata. Kehadiran tangan di satu sisi sebelumnya merusak rasio simetri kulit di oval core ($< 0.30$), sehingga sistem secara keliru menuduh pengguna *"Geser kepala sedikit ke kanan"*, alih-alih mendeteksi tangan di dahi!
+#### 12.3.2 Kasus Solusi Hambatan Wajah Atas (Upper Face: Forehead, Brow, Eyes, & Crown) & Pose-Specific Ocular Isolation
+- **Latar Belakang Masalah (False Alarm Tangan pada Pose Tolehan Menoleh):**
+  - Pada pengujian, saat pengguna menoleh ke kiri (~25°), mata kanan pengguna menghadap kamera sedangkan mata kiri secara alami tersembunyi/mengecil di belakang batang hidung akibat rotasi 3D perspektif (*self-occlusion*).
+  - Algoritma awal yang mengevaluasi asimetri mata (`eyeEdgeRatio < 0.38`) pada semua pose secara keliru menuduh kondisi alami tolehan ini sebagai *"✋ Terdeteksi halangan / tangan menutupi dahi atau mata!"* padahal tidak ada tangan sama sekali.
+- **Formulasi Pose-Specific Ocular Isolation:**
+  - Evaluasi asimetri mata (`isOcularOccluded`) dan jembatan pelipis (`hasTempleHandBridge`) **HANYA DIAKTIFKAN PADA POSE 1 (CENTER FRONTAL)**.
+  - Pada pose tolehan (`right`, `left`, `up`, `down`), oklusi dahi murni bertumpu pada **Intra-Skin Crease Density** ($\rho_{\text{intraSkin}} > 0.10$) atau saturasi mahkota atas ($\rho_{\text{crown}} > 0.65$), sehingga pengguna bebas menoleh ke kiri maupun ke kanan tanpa memicu alarm tangan palsu.
 - **Hierarki Prioritas Mutlak (Anti-Occlusion First):**
   - Deteksi oklusi tangan dievaluasi **SEBELUM** evaluasi centering atau pose alignment.
-  - Selama wajah hadir di kamera (`isFacePresent = coreSkinCount >= 180`), jika terdeteksi oklusi tangan di dahi atau mulut, sistem seketika memicu alarm tangan dan mengunci tombol capture (tidak membingungkan pengguna dengan perintah geser kepala).
-- **Indikator Heuristik Ocular & Forehead:**
-  1. **Ocular Eye-Pair Symmetry Check:** $\text{eyeEdgeRatio} < 0.38$ saat kontur mata aktif menandai salah satu mata/alis tertutup tangan.
-  2. **Lateral Temple Hand Bridge:** Intrusi kulit dari samping luar ($X \in [20, 46]$ atau $X \in [114, 140], Y \in [26, 66]$) melebihi 45 piksel yang terhubung ke dahi/mata.
-  3. **Intra-Skin Crease Sampling:** Gradien celah antar-kulit dahi $\rho_{\text{intraSkin}} > 0.08$.
-  4. **Crown Hand Saturation:** Tangan ditaruh di atas kepala ($\rho_{\text{crown}} > 0.60 \land \text{foreheadSkin} > 120$).
+  - Selama wajah hadir di kamera (`isFacePresent = coreSkinCount >= 180`), jika terdeteksi oklusi tangan di dahi atau mulut, sistem seketika memicu alarm tangan dan mengunci tombol capture.
 - **Respons Sistem:** Flag `hasForeheadOcclusion = true`, `occlusionZone = "forehead"`.
 
 #### 12.3.3 Background-Immune Internal Facial Sampling (Eliminasi Gangguan Kusen Pintu & Latar Belakang Ruangan)
@@ -1978,10 +1977,28 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
   1. **Pose 1 (Center Frontal):** Menggunakan toleransi simetri tengah yang ramah ($\ge 0.20$). Jika ada oklusi tangan, centering otomatis dianggap terpenuhi agar alarm tangan tampil dominan.
   2. **Pose 2 - 5 (Menoleh Kanan, Kiri, Mendongak, Menunduk):** Centering gate hanya memastikan wajah berada di dalam reticle oval (`isFacePresent = coreSkinCount >= 180`), tanpa menuntut simetri frontal.
   3. **Deteksi Tolehan Responsif:**
-     - **Menoleh Kanan (Pose 2):** Mendeteksi pergeseran massa kulit ke kiri frame cermin (`leftCoreSkin > rightCoreSkin * 1.15` atau `leftCheekSkin > rightCheekSkin * 1.20` atau `internalCheekRatio > 1.25`).
-     - **Menoleh Kiri (Pose 3):** Mendeteksi pergeseran massa kulit ke kanan frame cermin (`rightCoreSkin > leftCoreSkin * 1.15` atau `rightCheekSkin > leftCheekSkin * 1.20` atau `internalCheekRatio < 0.80`).
-     - **Mendongak Atas (Pose 4):** Mendeteksi dominasi leher/dagu (`verticalBalance < 1.08` atau `avgLower > avgUpper * 0.95` atau `chinSkinCount > 140`).
-     - **Menunduk Bawah (Pose 5):** Mendeteksi dominasi dahi atas (`verticalBalance > 0.90` atau `avgUpper > avgLower * 1.05`).
+     - **Menoleh Kanan (Pose 2):** Mendeteksi pergeseran massa kulit ke kiri frame cermin (`leftCoreSkin > rightCoreSkin * 1.08` atau `leftCheekSkin > rightCheekSkin * 1.10` atau `internalCheekRatio > 1.12`).
+     - **Menoleh Kiri (Pose 3):** Mendeteksi pergeseran massa kulit ke kanan frame cermin (`rightCoreSkin > leftCoreSkin * 1.08` atau `rightCheekSkin > leftCheekSkin * 1.10` atau `internalCheekRatio < 0.88`).
+     - **Mendongak Atas (Pose 4):** Mendeteksi dominasi leher/dagu (`verticalBalance < 1.15` atau `avgLower > avgUpper * 0.90` atau `chinSkinCount > 90`).
+     - **Menunduk Bawah (Pose 5):** Mendeteksi dominasi dahi atas (`verticalBalance > 0.85` atau `avgUpper > avgLower * 0.95`).
+
+#### 12.3.5 Dynamic In-Camera Facial Feature Alignment Grid (Panduan Garis Mata, Alis, Hidung, & Bibir)
+- **Latar Belakang UX:**
+  - Sebelumnya, panduan arah hanya divisualisasikan pada model kepala 3D di samping kanan layar. Pengguna mengalami kesulitan memperkirakan apakah sudut mata, lekukan hidung, dan bibir mereka sudah berada pada posisi yang diharapkan oleh model deteksi kamera.
+- **Spesifikasi In-Camera Overlay (Vector SVG Real-Time):**
+  - Di dalam bingkai oval panduan kamera, dirender kisi-kisi landmark anatomi dinamis:
+    1. **Sumbu Alis & Level Mata (*Eyebrow & Eyeline Axis*):** Garis horizontal putus-putus dengan penanda sepasang target mata (elips + titik pupil) berlabel `"ALIS & MATA"`.
+    2. **Meridian Batang Hidung (*Nose Bridge Meridian*):** Garis lengkung proyeksi 3D yang bergeser dinamis per pose:
+       - **Center:** Garis lurus vertikal di tengah dengan cuping hidung di $Y = 142$.
+       - **Kanan (Menoleh Kanan):** Garis meridian melengkung ke kanan dengan panah proyeksi arah.
+       - **Kiri (Menoleh Kiri):** Garis meridian melengkung ke kiri dengan panah proyeksi arah.
+       - **Atas (Mendongak):** Garis hidung memendek ke atas ($Y = 122$) dengan panah ke atas.
+       - **Bawah (Menunduk):** Garis hidung memanjang ke bawah ($Y = 158$) dengan panah ke bawah.
+    3. **Garis Target Bibir & Dagu (*Mouth Target Line*):** Garis lengkung busur horizontal berlabel `"BIBIR & DAGU"`.
+  - **Umpan Balik Warna Interaktif (*Snap Alignment Feedback*):**
+    - **Amber (`#fbbf24`):** Kepala belum sejajar dengan garis target anatomis.
+    - **Merah (`#ef4444`):** Terdeteksi oklusi tangan di wajah.
+    - **Hijau Emerald Menyala (`#10b981`):** Fitur wajah telah menempati garis target dengan presisi tinggi, mengindikasikan siap foto (*ready-to-snap*).
 
 ---
 
@@ -2127,4 +2144,6 @@ Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/kar
 | **Deteksi Tangan di Mulut/Bibir** | Punggung tangan mulus tidak terdeteksi | **Mouth Masking & Pure Skin Saturation** ($> 0.62$) | Deteksi deterministik saat 4 jari/tangan menutup mulut |
 | **Kekebalan Latar Belakang Ruangan** | Kusen pintu kontras memicu false turn | **Internal Facial Sampling** ($X \in [52, 72]$ & $[88, 108]$) | Pose center frontal stabil dan tidak terganggu kusen pintu |
 | **Relaksasi Centering 5-Pose** | Menoleh ke kanan/kiri terblokir oval | **Pose-Adaptive Centering Relaxation** | Pose tolehan kanan, kiri, atas, bawah responsif dan mulus |
+| **Isolasi Ocular Pose Tolehan** | Menoleh kiri/kanan memicu alarm tangan | **Pose-Specific Ocular Isolation** (Khusus Center) | Bebas salah deteksi tangan saat menoleh ke kiri/kanan |
+| **Panduan Landmark di Dalam Kamera** | Hanya model 3D terpisah di samping | **Dynamic In-Camera SVG Alignment Grid** | Garis panduan level mata, alis, hidung, & bibir langsung di video |
 
