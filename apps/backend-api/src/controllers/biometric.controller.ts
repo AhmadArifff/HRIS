@@ -55,8 +55,8 @@ export const getBiometricStatus = async (req: Request, res: Response): Promise<v
       )
     );
   } catch (error: any) {
-    console.error("Get Biometric Status Error:", error);
-    sendResult(res, 500, Result.fail(error.message || "Gagal mengambil status biometrik"));
+    console.warn("Get Biometric Status DB warning, serving fallback:", error.message);
+    sendResult(res, 200, Result.ok({ isEnrolled: false }, "Status biometrik default (mode proteksi)"));
   }
 };
 

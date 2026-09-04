@@ -142,74 +142,107 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-      const existingToday = await prisma.attendance.findFirst({
-        where: { employeeId, recordDate: today, deletedAt: null },
-      });
+      try {
+        const existingToday = await prisma.attendance.findFirst({
+          where: { employeeId, recordDate: today, deletedAt: null },
+        });
 
-      if (existingToday && existingToday.clockIn) {
-        sendResult(res, 400, Result.fail("Anda sudah melakukan absensi hari ini"));
-        return;
-      }
+        if (existingToday && existingToday.clockIn) {
+          sendResult(res, 400, Result.fail("Anda sudah melakukan absensi hari ini"));
+          return;
+        }
 
-      const employee = await prisma.employee.findUnique({
-        where: { id: employeeId },
-      });
+        const employee = await prisma.employee.findUnique({
+          where: { id: employeeId },
+        });
 
-      if (!employee) {
-        sendResult(res, 404, Result.fail("Karyawan tidak ditemukan"));
-        return;
-      }
+        if (!employee) {
+          sendResult(res, 404, Result.fail("Karyawan tidak ditemukan"));
+          return;
+        }
 
-      let shift = await prisma.shiftMaster.findFirst({
-        where: { isActive: true },
-      });
+        let shift = await prisma.shiftMaster.findFirst({
+          where: { isActive: true },
+        });
 
-      if (!shift) {
-        shift = await prisma.shiftMaster.create({
+        if (!shift) {
+          shift = await prisma.shiftMaster.create({
+            data: {
+              name: "Shift Reguler",
+              startTime: new Date("1970-01-01T08:00:00Z"),
+              endTime: new Date("1970-01-01T17:00:00Z"),
+              totalWorkHours: 8.0,
+              toleranceMinutes: 15,
+              isActive: true,
+            },
+          });
+        }
+
+        const emergencyAttendance = await prisma.attendance.create({
           data: {
-            name: "Shift Reguler",
-            startTime: new Date("1970-01-01T08:00:00Z"),
-            endTime: new Date("1970-01-01T17:00:00Z"),
-            totalWorkHours: 8.0,
-            toleranceMinutes: 15,
-            isActive: true,
+            employeeId,
+            shiftId: shift.id,
+            recordDate: today,
+            clockIn: now,
+            locationInLatlng: locationInLatlng || null,
+            statusId: employee.statusId,
+            notes: `[Absensi Darurat] ${emergencyReason.trim()}`,
+            isLate: false,
+            lateDurationMinutes: 0,
+            isFaceVerified: false,
+            faceSimilarityScore: null,
+            isSpoofDetected: false,
+            verificationMethod: "emergency_manual",
           },
         });
-      }
 
-      const emergencyAttendance = await prisma.attendance.create({
-        data: {
+        sendResult(
+          res,
+          201,
+          Result.ok(
+            {
+              attendanceId: emergencyAttendance.id,
+              clockIn: emergencyAttendance.clockIn,
+              isFaceVerified: false,
+              verificationMethod: "emergency_manual",
+              status: "PENDING_HR_APPROVAL",
+              notes: emergencyAttendance.notes,
+            },
+            "Presensi darurat berhasil diajukan dan sedang menunggu verifikasi HR"
+          )
+        );
+        return;
+      } catch (dbError: any) {
+        console.warn("Emergency manual attendance: DB unavailable, storing in Redis backup queue:", dbError.message);
+        const fallbackRecord = {
+          id: `att-emg-${Date.now()}`,
           employeeId,
-          shiftId: shift.id,
-          recordDate: today,
-          clockIn: now,
-          locationInLatlng: locationInLatlng || null,
-          statusId: employee.statusId,
+          recordDate: today.toISOString(),
+          clockIn: now.toISOString(),
+          status: "PENDING_HR_APPROVAL",
           notes: `[Absensi Darurat] ${emergencyReason.trim()}`,
-          isLate: false,
-          lateDurationMinutes: 0,
           isFaceVerified: false,
-          faceSimilarityScore: null,
-          isSpoofDetected: false,
           verificationMethod: "emergency_manual",
-        },
-      });
+        };
+        await redis.set(`emergency:attendance:${fallbackRecord.id}`, JSON.stringify(fallbackRecord), "EX", 86400 * 7);
 
-      sendResult(
-        res,
-        201,
-        Result.ok(
-          {
-            attendanceId: emergencyAttendance.id,
-            clockIn: emergencyAttendance.clockIn,
-            isFaceVerified: false,
-            verificationMethod: "emergency_manual",
-            status: "Menunggu Persetujuan HR",
-          },
-          "Presensi darurat berhasil diajukan dan sedang menunggu verifikasi HR"
-        )
-      );
-      return;
+        sendResult(
+          res,
+          201,
+          Result.ok(
+            {
+              attendanceId: fallbackRecord.id,
+              clockIn: fallbackRecord.clockIn,
+              isFaceVerified: false,
+              verificationMethod: "emergency_manual",
+              status: "PENDING_HR_APPROVAL",
+              notes: fallbackRecord.notes,
+            },
+            "Presensi darurat berhasil diajukan dan disimpan di buffer Redis aman (menunggu verifikasi HR)"
+          )
+        );
+        return;
+      }
     }
 
     if (!faceDescriptor && !selfieBase64) {
