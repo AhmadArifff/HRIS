@@ -707,22 +707,21 @@ export const EmployeeForm = () => {
 
             // Artificial Object Detection (White ceramic mug, cup, paper, surgical mask, mobile phone)
             // Human skin strictly requires high red-to-blue difference (r - b >= 25).
-            // A white/light cup or paper has high luminance and low saturation:
+            // A white/light ceramic cup or paper has high luminance and low saturation:
             const isWhiteObject =
-              gray > 105 &&
-              Math.abs(r - g) <= 22 &&
-              Math.abs(g - b) <= 22 &&
-              Math.abs(r - b) <= 24;
+              gray > 115 &&
+              Math.abs(r - g) <= 18 &&
+              Math.abs(g - b) <= 18 &&
+              Math.abs(r - b) <= 20;
 
-            // Colored foreign object (e.g. teal/cyan print on mug, dark phone chassis, dark fabric mask)
+            // Colored foreign object (e.g. vivid cyan, blue, emerald print on mug/phone)
+            // Black/dark clothing, normal hair, and skin tones are strictly EXCLUDED
             const isForeignObject =
               !isSkinTone &&
               !isDarkHair &&
               (isWhiteObject ||
-                (b > r + 10 && b > 55) ||
-                (g > r + 15 && g > 65) ||
-                gray > 130 ||
-                (gray < 50 && r < 50 && g < 50 && b < 50));
+                (b > r + 18 && b > 65) ||
+                (g > r + 20 && g > 75));
 
             // Step 1: Reticle Oval Core Sampling (Center at 80, 60)
             if (y >= 28 && y <= 92 && x >= 48 && x <= 112) {
@@ -745,8 +744,9 @@ export const EmployeeForm = () => {
               }
             }
 
-            // Step 3: Chin & Lower Jaw Zone (Y: 86-114, X: 48-112)
-            if (y >= 86 && y <= 114 && x >= 48 && x <= 112) {
+            // Step 3: Chin & Lower Jaw Anatomical Zone (Y: 82-98, X: 52-108)
+            // Tightened boundary avoids sampling black shirt collars and neck clothing
+            if (y >= 82 && y <= 98 && x >= 52 && x <= 108) {
               chinPixelCount++;
               if (isSkinTone) chinSkinCount++;
               if (isWhiteObject) chinWhiteObjectCount++;
@@ -755,7 +755,7 @@ export const EmployeeForm = () => {
                 const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
                 if (Math.abs(gray - downGray) > 22) chinEdgeCount++;
               }
-              if (y > 105 && isSkinTone) {
+              if (y >= 92 && isSkinTone) {
                 bottomSkinEntryCount++;
               }
             }
@@ -869,17 +869,29 @@ export const EmployeeForm = () => {
         // A. Hand Covering Mouth or Chin:
         const isMouthCovered = mouthSkinRatio > 0.65 && mouthPixelCount > 60 && mouthEdgeCount < 20;
         const hasMouthFingers = mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.38;
-        const hasChinHand = (chinEdgeDensity > 0.20 && chinSkinCount > 60) || (bottomSkinEntryCount > 75 && chinSkinCount > 90);
+        const hasChinHand = (chinEdgeDensity > 0.22 && chinSkinCount > 55) || (bottomSkinEntryCount > 65 && chinSkinCount > 75);
         const hasChinHandOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand);
 
         // B. Object Covering Mouth or Chin (Mug, Cup, Mask, Phone, Document):
-        // In an unobstructed face, if coreSkinCount >= 180, mouth and chin MUST have healthy skin!
-        // When a mug or cup blocks the mouth/chin:
-        // 1) Severe skin deficit in mouth (mouthSkinRatio < 0.22) or chin (chinSkinRatio < 0.18)
-        // 2) Or high cluster of foreign ceramic/plastic/paper object pixels
-        const hasMouthObject = (mouthSkinRatio < 0.22 && mouthPixelCount > 70) || mouthWhiteObjectCount > 30 || mouthForeignCount > 65;
-        const hasChinObject = (chinSkinRatio < 0.18 && chinPixelCount > 80) || chinWhiteObjectCount > 35 || chinForeignCount > 75;
-        const hasObjectOcclusion = isFacePresent && (hasMouthObject || hasChinObject);
+        // In an unobstructed face, healthy skin is present in mouth and chin.
+        // A real cup/mug held to the face blocks the mouth and upper chin:
+        const isMouthBlockedByObject =
+          mouthPixelCount > 50 &&
+          ((mouthSkinRatio < 0.22 && (mouthWhiteObjectCount > 20 || mouthForeignCount > 35)) ||
+            mouthWhiteObjectCount > 35 ||
+            mouthForeignCount > 55);
+
+        // A cup spanning mouth and chin simultaneously:
+        const isCupSpanningMouthAndChin =
+          (mouthWhiteObjectCount > 18 && chinWhiteObjectCount > 18) ||
+          (mouthForeignCount > 30 && chinForeignCount > 25);
+
+        // Large foreign ceramic/plastic object covering chin with simultaneous mouth disturbance:
+        const isChinObjectConfirmed =
+          chinWhiteObjectCount > 40 && chinSkinRatio < 0.20 && mouthSkinRatio < 0.40;
+
+        const hasObjectOcclusion =
+          isFacePresent && (isMouthBlockedByObject || isCupSpanningMouthAndChin || isChinObjectConfirmed);
 
         // C. Zone Forehead, Brows, Eyes, & Crown:
         const foreheadIntraSkinDensity = foreheadSkinCount > 0 ? foreheadIntraSkinEdgeCount / foreheadSkinCount : 0;
@@ -1625,8 +1637,18 @@ export const EmployeeForm = () => {
                             <div className="w-28 h-0.5 border-b border-dashed border-white/40 mt-0.5"></div>
                           </div>
 
-                          {/* Biometric Cyber Laser Scan Beam */}
-                          <div className="absolute inset-x-2 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] pointer-events-none animate-kyc-laser opacity-80 z-20" />
+                          {/* Biometric Cyber Laser Scan Beam with Dynamic State-Adaptive Glow */}
+                          <div
+                            className={`absolute inset-x-2 top-0 h-[2.5px] bg-gradient-to-r from-transparent ${
+                              fqaStatus.isOccluded
+                                ? "via-red-400 shadow-[0_0_15px_#ef4444]"
+                                : fqaStatus.isValid
+                                ? "via-emerald-400 shadow-[0_0_18px_#10b981]"
+                                : !fqaStatus.isPoseAligned
+                                ? "via-amber-400 shadow-[0_0_14px_#f59e0b]"
+                                : "via-cyan-400 shadow-[0_0_14px_#38bdf8]"
+                            } to-transparent pointer-events-none animate-kyc-laser opacity-90 z-20 transition-colors duration-300`}
+                          />
 
                           {/* Dynamic Adaptive Biometric Landmark Dot Mesh (38-Point Facial Topology) */}
                           {(() => {

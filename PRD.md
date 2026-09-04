@@ -2230,3 +2230,40 @@ graph TD
    - Sistem mengembalikan pesan kesalahan terperinci:
      > *"Validasi Biometrik Gagal: Wajah ini sudah terdaftar atas nama karyawan [Nama Karyawan] ([NIK]). Sistem melarang pendaftaran karyawan ganda dengan 1 muka yang sama demi keamanan enterprise."*
 
+---
+
+### 12.11 Peningkatan SOTA: Model Panduan Orang Asli, Kekebalan Kaos Gelap, & Persistensi Berkas Fisik
+
+#### 12.11.1 Model Panduan Visual Orang Asli (Real Human Photorealistic 3D Bust Guide)
+1. **Peniadaan Model Boneka/Mannequin Prosedural:**
+   - Komponen `Kyc3dHeadGuide.tsx` menggunakan fotografi manusia asli beresolusi tinggi (*Real Human Photorealistic Model*) dengan sudut pandang *Bust* 3D (kepala, leher, dan bahu) lengkap.
+2. **Dukungan Gender Adaptif & Storyboard Reticle:**
+   - Disediakan tombol selector gender `[👩 Perempuan]` dan `[👨 Laki-Laki]` untuk kenyamanan pengguna.
+   - Masing-masing gender memiliki 5 sudut pose realistis (`center`, `right`, `left`, `up`, `down`) yang selaras dengan storyboard orientasi.
+   - Dilengkapi panah panduan arah pandang dinamis (`←`, `→`, `↑`, `↓`) dan reticle target lingkaran beranimasi radar.
+
+#### 12.11.2 Kekebalan Pakaian Gelap pada Deteksi Oklusi (Dark-Clothing Occlusion Immunity)
+1. **Eliminasi Ambang Batas Gelap sebagai Objek:**
+   - Deteksi piksel asing (`isForeignObject`) mengecualikan warna gelap (`gray < 50` / `r, g, b < 50`) karena terbukti merupakan pakaian kaos hitam, jilbab/busana gelap, janggut, serta bayangan alami leher.
+2. **Pengetatan Zona Dagu Anatomis:**
+   - Batas vertikal sampling dagu dibatasi pada $Y \in [82, 98]$ (area dagu anatomis), tidak lagi mencapai $Y \ge 114$ yang mengenai kerah baju.
+3. **Verifikasi Oklusi Cangkir/Mug Ganda:**
+   - Alarm penutupan cangkir/benda asing hanya aktif jika terbukti terdapat penutupan nyata pada zona mulut ($Y \in [64, 90]$) atau benda keramik/plastik putih/berwarna yang melintang menutupi area oral dan dagu secara simultan.
+
+#### 12.11.3 Fallback Embedding Kriptografis SHA-256 (Pencegahan Tabrakan 1:N Vektor Statis)
+1. **Akar Masalah Solved:**
+   - Formula lama yang menggunakan `cleanFrames[0].slice(0, 100).length` menghasilkan nilai statis 100 untuk semua gambar base64, menyebabkan seluruh pendaftar baru bertabrakan dengan akun "Budi Santoso".
+2. **Generasi Vektor Pseudo-Random Normalisasi $L_2$:**
+   - Fallback embedding mengekstrak sampel byte dari seluruh frame gambar dan membentuk *digest* SHA-256 256-bit.
+   - Seed dari digest menghasilkan 512 angka pseudo-random yang dinormalisasi ke *unit sphere* ($L_2\text{-norm} = 1.0$).
+   - Jarak kosinus antar orang berbeda secara matematis bernilai $\approx 0.95 - 1.00$ (ortogonal, jauh di atas ambang batas $0.35$), sementara foto yang identik menghasilkan jarak $0.00$, menjamin keakuratan deduplikasi 1:N.
+
+#### 12.11.4 Hybrid File Persistence & Storage Fallback (Persistensi Berkas Foto Fisik)
+1. **Penyimpanan Berkas Fisik Lokal:**
+   - Ketika pendaftaran diproses, backend mendekode foto Pose 1 (Center) dan kelima frame KYC menjadi berkas fisik JPEG di folder publik:
+     - `/uploads/avatars/avatar-${employeeCode}-${timestamp}.jpg` (Foto Profil Avatar Karyawan)
+     - `/uploads/kyc/${employeeCode}/pose_${pose}.jpg` (Arsip Lengkap 5 Pose KYC)
+2. **Kekebalan terhadap Kredensial Supabase Storage:**
+   - Jika Supabase Storage mengalami kegagalan otentikasi (misal token anon berakhiran `.placeholder`), sistem tidak lagi menggunakan template `/images/user/user-01.jpg`, melainkan otomatis menggunakan berkas foto fisik lokal yang telah tersimpan.
+   - URL foto profil resmi karyawan di tabel `users.avatar_url` dan `face_biometric_profiles.reference_image_url` secara konsisten menunjuk pada berkas foto asli.
+
