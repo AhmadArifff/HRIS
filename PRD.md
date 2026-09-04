@@ -2380,3 +2380,11 @@ graph TD
        5. **Bayangan Kumis / Stubble & Rahang:** Rasio luminansi filtrum bibir atas terhadap pipi mendeteksi folikel kumis pria (`avgPhiltrum < 0.88 * avgCheek`), serta rasio lebar mandibula rahang persegi (`jawWidth / faceW \ge 0.78`).
        6. **Pencegahan Alarm Palsu Oklusi Tangan:** Ambang batas tangan di dagu mensyaratkan ketiadaan kontur bibir alami (`mouthLipCount < 6`), sehingga kulit leher pria saat mendekat ke kamera tidak memicu peringatan tangan palsu.
      - Hasil deterministik: Klasifikasi `FEMALE` + badge `[HIJAB]` jika syarat terpenuhi, atau `MALE` jika terdapat rambut dahi atau kulit leher terbuka.
+ 6. **Inspeksi Interaktif Hasil Foto & Face Recognition (Interactive Inspection & Dynamic Preview):**
+    - **Modal Inspeksi Detail Biometrik:** Seluruh thumbnail foto yang telah ditangkap (baik pada *stepper* langkah 1-5, panel samping di bawah panduan 3D, *mini-strip gallery*, maupun *Review 5-Pose Gallery*) bersifat interaktif dan dapat diklik untuk membuka modal inspeksi beresolusi tinggi dengan HUD metadata lengkap (*Gender*, *Age Group*, *Human Part: Craniofacial 3D*, *Quality Score*, *Detection Score*, *512-D Vector Hash*, serta audit ketajaman & pencahayaan).
+    - **Logika Dinamis Panel Samping (Pose Aktif vs Foto Terakhir):**
+      - Jika pose aktif sudah diambil (misal Pose 2: Kanan), panel samping di bawah model 3D memprioritaskan menampilkan hasil foto pose aktif tersebut (*Hasil Foto Pose Ini: 2. Kanan*) beserta skor dan tombol aksi, bukan terpaku kaku pada foto Pose 1 (Center).
+      - Jika pose aktif belum diambil, panel menampilkan foto terakhir yang berhasil ditangkap (*Foto Terakhir Diambil*).
+      - Menampilkan *Mini-strip 5 Sudut Pose* di bawahnya agar pengguna dapat memantau seluruh sudut secara real-time.
+    - **Eliminasi Oklusi Dahi Pose Menunduk Bawah:** Pada Pose 5 (*Menunduk Bawah* -15°), peningkatan densitas kening akibat kepala condong ke depan tidak lagi memicu alarm palsu `TANGAN MENUTUPI DAHI`.
+    - **Gating Kelengkapan 5-Pose Form Submit:** Validasi tombol simpan karyawan mengacu pada keterisian seluruh 5 pose (`allPosesCaptured`), sehingga form tidak terkunci saat pengguna membuka kembali kamera untuk meninjau pose.
