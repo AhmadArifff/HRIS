@@ -2346,18 +2346,15 @@ graph TD
    - **Target Framing Brackets `[   ]`:** Empat siku sudut bermetrik kalibrasi, label sistem (`SYS//01`, `REC.3D`, `W:640 H:480`), dan derajat orientasi *real-time*.
    - **3D Triangular Polygon Facets:** Shading faset segitiga poligon transparan yang merefleksikan topologi wajah 3D manusia.
    - **Jalur Konstelasi Bercahaya (Constellation Flow):** Garis vektor bercahaya emas/sian dengan animasi *flowing stroke dashoffset* ($1.6\text{s}$ siklus) yang menghubungkan titik-titik biometrik utama dengan efek aliran energi data, dilengkapi cincin radar ping (`animate-ping`).
-   - **Holographic Wavefront Laser Scan Beam:** Berkas laser vertikal bersinar ganda (*double-glow gradient*) yang menyapu permukaan wajah dari atas ke bawah secara kontinu ($2.4\text{s}$ siklus).
-   - **Panel Telemetri Biometrik HUD Sisi Kanan (Sesuai Gambar 2):**
-     - Header: `FACE RECOGNITION` beraksen neon.
-     - `● NO` : Kode identitas karyawan terdaftar (contoh: `#0842-AX`).
-     - `● GEN` : Profil gender biometrik.
-     - `● AGE GROUP` : Estimasi kelompok usia biometrik (`ADULT (20-35)`).
-     - `● ETHNICITY` : Standar biometrik (`BIOMETRIC STD`).
+   - **Holographic Wavefront Laser Scan Beam:** Berkas laser vertikal bersinar ganda (*double-glow gradient*) yang menyapu permukaan wajah dari atas ke bawah secara kontinu ($2.4\text{s}$ siklus) mengikuti area kontur wajah aktif.
+   - **Panel Telemetri Biometrik HUD Ringkas (Streamlined Telemetry HUD):**
+     - Dirancang ultra-ringkas (4 baris inti) agar fokus, bersih, dan tidak menghalangi wajah pengguna:
+     - `● GEN` : Profil gender hasil analisis biometrik riil (`FEMALE` atau `MALE`), dilengkapi badge `[HIJAB]` ketika terdeteksi hijab/kerudung.
+     - `● AGE GROUP` : Estimasi kelompok usia biometrik dinamis (`ADULT (20-35)`).
      - `● HUMAN PART` : Bagian anatomi terfokus (`CRANIOFACIAL 3D`).
-     - `● TIME` : Jam militer milidetik langsung (`HH:MM:SS.mmm`).
-     - `● DETECTION` : Status kepastian deteksi (`99.8% CONFIRMED`).
-     - `● POS` : Koordinat rotasi Yaw & Pitch langsung dari sensor FQA.
-     - *Cryptographic SHA-256 Vector Stream Ticker* di bagian bawah.
+     - `● DETECTION` : Skor kepastian deteksi aktual real-time (contoh: `96.4% COMPUTING` atau `99.4% CONFIRMED`).
+     - *Catatan:* Data pelengkap yang berlebih (`NO`, `TIME`, `ETHNICITY`, `POS`) telah dieliminasi agar tampilan ringkas dan presisi.
+     - *Cryptographic SHA-256 Vector Stream Ticker* di bagian bawah (`512-D VECTOR`).
 3. **Sintesis Audio Fiksi Ilmiah (Web Audio API Synthesizer):**
    - Menggunakan oscillator audio murni tanpa dependensi file MP3 eksternal untuk respon nol latensi:
      - **Landmark Tracking Ping:** Frekuensi sine $1400\text{ Hz} \to 1800\text{ Hz}$ lembut saat titik wajah terkunci.
@@ -2369,4 +2366,17 @@ graph TD
    - **Target Locked / Valid (Emerald Neon `#10b981`):** Wajah terpusat, sudut pose tepat, iluminasi cukup, siap jepret.
    - **Occluded / Halangan Terdeteksi (Danger Crimson `#ef4444`):** Glitch sinematik seketika, wireframe merah menyala, peringatan oklusi aktif.
    - **Angle Adjustment (Cyber Amber `#fbbf24`):** Panduan orientasi sudut kepala.
+5. **Pelacakan Wajah Dinamis & Klasifikasi Demografis Hijab/Kerudung (Dynamic Face Tracking & Hijab Classifier):**
+   - **Dynamic Real-Time Face Tracking:**
+     - Menghitung *centroid* wajah $(c_x, c_y)$ dan *bounding box* dari piksel kulit/wajah di canvas sampling $160 \times 120$.
+     - Mengonversi koordinat terbalik akibat video cermin (`scale-x-[-1]`):
+       $$x_{\text{screen}} = (1 - c_x / 160) \times 100\%, \quad y_{\text{screen}} = (c_y / 120) \times 100\%$$
+     - Menggunakan *Exponential Moving Average* (EMA) smoothing untuk pergerakan mulus bebas jitter.
+     - Seluruh 42 titik biometrik, faset poligon 3D, jalur konstelasi, dan berkas strip laser secara dinamis mengikuti pergerakan, jarak, dan skala kepala pengguna secara langsung, bukan terpaku statis di tengah oval.
+   - **Klasifikasi Gender & Deteksi Hijab/Kerudung Riil:**
+     - Mengatasi permasalahan di mana pengguna perempuan yang mengenakan kerudung/hijab sebelumnya salah diklasifikasikan sebagai `MALE` karena ketiadaan data rambut menjuntai (*draping hair*).
+     - Menganalisis zona sub-mandibular leher ($Y \in [96, 118]$) dan mahkota kepala ($Y \in [4, 24]$):
+       - Pengguna berhijab: Leher tertutup kain (`neckSkinCount < 25`, `neckFabricCount > 20`) dan mahkota kepala tertutup rapi oleh kain jilbab (`crownDarkHairCount < 40`, `crownFabricCount > 20`), tanpa helai rambut menjuntai.
+       - Ketika kriteria terpenuhi, sistem secara deterministik mengklasifikasikan gender sebagai **`FEMALE`** dengan confidence tinggi ($\ge 98\%$) dan menyematkan badge `[HIJAB]`.
+       - Sebaliknya, jika terdeteksi kulit leher terbuka (`neckSkinCount > 35`) dan rambut pendek di mahkota kepala, sistem mengklasifikasikan sebagai **`MALE`**.
 

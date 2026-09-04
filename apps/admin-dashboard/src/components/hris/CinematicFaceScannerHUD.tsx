@@ -21,6 +21,20 @@ export interface CinematicFaceScannerHUDProps {
   employeeCode?: string;
   employeeName?: string;
   gender?: string;
+  faceTrack?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    isDetected: boolean;
+  };
+  biometricAnalysis?: {
+    gender: "FEMALE" | "MALE";
+    genderConfidence?: number;
+    hasHijab?: boolean;
+    ageGroup?: string;
+    detectionScore?: number;
+  };
 }
 
 interface BiometricDot {
@@ -466,11 +480,24 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
   employeeCode = "0842-AX",
   employeeName = "KARYAWAN",
   gender = "MALE",
+  faceTrack = { x: 50, y: 50, width: 36, height: 58, isDetected: false },
+  biometricAnalysis,
 }) => {
   const meshConfig = useMemo(() => getBiometricConfig(poseId), [poseId]);
 
-  // Live Military Millisecond Clock (Image 2 HUD)
-  const [militaryTime, setMilitaryTime] = useState<string>("00:00:00.000");
+  // Demographic analysis: prioritize real-time biometric analysis over static fallbacks
+  const analyzedGender =
+    biometricAnalysis?.gender ||
+    (gender && gender.toUpperCase().includes("FEM") ? "FEMALE" : "MALE");
+  const isHijabDetected = Boolean(biometricAnalysis?.hasHijab);
+  const ageGroup = biometricAnalysis?.ageGroup || "ADULT (20-35)";
+  const detectionScore =
+    biometricAnalysis?.detectionScore !== undefined
+      ? biometricAnalysis.detectionScore
+      : fqaStatus.isValid
+      ? 99.4
+      : 94.2;
+
   const [sfxMuted, setSfxMuted] = useState<boolean>(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -543,20 +570,6 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
     }
     prevOccludedRef.current = fqaStatus.isOccluded;
   }, [fqaStatus.isValid, fqaStatus.isOccluded]);
-
-  // Live Military Millisecond Clock loop
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, "0");
-      const m = String(now.getMinutes()).padStart(2, "0");
-      const s = String(now.getSeconds()).padStart(2, "0");
-      const ms = String(now.getMilliseconds()).padStart(3, "0");
-      setMilitaryTime(`${h}:${m}:${s}.${ms}`);
-    }, 45);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Theme color palette based on live FQA status
   const theme = useMemo(() => {
@@ -721,9 +734,9 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
             </span>
           </div>
 
-          {/* Center Crosshairs & Azimuth Tick Calibration Marks */}
+          {/* Center Crosshairs & Azimuth Tick Calibration Marks (Ambient Guideline) */}
           <div
-            className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none"
+            className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none"
             style={{ animation: "cyber-radar-pulse 4s ease-in-out infinite" }}
           >
             <div
@@ -734,10 +747,23 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
         </div>
       </div>
 
-      {/* 3. CENTRAL 3D FACIAL MESH & CONSTELLATION OVERLAY (Matching Image 1 & Image 2) */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className="w-48 h-64 sm:w-56 sm:h-72 relative">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 192 260" fill="none">
+      {/* 3. DYNAMIC REAL-TIME FACE-TRACKING 3D MESH & SCANNING LASER STRIP (Follows User Face) */}
+      <div
+        className="absolute pointer-events-none z-10 transition-all duration-150 ease-out flex items-center justify-center"
+        style={{
+          left: `${faceTrack?.x ?? 50}%`,
+          top: `${faceTrack?.y ?? 50}%`,
+          width: `${faceTrack?.width ?? 36}%`,
+          height: `${faceTrack?.height ?? 58}%`,
+          transform: "translate(-50%, -50%)",
+          minWidth: "160px",
+          maxWidth: "360px",
+          minHeight: "220px",
+          maxHeight: "460px",
+        }}
+      >
+        <div className="w-full h-full relative">
+          <svg className="w-full h-full overflow-visible" viewBox="0 0 192 260" preserveAspectRatio="none" fill="none">
             <defs>
               {/* Sci-Fi Glow Filter */}
               <filter id="sci-fi-glow" x="-30%" y="-30%" width="160%" height="160%">
@@ -863,7 +889,7 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
             ))}
           </svg>
 
-          {/* HOLOGRAPHIC WAVEFRONT SCANNING LASER BEAM */}
+          {/* HOLOGRAPHIC WAVEFRONT SCANNING LASER BEAM (Follows Tracked Face) */}
           <div
             className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-300 to-transparent pointer-events-none z-30 transition-colors duration-300"
             style={{
@@ -875,10 +901,10 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
         </div>
       </div>
 
-      {/* 4. SCI-FI BIOMETRIC TELEMETRY HUD PANEL (Signature Image 2 Feature) */}
+      {/* 4. SCI-FI BIOMETRIC TELEMETRY HUD PANEL (Streamlined: GEN, AGE GROUP, HUMAN PART, DETECTION) */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30 flex flex-col items-end pointer-events-auto">
         <div
-          className="w-52 sm:w-60 bg-slate-950/80 backdrop-blur-md rounded-xl p-3 border text-left shadow-2xl transition-all duration-300"
+          className="w-48 sm:w-56 bg-slate-950/85 backdrop-blur-md rounded-xl p-2.5 border text-left shadow-2xl transition-all duration-300"
           style={{ borderColor: `${theme.primary}50` }}
         >
           {/* Header */}
@@ -902,34 +928,27 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
             </button>
           </div>
 
-          {/* Telemetry Key-Value Matrix (Matching Image 2 verbatim) */}
-          <div className="space-y-1 text-[9px] sm:text-[10px] leading-tight text-slate-300">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-slate-500 font-semibold">
-                <span className="text-white text-[7px]">●</span> NO
-              </span>
-              <span className="font-bold text-white tracking-wider">{employeeCode}</span>
-            </div>
-
+          {/* Telemetry Key-Value Matrix (Streamlined: GEN, AGE GROUP, HUMAN PART, DETECTION) */}
+          <div className="space-y-1.5 text-[9px] sm:text-[10px] leading-tight text-slate-300">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1 text-slate-500 font-semibold">
                 <span className="text-white text-[7px]">●</span> GEN
               </span>
-              <span className="text-slate-200">{gender}</span>
+              <span className="text-slate-200 font-bold flex items-center gap-1.5">
+                {analyzedGender}
+                {isHijabDetected && (
+                  <span className="text-[7.5px] tracking-wider uppercase bg-pink-950/90 border border-pink-500/60 text-pink-300 px-1.5 py-0.5 rounded font-mono">
+                    HIJAB
+                  </span>
+                )}
+              </span>
             </div>
 
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1 text-slate-500 font-semibold">
                 <span className="text-white text-[7px]">●</span> AGE GROUP
               </span>
-              <span className="text-slate-200">ADULT (20-35)</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-slate-500 font-semibold">
-                <span className="text-white text-[7px]">●</span> ETHNICITY
-              </span>
-              <span className="text-slate-200">BIOMETRIC STD</span>
+              <span className="text-slate-200">{ageGroup}</span>
             </div>
 
             <div className="flex items-center justify-between">
@@ -941,26 +960,16 @@ export const CinematicFaceScannerHUD: React.FC<CinematicFaceScannerHUDProps> = (
 
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1 text-slate-500 font-semibold">
-                <span className="text-white text-[7px]">●</span> TIME
-              </span>
-              <span className="text-emerald-400 font-mono font-semibold">{militaryTime}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-slate-500 font-semibold">
                 <span className="text-white text-[7px]">●</span> DETECTION
               </span>
               <span className="font-bold" style={{ color: theme.primary }}>
-                {theme.telemetryDetection}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-slate-500 font-semibold">
-                <span className="text-white text-[7px]">●</span> POS
-              </span>
-              <span className="text-cyan-300 font-mono">
-                {meshConfig.yawDegrees} | {meshConfig.pitchDegrees}
+                {fqaStatus.isValid
+                  ? `${detectionScore.toFixed(1)}% CONFIRMED`
+                  : fqaStatus.isOccluded
+                  ? "INTERRUPTED // OCCLUDED"
+                  : !fqaStatus.isFaceCentered || !fqaStatus.isPoseAligned
+                  ? "ALIGNING TOPOLOGY"
+                  : `${detectionScore.toFixed(1)}% COMPUTING`}
               </span>
             </div>
           </div>
