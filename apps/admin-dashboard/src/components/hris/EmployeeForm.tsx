@@ -66,10 +66,59 @@ interface BiometricDot {
 interface BiometricMeshConfig {
   dots: BiometricDot[];
   meshConnections: [number, number][];
+  facets: number[][];
   poseHintText: string;
   yawDegrees: string;
   centerPos: { x: number; y: number };
 }
+
+// 3D Polygon Surface Facets conforming to facial & neck geometry (Matching Image 1)
+const BIOMETRIC_FACETS: number[][] = [
+  // 1. Forehead Arch & Temples
+  [0, 1, 6, 7],
+  [1, 2, 5, 6],
+  [0, 3, 9, 8],
+  [3, 4, 10, 9],
+  [0, 7, 17, 8],
+  // 2. Eye Sockets & Orbital Contours
+  [5, 6, 12, 11],
+  [6, 7, 13, 12],
+  [11, 12, 24, 23],
+  [12, 13, 21, 24],
+  [8, 9, 15, 14],
+  [9, 10, 16, 15],
+  [14, 15, 22, 26],
+  [15, 16, 25, 26],
+  // 3. Nasal Pyramid & Bridge
+  [7, 8, 18, 17],
+  [17, 18, 19],
+  [18, 19, 20],
+  [19, 20, 21],
+  [19, 20, 22],
+  // 4. Cheeks & Maxillary Surfaces
+  [2, 5, 23, 31],
+  [4, 10, 25, 37],
+  [23, 24, 32, 31],
+  [25, 26, 36, 37],
+  [24, 21, 27, 33],
+  [26, 22, 29, 35],
+  // 5. Philtrum & Mouth & Lips
+  [20, 21, 27, 28],
+  [20, 22, 29, 28],
+  [27, 28, 29, 30],
+  [27, 30, 34, 33],
+  [29, 30, 34, 35],
+  // 6. Chin Apex & Mandible
+  [31, 32, 33],
+  [37, 36, 35],
+  [32, 33, 34],
+  [36, 35, 34],
+  // 7. Neck & Throat Contours (Extending down the neck as shown in Image 1)
+  [33, 34, 39, 38],
+  [34, 35, 40, 39],
+  [38, 39, 41],
+  [39, 40, 41],
+];
 
 // Interconnection lines between biometric facial landmark nodes (pairs of dot indices)
 const BIOMETRIC_MESH_CONNECTIONS: [number, number][] = [
@@ -93,6 +142,8 @@ const BIOMETRIC_MESH_CONNECTIONS: [number, number][] = [
   [23, 31], [31, 32], [32, 33], [33, 34], [34, 35], [35, 36], [36, 37], [37, 25],
   // Mouth to Chin
   [30, 34],
+  // Neck & Throat Contours (38..41)
+  [33, 38], [34, 39], [35, 40], [38, 39], [39, 40], [38, 41], [39, 41], [40, 41],
 ];
 
 const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
@@ -103,6 +154,7 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         poseHintText: "TOLEHKAN KE KANAN (+25°)",
         yawDegrees: "+25° YAW",
         centerPos: { x: 80, y: 138 },
+        facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
           { id: "fh_c", x: 80, y: 62 },
@@ -139,18 +191,23 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "ck_rt", x: 138, y: 122 },
           { id: "ck_rm", x: 124, y: 146 },
           // 27..30 Lips
-          { id: "lp_l", x: 64, y: 174 },
-          { id: "lp_t", x: 80, y: 168 },
-          { id: "lp_r", x: 102, y: 174 },
-          { id: "lp_b", x: 80, y: 182 },
+          { id: "lp_l", x: 66, y: 174 },
+          { id: "lp_t", x: 82, y: 168 },
+          { id: "lp_r", x: 104, y: 174 },
+          { id: "lp_b", x: 82, y: 182 },
           // 31..37 Jaw & Chin
           { id: "jw_1", x: 42, y: 152 },
           { id: "jw_2", x: 50, y: 188 },
           { id: "jw_3", x: 66, y: 212 },
-          { id: "ch_tip", x: 80, y: 218, isAnchor: true },
-          { id: "jw_5", x: 104, y: 212 },
+          { id: "ch_tip", x: 84, y: 218, isAnchor: true },
+          { id: "jw_5", x: 106, y: 212 },
           { id: "jw_6", x: 128, y: 188 },
           { id: "jw_7", x: 142, y: 152 },
+          // 38..41 Neck & Throat
+          { id: "nk_l", x: 68, y: 236 },
+          { id: "nk_c", x: 84, y: 240, isAnchor: true },
+          { id: "nk_r", x: 112, y: 236 },
+          { id: "nk_b", x: 88, y: 250 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -161,6 +218,7 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         poseHintText: "TOLEHKAN KE KIRI (-25°)",
         yawDegrees: "-25° YAW",
         centerPos: { x: 112, y: 138 },
+        facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
           { id: "fh_c", x: 112, y: 62 },
@@ -209,6 +267,11 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "jw_5", x: 126, y: 212 },
           { id: "jw_6", x: 142, y: 188 },
           { id: "jw_7", x: 150, y: 152 },
+          // 38..41 Neck & Throat
+          { id: "nk_l", x: 80, y: 236 },
+          { id: "nk_c", x: 108, y: 240, isAnchor: true },
+          { id: "nk_r", x: 124, y: 236 },
+          { id: "nk_b", x: 104, y: 250 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -219,6 +282,7 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         poseHintText: "DONGAKKAN KE ATAS (+15°)",
         yawDegrees: "+15° PITCH",
         centerPos: { x: 96, y: 124 },
+        facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
           { id: "fh_c", x: 96, y: 52 },
@@ -267,6 +331,11 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "jw_5", x: 116, y: 210 },
           { id: "jw_6", x: 136, y: 184 },
           { id: "jw_7", x: 148, y: 144 },
+          // 38..41 Neck & Throat
+          { id: "nk_l", x: 74, y: 236 },
+          { id: "nk_c", x: 96, y: 242, isAnchor: true },
+          { id: "nk_r", x: 118, y: 236 },
+          { id: "nk_b", x: 96, y: 254 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -277,6 +346,7 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         poseHintText: "TUNDUKKAN KE BAWAH (-15°)",
         yawDegrees: "-15° PITCH",
         centerPos: { x: 96, y: 152 },
+        facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead
           { id: "fh_c", x: 96, y: 74 },
@@ -325,6 +395,11 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "jw_5", x: 116, y: 220 },
           { id: "jw_6", x: 134, y: 196 },
           { id: "jw_7", x: 146, y: 160 },
+          // 38..41 Neck & Throat
+          { id: "nk_l", x: 78, y: 238 },
+          { id: "nk_c", x: 96, y: 242, isAnchor: true },
+          { id: "nk_r", x: 114, y: 238 },
+          { id: "nk_b", x: 96, y: 250 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -335,6 +410,7 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
         poseHintText: "POSISI LURUS (FRONTAL)",
         yawDegrees: "0° (FRONT)",
         centerPos: { x: 96, y: 138 },
+        facets: BIOMETRIC_FACETS,
         dots: [
           // 0..4 Forehead & Temples
           { id: "fh_c", x: 96, y: 64 },
@@ -383,6 +459,11 @@ const getBiometricMesh = (poseId: string): BiometricMeshConfig => {
           { id: "jw_5", x: 116, y: 214 },
           { id: "jw_6", x: 136, y: 192 },
           { id: "jw_7", x: 148, y: 154 },
+          // 38..41 Neck & Throat
+          { id: "nk_l", x: 76, y: 236 },
+          { id: "nk_c", x: 96, y: 240, isAnchor: true },
+          { id: "nk_r", x: 116, y: 236 },
+          { id: "nk_b", x: 96, y: 252 },
         ],
         meshConnections: BIOMETRIC_MESH_CONNECTIONS,
       };
@@ -1566,6 +1647,14 @@ export const EmployeeForm = () => {
                               ? "text-amber-400 border-amber-500/40 bg-amber-950/50"
                               : "text-cyan-400 border-cyan-500/40 bg-cyan-950/50";
 
+                            const facetFill = fqaStatus.isOccluded
+                              ? "rgba(239, 68, 68, 0.08)"
+                              : fqaStatus.isValid
+                              ? "rgba(16, 185, 129, 0.12)"
+                              : !fqaStatus.isPoseAligned
+                              ? "rgba(245, 158, 11, 0.08)"
+                              : "rgba(6, 182, 212, 0.10)";
+
                             return (
                               <div className="absolute inset-0 pointer-events-none z-10">
                                 <svg
@@ -1573,7 +1662,42 @@ export const EmployeeForm = () => {
                                   viewBox="0 0 192 256"
                                   fill="none"
                                 >
-                                  {/* Biometric Mesh Wireframe Interconnecting Lines */}
+                                  {/* Cyber Neon Glow Filter */}
+                                  <defs>
+                                    <filter id="cyber-glow" x="-20%" y="-20%" width="140%" height="140%">
+                                      <feGaussianBlur stdDeviation="1.2" result="glow" />
+                                      <feMerge>
+                                        <feMergeNode in="glow" />
+                                        <feMergeNode in="SourceGraphic" />
+                                      </feMerge>
+                                    </filter>
+                                  </defs>
+
+                                  {/* 1. Biometric 3D Wireframe Polygon Facets (Matching Image 1) */}
+                                  {mesh.facets.map((facet, i) => {
+                                    const points = facet
+                                      .map((idx) => {
+                                        const p = mesh.dots[idx];
+                                        return p ? `${p.x},${p.y}` : null;
+                                      })
+                                      .filter(Boolean)
+                                      .join(" ");
+
+                                    return (
+                                      <polygon
+                                        key={`facet-${i}`}
+                                        points={points}
+                                        fill={facetFill}
+                                        stroke={guideColor}
+                                        strokeWidth="0.85"
+                                        strokeOpacity={fqaStatus.isValid ? "0.9" : "0.75"}
+                                        strokeLinejoin="round"
+                                        filter="url(#cyber-glow)"
+                                      />
+                                    );
+                                  })}
+
+                                  {/* 2. Biometric Mesh Wireframe Interconnecting Lines */}
                                   {mesh.meshConnections.map(([startIdx, endIdx], i) => {
                                     const p1 = mesh.dots[startIdx];
                                     const p2 = mesh.dots[endIdx];
@@ -1586,14 +1710,14 @@ export const EmployeeForm = () => {
                                         x2={p2.x}
                                         y2={p2.y}
                                         stroke={guideColor}
-                                        strokeWidth="0.8"
-                                        strokeOpacity={fqaStatus.isValid ? "0.45" : "0.25"}
-                                        strokeDasharray="2 3"
+                                        strokeWidth="0.75"
+                                        strokeOpacity={fqaStatus.isValid ? "0.6" : "0.4"}
+                                        strokeDasharray="1.5 2"
                                       />
                                     );
                                   })}
 
-                                  {/* Biometric Landmark Dots (38 Points) */}
+                                  {/* 3. Biometric Landmark Nodes (42 Points) */}
                                   {mesh.dots.map((dot) => (
                                     <g key={dot.id}>
                                       {/* Anchor Point Expanding Radar Ping */}
@@ -1604,7 +1728,7 @@ export const EmployeeForm = () => {
                                           r="6"
                                           stroke={guideColor}
                                           strokeWidth="0.8"
-                                          strokeOpacity={fqaStatus.isValid ? "0.6" : "0.3"}
+                                          strokeOpacity={fqaStatus.isValid ? "0.7" : "0.4"}
                                           className="animate-ping origin-center"
                                         />
                                       )}
@@ -1612,7 +1736,7 @@ export const EmployeeForm = () => {
                                       <circle
                                         cx={dot.x}
                                         cy={dot.y}
-                                        r={dot.isAnchor ? 3.8 : 2.4}
+                                        r={dot.isAnchor ? 3.5 : 2.2}
                                         fill={guideColor}
                                         fillOpacity={dot.isAnchor ? "0.35" : "0.2"}
                                       />
@@ -1620,7 +1744,7 @@ export const EmployeeForm = () => {
                                       <circle
                                         cx={dot.x}
                                         cy={dot.y}
-                                        r={dot.isAnchor ? 2.2 : 1.4}
+                                        r={dot.isAnchor ? 2.0 : 1.3}
                                         fill={guideColor}
                                         fillOpacity={fqaStatus.isValid ? "1" : "0.85"}
                                       />
@@ -1653,7 +1777,7 @@ export const EmployeeForm = () => {
                                 {/* Biometric HUD Corner Telemetry Badges */}
                                 <div className="absolute top-2 left-2 flex items-center gap-1">
                                   <span className={`text-[8px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded border backdrop-blur-md ${guideColorClass}`}>
-                                    38-PTS MESH
+                                    3D FACE MESH
                                   </span>
                                 </div>
                                 <div className="absolute top-2 right-2 flex items-center gap-1">

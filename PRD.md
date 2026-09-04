@@ -1982,35 +1982,37 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
      - **Mendongak Atas (Pose 4):** Mendeteksi dominasi leher/dagu (`verticalBalance < 1.15` atau `avgLower > avgUpper * 0.90` atau `chinSkinCount > 90`).
      - **Menunduk Bawah (Pose 5):** Mendeteksi dominasi dahi atas (`verticalBalance > 0.85` atau `avgUpper > avgLower * 0.95`).
 
-#### 12.3.5 Dynamic Cyber Biometric Landmark Dot Mesh & Adaptive Laser Scanner (Face ID Cyberpunk Standard)
+#### 12.3.5 Augmented Reality 3D Polygon Wireframe Face Mesh Scanner (Apple Face ID / Cyberpunk Mesh Standard)
 - **Latar Belakang UX & Standar Visual:**
-  - Sebelumnya, reticle kamera menggunakan garis putus-putus elips mata dan garis bibir statis 2D yang tata letaknya kaku dan canggung (sering kali jatuh di dahi atau garis rambut saat pengguna menoleh).
-  - Pengguna menginginkan efek pemindaian wajah futuristik (*biometric dot mesh scan*) yang menyatu secara organik dengan anatomi wajah pengguna, dilengkapi animasi laser bergerak dan umpan balik saat foto diambil.
-- **Spesifikasi Biometric Dot Matrix & Wireframe Mesh (`getBiometricMesh`):**
-  1. **38-Point Adaptive Landmark Dot Matrix:**
-     - Menghamparkan 38 titik koordinat biometrik dinamis yang bergeser mengikuti pose target:
+  - Sebelumnya, reticle kamera hanya menggunakan beberapa titik dot terisolasi atau garis putus-putus statis 2D yang tata letaknya kaku dan canggung (sering kali jatuh di dahi atau garis rambut saat pengguna menoleh).
+  - Berdasarkan standar visual biometrik tingkat lanjut (referensi visual Image 1), modul kamera kini menerapkan **3D Polygon Wireframe Surface Mesh** holografis yang menempel dan mengikuti topologi 3D wajah secara presisi, dari dahi hingga ke pangkal leher.
+- **Spesifikasi 3D Facial Polygon Facet Mesh (`getBiometricMesh`):**
+  1. **42-Point Adaptive Landmark Topological Nodes:**
+     - Menghamparkan 42 titik koordinat biometrik dinamis yang bergeser dan mengalami distorsi perspektif 3D mengikuti pose target:
        - **Dahi & Pelipis (Dots 0–4):** Titik jangkar pelipis kiri/kanan (`isAnchor: true`).
        - **Alis Kiri & Kanan (Dots 5–10):** Kontur lengkung alis luar, tengah, dan dalam.
-       - **Mata & Pupil (Dots 11–16):** Titik pupil mata kiri & kanan dengan animasi radar ping berdenyut (`animate-ping`).
-       - **Batang & Cuping Hidung (Dots 17–22):** Titik jembatan dan puncak hidung (`ns_tip`).
-       - **Pipi Dalam & Rahang (Dots 23–26):** Topologi pipi kiri/kanan yang meregang/merapat saat menoleh.
-       - **Kontur Bibir (Dots 27–30):** Garis perimeter mulut (kiri, atas, kanan, bawah).
-       - **Garis Rahang & Dagu (Dots 31–37):** Titik kontur rahang bawah dan dagu (`ch_tip`).
-  2. **Interconnecting Cyber Wireframe Lines:**
-     - Menghubungkan titik-titik landmark menggunakan garis vektor berjarak putus-putus tipis (`BIOMETRIC_MESH_CONNECTIONS`), membentuk jaring poligon 3D ala scanner biometrik militer/Face ID enterprise.
+       - **Orbital Mata & Pupil (Dots 11–16):** Titik pupil mata kiri & kanan dengan animasi radar ping berdenyut ganda (`animate-ping`).
+       - **Piramida & Cuping Hidung (Dots 17–22):** Titik jembatan, sayap hidung, dan puncak hidung (`ns_tip`).
+       - **Permukaan Pipi & Zygomatic (Dots 23–26):** Topologi pipi kiri/kanan yang meregang dan memampat sesuai rotasi kepala.
+       - **Kontur Bibir & Philtrum (Dots 27–30):** Garis perimeter mulut (kiri, atas, kanan, bawah).
+       - **Garis Rahang Bawah & Dagu (Dots 31–37):** Titik kontur mandibular dan puncak dagu (`ch_tip`).
+       - **Kontur Leher & Tenggorokan (Dots 38–41):** Titik permukaan silinder leher dan jakun (`nk_l`, `nk_c`, `nk_r`, `nk_b`), menghasilkan cakupan pemindaian bust 3D utuh seperti pada Image 1.
+  2. **Connected 3D Polygon Facet Rings (`BIOMETRIC_FACETS`):**
+     - Membentuk permukaan poligon (quadrilateral dan triangular) tertutup yang dilapisi isian holografis semi-transparan (`fill: rgba(6, 182, 212, 0.10)`) dengan filter pendaran neon SVG (`#cyber-glow`).
+     - Garis-garis tepi poligon menyala tegas (`strokeWidth: 0.85px`) menyerupai jaring geometri laser 3D yang membungkus kontur organik wajah pengguna.
   3. **Sweeping Cyber Laser Scan Beam:**
      - Garis laser horizontal cyan menyala bergradasi (`animate-kyc-laser`, `@keyframes kycLaserScan`) yang menyapu naik-turun dari atas ke bawah reticle oval secara kontinu selama kamera aktif.
   4. **Corner HUD Telemetry Badges:**
      - Menampilkan label telemetri biometrik di sudut reticle:
-       - Kiri Atas: `[38-PTS MESH]`
+       - Kiri Atas: `[3D FACE MESH]`
        - Kanan Atas: `[+25° YAW]` / `[-15° PITCH]` / `[0° FRONT]`
   5. **Capture Snapshot Lock Ripple Effect:**
      - Saat foto diambil (`flashFeedback = true`), layar kamera menampilkan kilatan optik putih transparan, lingkaran ganda hijau emerald yang mengembang (*ripple ping*), serta lencana status konfirmasi:
        `✓ BIOMETRIC MESH SNAPSHOT`
   6. **Umpan Balik Warna Status Reaktif:**
-     - **Merah Glowing (`#ef4444`):** Terdeteksi tangan atau objek menutupi wajah.
+     - **Merah Glowing (`#ef4444`):** Terdeteksi tangan atau objek menutupi wajah (`fill: rgba(239, 68, 68, 0.08)`).
      - **Kuning / Cyan (`#fbbf24` / `#38bdf8`):** Melacak orientasi kepala (*tracking*).
-     - **Hijau Emerald Menyala (`#10b981`):** Orientasi dan ketajaman wajah terkunci 100% (*ready-to-snap*).
+     - **Hijau Emerald Menyala (`#10b981`):** Orientasi dan ketajaman wajah terkunci 100% (*ready-to-snap*, `fill: rgba(16, 185, 129, 0.12)`).
 
 ---
 
@@ -2106,27 +2108,34 @@ Penggunaan emoticon / emoji kartun (seperti `🙂`, `👉`, `👆`) **resmi diti
 *   Mengesankan aplikasi amatir (*toy application*), tidak mencerminkan kredibilitas sistem enterprise berstandar perbankan.
 *   Emoticon kartun bersifat 2D datar sehingga ambigu dan tidak dapat menunjukkan kedalaman rotasi perspektif 3D yang tepat kepada karyawan.
 
-#### 12.7.2 Spesifikasi Komponen Model 3D Dual-Gender (`Kyc3dHeadGuide.tsx`)
-Komponen panduan visual dibangun menggunakan **10 aset model 3D manusia asli photorealistic (5 model perempuan & 5 model laki-laki)** untuk masing-masing pose target:
-1. **Anatomi Visual 3D Human Model Lengkap (Bust Framing):**
-   - Menampilkan postur tubuh bagian atas manusia digital twin lengkap: **rambut, mata, hidung, alis, mulut/bibir, telinga, leher jenjang, kerah kemeja, dan kedua pundak/bahu** secara proporsional.
-   - Menggunakan rasio bingkai luas (`h-36 sm:h-40`, `object-cover object-center`) yang memastikan pundak dan leher tidak terpotong, memberikan panduan arah tolehan yang sangat natural dan mudah dipahami oleh pengguna.
-   - Menampilkan **2 model gender** yang tersusun vertikal pada panel samping panduan:
-     - **Bagian Atas:** Model 3D Perempuan (*Female Avatar Guide*)
-     - **Bagian Bawah:** Model 3D Laki-Laki (*Male Avatar Guide*)
-2. **Dedicated Multi-Model Visual Asset per Pose (5 Model Female & 5 Model Male):**
-   - Setiap pose memiliki citra render 3D tersendiri, bukan memutar foto frontal tunggal via CSS:
-     - **Pose 1 (Center):** `/images/kyc/female_center.jpg` & `male_center.jpg` (Menghadap lurus frontal dengan bahu tegak simetris).
-     - **Pose 2 (Right):** `/images/kyc/female_right.jpg` & `male_right.jpg` (Menoleh ke kanan ~25°, memperlihatkan profil rahang kiri, telinga, dan pergeseran pundak).
-     - **Pose 3 (Left):** `/images/kyc/female_left.jpg` & `male_left.jpg` (Menoleh ke kiri ~25°, memperlihatkan profil rahang kanan, telinga, dan pergeseran pundak).
-     - **Pose 4 (Up):** `/images/kyc/female_up.jpg` & `male_up.jpg` (Mendongak ke atas ~15°, mengekspos leher, dagu, dan pangkal kerah kemeja).
-     - **Pose 5 (Down):** `/images/kyc/female_down.jpg` & `male_down.jpg` (Menunduk ke bawah ~15°, memperlihatkan mahkota rambut, dahi, dan pundak rileks).
-3. **Indikator Status Reaktif 5-Tema:**
-   - **Sky Blue (`#38bdf8` - Waiting):** Menunggu pengguna memposisikan kepala sesuai model 3D (`IKUTI ARAH MODEL 3D`).
-   - **Emerald Green (`#10b981` - Aligned):** Kepala telah menoleh dengan sudut presisi, siap dipindai (`✓ SUDUT ROTASI TEPAT`).
-   - **Crimson Red (`#ef4444` - Occluded):** Terdeteksi tangan atau benda asing (cangkir, mug, masker, ponsel) menutupi wajah (`✋ OBJEK / TANGAN MENUTUPI WAJAH`).
-   - **Amber (`#f59e0b` - Not Centered):** Wajah berada di luar bingkai oval reticle (`POSISIKAN WAJAH DI OVAL`).
-   - **Cyan (`#06b6d4` - Captured):** Pose telah berhasil diambil dengan skor kelayakan $\ge 75$ (`✓ POSE SELESAI`).
+#### 12.7.2 Spesifikasi Komponen Avatar 3D WebGL Interaktif (`KycThreeAvatar.tsx` & `Kyc3dHeadGuide.tsx`)
+Berdasarkan storyboard panduan verifikasi identitas (referensi visual Image 3), sistem resmi mengadopsi **Interactive 3D WebGL Avatar** berbasis Three.js yang secara fisik **bergerak menengok dan memiringkan kepala (*real-time head-turning motion*)** secara konsisten:
+1. **Articulated Neck Pivot Kinematics & Smooth Damped LERP:**
+   - Seluruh anatomi kepala (tengkorak kepala, rambut bob/crop, mata, pupil dengan highlight pantulan, hidung, bibir, telinga) dikelompokkan ke dalam `headPivot` dengan titik poros (*pivot point*) tepat di pangkal sambungan leher $(0, 0.08, 0)$.
+   - Badan dan bahu (`torsoGroup`) memakai sweater/blazer biru storyboard dengan aksen kerah putih, memiliki mikro-animasi pernapasan (*natural idle breathing*).
+   - Saat pose berubah, kepala avatar bergerak menengok secara organik menggunakan interpolasi *damped lerp* ($7.5 \times \Delta t$):
+     - **Center (0°):** Menghadap lurus ke depan, mata menatap kamera.
+     - **Kiri (-25°):** Kepala berputar menengok ke arah kiri pengguna ($\text{Yaw} = -32^\circ$).
+     - **Kanan (+25°):** Kepala berputar menengok ke arah kanan pengguna ($\text{Yaw} = +32^\circ$).
+     - **Atas (+15°):** Kepala mendongak ke atas ($\text{Pitch} = +22^\circ$), memperlihatkan dagu dan leher.
+     - **Bawah (-15°):** Kepala menunduk ke bawah ($\text{Pitch} = -20^\circ$), memperlihatkan dahi dan mahkota rambut.
+2. **Karakter Konsisten & Gender Selector Tabs:**
+   - Mencegah inkonsistensi wajah antar-pose: Avatar yang digunakan adalah **satu karakter digital twin tunggal yang konsisten** untuk seluruh alur 5 pose.
+   - Dilengkapi tombol selector tab gender di bagian atas:
+     - `[👩 Perempuan]`: Menampilkan model avatar perempuan dengan rambut modern bob berponi ala storyboard.
+     - `[👨 Laki-Laki]`: Menampilkan model avatar laki-laki dengan potongan rambut crop textured rapi.
+3. **Storyboard Circular Target Reticle & Directional Guide Arrows:**
+   - Di sekeliling avatar 3D terdapat lingkaran target putus-putus (*green/cyan circular reticle*) yang dilengkapi panah penunjuk arah berkedip (*animated pulsing guide arrow*):
+     - **Pose Kiri:** Panah horizontal menunjuk ke kiri (`←`).
+     - **Pose Kanan:** Panah horizontal menunjuk ke kanan (`→`).
+     - **Pose Atas:** Panah vertikal memantul ke atas (`↑`).
+     - **Pose Bawah:** Panah vertikal memantul ke bawah (`↓`).
+4. **Indikator Reaktif Status & Mikro-Reaksi Avatar:**
+   - **Aligned (`#10b981`):** Reticle hijau menyala, kepala avatar memberikan anggukan mikro konfirmasi (*affirmative micro-nod*).
+   - **Occluded (`#ef4444`):** Reticle merah menyala, kepala avatar memberikan gelengan peringatan (*warning wiggle*).
+   - **Captured (`#06b6d4`):** Reticle cyan menyala, pose terkunci dan beralih mulus ke pose berikutnya.
+5. **Secondary Photo Reference Accordion:**
+   - Disediakan toggle collapsible `[▶ Tampilkan Foto Referensi (Bust 2D)]` bagi operator yang ingin menyandingkan panduan avatar 3D dengan foto studio asli.
 
 ---
 
