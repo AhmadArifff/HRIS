@@ -1147,13 +1147,34 @@ Seksi ini merinci cetak biru (*blueprint*) arsitektur pengenalan wajah (*Face Re
     *   **End-to-End Latency:** < `800ms` per transaksi presensi (mulai dari capture kamera browser hingga respon status terverifikasi).
     *   **Tingkat Adopsi Karyawan:** `98%` karyawan mandiri berhasil presensi tanpa hambatan teknis dalam 7 hari pertama peluncuran.
 
-#### 9.1.2 Protokol Standar Pendaftaran Wajah (Face Enrollment SOP)
-Pendaftaran wajah karyawan baru (*Enrollment*) merupakan fondasi utama akurasi sistem. Untuk meminimalkan *noise* dan mencegah penolakan palsu di kemudian hari, sistem menerapkan **Protokol Pendaftaran 3-Frame Multi-Pose**:
-1.  **Frame 1: Pose Frontal Tegak Lurus (Netral):** Pandangan tepat ke lensa kamera, ekspresi wajah netral, mulut tertutup.
-2.  **Frame 2: Pose Serong Kiri (~15°):** Sedikit memiringkan kepala ke kiri untuk menangkap kontur rahang dan pipi kiri.
-3.  **Frame 3: Pose Serong Kanan (~15°):** Sedikit memiringkan kepala ke kanan untuk menangkap kontur rahang dan pipi kanan.
+#### 9.1.2 Protokol Standar Pendaftaran Wajah Bank-Grade e-KYC (Bank-Grade KYC Enrollment SOP)
+Pendaftaran wajah karyawan baru (*Enrollment*) merupakan fondasi utama akurasi dan integritas sistem biometrik. Terinspirasi oleh standar verifikasi identitas perbankan digital (*e-KYC Bank BCA, Mandiri Livin', Jenius, dan Dukcapil*), sistem menerapkan **Protokol Registrasi 5-Aksi Gerak Kepala Interaktif & Reticle Boundary Guard**:
 
-*Sistem mengekstrak vektor embedding 512-dimensi dari ketiga frame, memvalidasi konsistensi intra-person cosine similarity ($> 0.85$), dan menyimpan representasi terpusat (vektor centroid ternormalisasi L2) ke database Supabase `face_biometric_profiles`.*
+1.  **Reticle Oval Target Boundary Guard ("Set Objek Wajah Sesuai Letaknya"):**
+    *   Kamera menampilkan bingkai siluet oval panduan proporsional di tengah layar ($65\% - 75\%$ tinggi viewport).
+    *   Algoritma pelacak wajah di browser (*Client-Side Geometric Bounding Evaluator*) menghitung koordinat kotak wajah $(x, y, w, h)$ secara *real-time*.
+    *   **Aturan Penguncian Batas Ketat (Strict Boundary Lock):** Jika wajah pengguna bergeser ke luar batas oval, terlalu dekat (wajah terpotong batas), atau terlalu jauh ($< 40\%$ area oval), sistem **SEKETIKA MENGUNCI / MENAHAN PROSES (PAUSED)**.
+    *   Garis bingkai oval seketika berubah merah/kuning dengan instruksi tegas: *"⚠️ Wajah di Luar Area! Posisikan wajah tepat di dalam bingkai oval"*, *"Maju sedikit"*, atau *"Mundur sedikit"*. Proses pendaftaran **TIDAK AKAN BERLANJUT** selama wajah belum kembali ke posisi aman di dalam bingkai oval target.
+
+2.  **Tantangan Gerakan Kepala Interaktif (5-Action Multi-Pose Liveness):**
+    Pengguna diarahkan menyelesaikan 5 gestur alami bertahap untuk merekam struktur 3D wajah secara holistik:
+    *   **Aksi 1: Hadap Depan (Center Frontal):** Wajah tegak lurus menatap kamera di dalam oval (Yaw $0^\circ$, Pitch $0^\circ$).
+    *   **Aksi 2: Tengok Kiri (Turn Left):** Memutar kepala ke arah kiri (Yaw $\le -15^\circ$) untuk menangkap kontur telinga dan rahang kiri.
+    *   **Aksi 3: Tengok Kanan (Turn Right):** Memutar kepala ke arah kanan (Yaw $\ge +15^\circ$) untuk menangkap kontur rahang kanan.
+    *   **Aksi 4: Tengok Atas (Tilt Up / Dongak):** Mengangkat dagu/kepala sedikit ke atas (Pitch $\le -10^\circ$) untuk kontur dagu bawah.
+    *   **Aksi 5: Tengok Bawah (Tilt Down / Tunduk):** Menundukkan kepala sedikit ke bawah (Pitch $\ge +10^\circ$) untuk kontur dahi dan garis alis.
+    *   **Aksi Tambahan: Kedipan Mata Alami (Eye Blink Liveness):** Pengujian keaktifan biologis (*Eye Aspect Ratio / EAR*) guna memastikan subjek adalah manusia hidup, bukan manekin atau topeng 3D.
+
+3.  **Gerbang Pengujian Verifikasi Mandiri Pasca-Pendaftaran (Post-Enrollment Self-Verification Test Gate):**
+    *   Setelah seluruh 5 frame gerakan berhasil dikirim dan diekstraksi ke embedding 512-dimensi di database Supabase dan cache Redis, sistem **TIDAK langsung mengalihkan karyawan ke halaman presensi**.
+    *   Sistem secara wajib membuka tahapan khusus: **"Layar Uji Coba Pengenalan Wajah (Instant Verification Self-Test)"**.
+    *   **Tujuan:** Memberikan kepastian psikologis dan teknis bahwa wajah yang baru saja didaftarkan telah terindeks dengan benar dan dapat diverifikasi 1:1 oleh mesin AI tanpa galat.
+    *   Karyawan diminta menghadap kamera satu kali lagi untuk pemindaian uji coba.
+    *   Endpoint `POST /api/biometrics/test-verify` membandingkan selfie uji coba terhadap profil biometrik yang baru disimpan via Cosine Distance.
+    *   Jika kemiripan $\ge 90\%$ (Distance $\le 0.25$), layar menampilkan konfirmasi visual:
+        *   Badge Hijau: *"✓ Wajah Berhasil Teridentifikasi & Terverifikasi Sempurna! (Kemiripan 96.5%)"*.
+        *   Status profil biometrik di-update menjadi `is_tested = true`.
+        *   Tombol *"Lanjutkan ke Portal & Mulai Presensi"* terbuka dan aktif.
 
 #### 9.1.3 Evaluasi Kualitas Wajah Otomatis (Face Quality Assessment / FQA)
 Sebelum citra diproses oleh model representasi, sistem secara otomatis mengevaluasi kelayakan foto berdasarkan parameter baku:
@@ -1163,40 +1184,42 @@ Sebelum citra diproses oleh model representasi, sistem secara otomatis mengevalu
 *   **Pose Angle Constraints:** Yaw $\le \pm 15^\circ$, Pitch $\le \pm 15^\circ$, Roll $\le \pm 10^\circ$.
 *   **Occlusion Guard:** Menolak jika mendeteksi area mata/mulut terhalang masker medis, kacamata hitam gelap, atau tangan.
 
-#### 9.1.4 User Personas & User Journeys
-1.  **Karyawan Baru (Onboarding Enrollment):** Mengakses menu Mandiri `/biometrics/enroll` &rarr; Membuka kamera depan PWA &rarr; Mengikuti panduan reticle oval & FQA bar &rarr; Mengambil 3 foto bertahap &rarr; Profil biometrik resmi aktif.
-2.  **Karyawan (Daily Clock-In/Out):** Membuka menu Absensi `/attendance` &rarr; Menghadapkan wajah ke scanner &rarr; Sistem mendeteksi liveness & kecocokan vektor biometrik instan (<500ms) &rarr; Status kehadiran Hadir terekam.
+#### 9.1.4 User Personas & User Journeys Terpadu
+1.  **Karyawan Baru (Onboarding Enrollment & Self-Test):** Login portal &rarr; Sistem mendeteksi `isEnrolled === false` &rarr; Diarahkan ke `/biometrics/enroll` &rarr; Menyetujui Persetujuan Biometrik UU PDP &rarr; Mengikuti panduan Reticle Oval Target & 5-Aksi Gerak Kepala (Depan, Kiri, Kanan, Atas, Bawah) &rarr; Sistem memproses embedding ArcFace &rarr; Menjalani **Tahap Uji Verifikasi Wajah (Self-Test)** &rarr; Profil diverifikasi & siap untuk absensi harian.
+2.  **Karyawan (Daily Clock-In/Out):** Membuka menu Absensi `/attendance` &rarr; Sistem memvalidasi profil biometrik aktif & teruji (`is_tested = true`) &rarr; Menghadapkan wajah ke scanner &rarr; Sistem memverifikasi 1:1 Cosine Distance (<500ms) &rarr; Status kehadiran Hadir terekam.
 3.  **HR & Personalia:** Memantau audit log absensi, skor kemiripan (*similarity score*), riwayat tangkapan selfie presensi, serta opsi *Reset Biometric Profile* jika karyawan mengalami perubahan fisik signifikan.
 4.  **Administrator Sistem / IT:** Memantau metrik latency microservice DeepFace & performa kueri `pgvector` Supabase.
 
 #### 9.1.5 User Stories & Kriteria Penerimaan (Acceptance Criteria)
 
-*   **Story 1: Pendaftaran Mandiri Profil Wajah (Face Enrollment)**
+*   **Story 1: Pendaftaran Mandiri Bank-Grade e-KYC dengan Batas Oval & 5-Aksi Kepala**
     *   *Sebagai* Karyawan Baru,
-    *   *Saya ingin* mendaftarkan wajah saya ke sistem secara mandiri melalui panduan interaktif,
-    *   *Agar* data biometrik saya tersimpan aman di database Supabase untuk absensi harian.
+    *   *Saya ingin* mendaftarkan wajah dengan panduan bingkai oval dan aksi gerak kepala (kiri, kanan, atas, bawah),
+    *   *Agar* data biometrik saya tercatat akurat dan tidak ada kesalahan posisi wajah.
     *   **Acceptance Criteria:**
-        *   *Given* Karyawan telah login dan belum memiliki profil biometrik aktif.
-        *   *When* Karyawan membuka `/biometrics/enroll` dan menyelesaikan capture 3 frame yang lolos uji FQA.
-        *   *Then* Sistem mengekstrak embedding 512-d ArcFace, memverifikasi `is_real == true` (anti-spoofing), mengunggah foto master ke Supabase Storage bucket `secure-documents`, dan menyimpan vektor ke tabel `face_biometric_profiles`.
+        *   *Given* Karyawan berada di layar pendaftaran `/biometrics/enroll`.
+        *   *When* Wajah pengguna keluar dari area bingkai oval target.
+        *   *Then* Sistem seketika mengunci proses pendaftaran (*pause*), mengubah warna bingkai menjadi merah, dan menampilkan instruksi reposisi hingga wajah kembali tepat di tengah oval.
+        *   *When* Pengguna menyelesaikan 5 gerakan kepala (Depan, Kiri, Kanan, Atas, Bawah) di dalam batas oval.
+        *   *Then* Sistem mengekstrak embedding 512-dimensi ArcFace, menyimpannya ke database Supabase dan cache Redis.
 
-*   **Story 2: Presensi Harian dengan Latensi Rendah & Anti-Noise (Clock-In Verification)**
+*   **Story 2: Gerbang Pengujian Verifikasi Mandiri Pasca-Registrasi (Self-Test Gate)**
     *   *Sebagai* Karyawan,
-    *   *Saya ingin* melakukan absensi cukup dengan menghadapkan wajah ke kamera tanpa tertunda *loading* lama,
-    *   *Agar* proses clock-in berlangsung secepat kilat bahkan di koneksi seluler biasa.
+    *   *Saya ingin* langsung menguji wajah yang baru saja saya daftarkan di layar khusus sebelum menggunakan absensi,
+    *   *Agar* saya yakin 100% sistem dapat mengenali wajah saya dengan akurat.
     *   **Acceptance Criteria:**
-        *   *Given* Karyawan berada dalam radius geofence GPS kantor.
-        *   *When* Karyawan menghadapkan wajah ke reticle scanner.
-        *   *Then* Client melakukan pre-filtering blur di browser; server memverifikasi liveness dan mencocokkan kemiripan wajah via Cosine Distance ($\le 0.40$); transaksi selesai dalam $< 800\text{ ms}$; data absensi tercatat di tabel `attendances`.
+        *   *Given* Pendaftaran 5 frame telah sukses tersimpan di database.
+        *   *When* Layar beralih ke tahap Uji Verifikasi Mandiri dan pengguna menghadapkan wajah ke kamera.
+        *   *Then* Endpoint `POST /api/biometrics/test-verify` membandingkan selfie live terhadap profil baru; jika Cosine Distance $\le 0.25$ (kemiripan $\ge 90\%$), sistem menampilkan badge sukses *"✓ Wajah Teridentifikasi & Terverifikasi"* dan membuka akses tombol absensi harian.
 
-*   **Story 3: Proteksi Serangan Manipulasi (Anti-Spoofing Alert)**
-    *   *Sebagai* Manajemen HR,
-    *   *Saya ingin* sistem otomatis menolak absensi yang menggunakan foto di kertas atau rekaman video HP,
-    *   *Agar* integritas kehadiran terjamin 100%.
+*   **Story 3: Sinkronisasi Autentikasi Login Wajah Nyata (Unified Face Auth)**
+    *   *Sebagai* Karyawan,
+    *   *Saya ingin* sistem login wajah hanya mengizinkan masuk jika wajah saya benar-benar telah terdaftar dan cocok,
+    *   *Agar* tidak terjadi kebingungan saat hendak melakukan absensi di kemudian hari.
     *   **Acceptance Criteria:**
-        *   *Given* Pengguna mengarahkan layar ponsel/foto cetak ke kamera.
-        *   *When* Modul Silent-Face-Anti-Spoofing mendeteksi anomali tekstur frekuensi (`is_real == false`).
-        *   *Then* Sistem menolak transaksi seketika (*early return*), menampilkan toast peringatan merah *"⚠️ Peringatan: Manipulasi Wajah Terdeteksi"*, dan mencatat status `is_spoof_detected = true` pada log audit.
+        *   *Given* Karyawan belum mendaftarkan biometrik wajah (`isEnrolled === false`).
+        *   *When* Karyawan mencoba login menggunakan Face Scan di portal.
+        *   *Then* Sistem menolak login wajah tiruan dan memberikan instruksi: *"Wajah belum terdaftar. Silakan masuk menggunakan Akun/PIN untuk melakukan pendaftaran biometrik."*
 
 #### 9.1.6 Kebijakan Zero Hardcoded Master Data pada Modul Biometrik
 Seluruh parameter teknis AI **DILARANG KERAS DI-HARDCODE** di kode program. Seluruh variabel dikonfigurasi melalui tabel konfigurasi dinamis Supabase:
@@ -1206,6 +1229,8 @@ Seluruh parameter teknis AI **DILARANG KERAS DI-HARDCODE** di kode program. Selu
 *   `biometric_threshold`: `0.40` (untuk ArcFace Cosine Distance).
 *   `anti_spoofing_enforced`: `true` / `false`.
 *   `fqa_min_sharpness`: `120.0`.
+*   `ekyc_oval_boundary_tolerance`: `0.15` (toleransi deviasi posisi oval).
+*   `ekyc_min_similarity_selftest`: `0.85` (skor kemiripan minimal kelulusan uji mandiri).
 *   Admin HR dapat mengalihkan konfigurasi model atau mengkalibrasi nilai threshold langsung dari panel admin secara *real-time* tanpa redeploy aplikasi.
 
 ---
@@ -1339,16 +1364,18 @@ model Attendance {
 
 #### 9.2.5 Spesifikasi Endpoint REST API
 
-1.  **`POST /api/biometrics/enroll` (Pendaftaran Wajah Baru Karyawan)**
-    *   **Deskripsi:** Menerima paket 3 foto pendaftaran dari karyawan, memverifikasi FQA & anti-spoofing, mengunggah foto master ke Supabase Storage, dan menyimpan vektor embedding ke database.
+1.  **`POST /api/biometrics/enroll` (Pendaftaran Wajah Baru Karyawan Bank-Grade e-KYC)**
+    *   **Deskripsi:** Menerima paket 5 foto pendaftaran gerakan kepala (Frontal, Tengok Kiri, Tengok Kanan, Tengok Atas, Tengok Bawah) dari karyawan, memverifikasi FQA & anti-spoofing, mengunggah foto master ke Supabase Storage, dan menyimpan vektor embedding ke database serta cache Redis.
     *   **Payload DTO:**
         ```json
         {
           "employeeId": "e1f2a3b4-...",
           "imagesBase64": [
-            "data:image/jpeg;base64,...", // Frontal
-            "data:image/jpeg;base64,...", // Tilt Left
-            "data:image/jpeg;base64,..."  // Tilt Right
+            "data:image/jpeg;base64,...", // 1. Frontal Center
+            "data:image/jpeg;base64,...", // 2. Turn Left
+            "data:image/jpeg;base64,...", // 3. Turn Right
+            "data:image/jpeg;base64,...", // 4. Tilt Up
+            "data:image/jpeg;base64,..."  // 5. Tilt Down
           ]
         }
         ```
@@ -1364,14 +1391,43 @@ model Attendance {
             "profileId": "f9a8b7c6-...",
             "employeeId": "e1f2a3b4-...",
             "modelName": "ArcFace",
-            "qualityScore": 0.94,
+            "qualityScore": 0.96,
             "registeredAt": "2026-09-04T07:15:00Z"
           },
           "message": "Profil biometrik wajah resmi berhasil didaftarkan"
         }
         ```
 
-2.  **`POST /api/attendance/clock-in` (Absensi Masuk Berbasis Wajah)**
+2.  **`POST /api/biometrics/test-verify` (Uji Verifikasi Mandiri Pasca-Pendaftaran)**
+    *   **Deskripsi:** Endpoint khusus yang dipanggil langsung setelah pendaftaran berhasil untuk menguji bahwa wajah yang baru saja didaftarkan dapat dikenali dan diverifikasi 1:1 oleh model AI dengan Cosine Distance yang valid.
+    *   **Payload DTO:**
+        ```json
+        {
+          "employeeId": "e1f2a3b4-...",
+          "selfieBase64": "data:image/jpeg;base64,..."
+        }
+        ```
+    *   **Alur Verifikasi 1:1:**
+        *   Mengambil embedding master karyawan dari Redis cache (atau database).
+        *   Mengekstrak embedding selfie uji coba via DeepFace ArcFace.
+        *   Menghitung Cosine Distance. Jika $\text{Distance} \le 0.30$ (Similarity $\ge 85\%-98\%$), sistem menyatakan uji coba **Lolos & Terverifikasi**.
+    *   **Result Pattern Response (200 OK):**
+        ```json
+        {
+          "isSuccess": true,
+          "data": {
+            "isMatch": true,
+            "similarityScore": 96.8,
+            "distance": 0.078,
+            "status": "VERIFIED_AND_TESTED",
+            "employeeId": "e1f2a3b4-...",
+            "message": "Wajah berhasil teridentifikasi dan cocok dengan profil terdaftar"
+          },
+          "message": "Uji coba verifikasi biometrik berhasil"
+        }
+        ```
+
+3.  **`POST /api/attendance/clock-in` (Absensi Masuk Berbasis Wajah)**
     *   **Deskripsi:** Memverifikasi selfie real-time karyawan terhadap profil biometrik terdaftar, memvalidasi geofence GPS, dan mencatat absensi.
     *   **Payload DTO:**
         ```json
@@ -1401,23 +1457,40 @@ model Attendance {
         }
         ```
 
-3.  **`GET /api/biometrics/status/:employeeId` (Status Pendaftaran Biometrik)**
-    *   Mengembalikan status apakah karyawan telah terdaftar biometrik, tanggal pendaftaran, dan skor kualitas foto master.
+4.  **`GET /api/biometrics/status/:employeeId` (Status Pendaftaran Biometrik)**
+    *   Mengembalikan status apakah karyawan telah terdaftar biometrik, model AI yang digunakan, status pengujian mandiri (`isTested`), tanggal pendaftaran, dan skor kualitas master.
 
-4.  **`DELETE /api/biometrics/:employeeId` (Reset Profil Biometrik)**
+5.  **`DELETE /api/biometrics/:employeeId` (Reset Profil Biometrik)**
     *   Akses khusus Admin HR untuk menghapus profil biometrik lama dan mengizinkan karyawan mendaftar ulang.
 
 ---
 
 ### 9.3 Perancangan Frontend Engineering (/frontend)
 
-#### 9.3.1 Halaman Pendaftaran Wajah Mandiri (`/biometrics/enroll`)
+#### 9.3.1 Halaman Pendaftaran Wajah Bank-Grade e-KYC (`/biometrics/enroll`)
 *   **Desain UX & UI Pro Max:**
-    *   Mengadopsi komponen *Step-by-Step Enrollment Wizard* dengan animasi *Framer Motion*.
-    *   Kamera depan WebRTC dengan *stream aspect ratio* $1:1$ (Square) atau $4:3$ jernih (resolusi ideal 1280x720).
-    *   **Interactive SVG Reticle:** Lingkaran pemandu dengan animasi garis berputar saat sistem mengukur parameter FQA.
-    *   **Real-time Quality Meters (Indikator Kualitas Langsung):**
-        *   *Indikator Pencahayaan:* Batang warna hijau/kuning (*"Pencahayaan Sempurna"*).
+    *   Mengadopsi komponen *Interactive 5-Action Enrollment Wizard* dengan animasi *Framer Motion*.
+    *   Kamera depan WebRTC dengan rasio 1:1 atau 4:3 tajam (resolusi ideal 1280x720).
+    *   **Reticle Oval Target Boundary Guard:**
+        *   Overlay siluet oval SVG proporsional di tengah layar.
+        *   Pelacak posisi wajah (*Face Bounding Box Tracker*) mengukur koordinat wajah secara instan.
+        *   Jika wajah berada di luar oval atau terpotong tepi:
+            *   Garis oval berubah **Merah Berkedip**.
+            *   Tombol dan auto-capture **SEKETIKA DIKUNCI (PAUSED)**.
+            *   Banner peringatan: *"Wajah keluar dari bingkai! Posisikan wajah Anda tepat di dalam oval"*.
+        *   Jika wajah berada di dalam oval:
+            *   Garis oval berubah **Cyan / Emerald Hijau**.
+            *   Proses tantangan gerakan kepala diizinkan berlanjut.
+    *   **Tantangan 5-Aksi Gerak Kepala:**
+        1. Hadap Depan (Center Frontal) &rarr; 2. Tengok Kiri &rarr; 3. Tengok Kanan &rarr; 4. Tengok Atas &rarr; 5. Tengok Bawah.
+        *   Setiap langkah memiliki ikon arah interaktif dan progress bar dinamis.
+    *   **Layar Uji Coba Pengenalan Wajah (Instant Verification Self-Test Screen):**
+        *   Setelah pendaftaran selesai, UI otomatis membuka mode pengujian (*Self-Test Verification Mode*).
+        *   Karyawan diminta menghadap kamera satu kali lagi.
+        *   Kamera mengambil selfie uji coba dan mengirim ke `POST /api/biometrics/test-verify`.
+        *   Tampilan animasi *Scanning Pulse Wave* 3D berputar halus mengelilingi reticle.
+        *   Menampilkan skor kemiripan secara real-time (contoh: *"Kemiripan 96.8% - Cocok"*).
+        *   Tombol *"Lanjut ke Portal & Absensi"* terbuka setelah verifikasi uji coba sukses.
         *   *Indikator Ketajaman / Blur:* Berubah hijau saat kepala diam stabil (*"Kamera Stabil"*).
         *   *Indikator Posisi Wajah:* Garis oval hijau saat wajah berada tepat di area $70\%$ tengah.
     *   **Auto-Capture:** Saat ketiga parameter hijau selama 1.5 detik beruntun, sistem secara otomatis mengambil snapshot tanpa getaran tangan akibat menekan layar ponsel.
