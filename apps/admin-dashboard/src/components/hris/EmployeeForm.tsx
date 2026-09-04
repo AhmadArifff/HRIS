@@ -107,6 +107,7 @@ export const EmployeeForm = () => {
   const [fqaStatus, setFqaStatus] = useState<{
     isValid: boolean;
     isOccluded: boolean;
+    occlusionZone: "none" | "chin" | "forehead";
     isPoseAligned: boolean;
     label: string;
     sharpness: number;
@@ -115,6 +116,7 @@ export const EmployeeForm = () => {
   }>({
     isValid: false,
     isOccluded: false,
+    occlusionZone: "none",
     isPoseAligned: false,
     label: "Menyesuaikan Posisi & Arah Wajah...",
     sharpness: 0,
@@ -211,7 +213,8 @@ export const EmployeeForm = () => {
         const avgBrightness = Math.round(totalBrightness / pixelCount);
         const avgSharpness = Math.round(edgeGradient / pixelCount);
 
-        // 2. Anti-Occlusion & Hand-on-Chin Detection (PRD §12.3)
+        // 2. Anti-Occlusion & Multi-Zone Hand Obstruction Detection (PRD §12.3)
+        // Zone A: Chin & Jaw (Lower Third: Y: 75-115, X: 40-120)
         let chinEdgeCount = 0;
         let chinPixelCount = 0;
         let leftJawIntensity = 0;
@@ -219,6 +222,19 @@ export const EmployeeForm = () => {
         let leftJawCount = 0;
         let rightJawCount = 0;
         let bottomSkinEntryCount = 0;
+
+        // Zone B: Forehead & Brow (Upper Third: Y: 18-52, X: 42-118)
+        let foreheadPixelCount = 0;
+        let foreheadEdgeCount = 0;
+        let foreheadSkinCount = 0;
+
+        // Zone C: Crown & Hairline (Top: Y: 8-32, X: 48-112)
+        let crownPixelCount = 0;
+        let crownSkinCount = 0;
+
+        // Zone D: Lateral Upper Arm / Hand Entry (Y: 15-68, Left X: 5-42, Right X: 118-155)
+        let leftUpperSkinCount = 0;
+        let rightUpperSkinCount = 0;
 
         // 3. Head Pose Estimation (Yaw & Pitch Calculation)
         // Upper zone (eyes/forehead) vs Lower zone (jawline)
@@ -239,7 +255,10 @@ export const EmployeeForm = () => {
             const b = data[idx + 2];
             const gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            // Chin safe zone (Y: 75-115, X: 40-120)
+            // Robust Skin-Tone Detection
+            const isSkinTone = r > 70 && g > 40 && b > 25 && r > g && r > b && (r - g) >= 5;
+
+            // Zone A: Chin safe zone (Y: 75-115, X: 40-120)
             if (y >= 75 && y <= 115 && x >= 40 && x <= 120) {
               chinPixelCount++;
               if (idx + 160 * 4 < data.length) {
@@ -253,10 +272,31 @@ export const EmployeeForm = () => {
                 rightJawIntensity += gray;
                 rightJawCount++;
               }
-              if (y > 105) {
-                const isSkinTone = r > 80 && g > 45 && b > 30 && r > g && r > b;
-                if (isSkinTone) bottomSkinEntryCount++;
+              if (y > 105 && isSkinTone) {
+                bottomSkinEntryCount++;
               }
+            }
+
+            // Zone B: Forehead & Brow safe zone (Y: 18-52, X: 42-118)
+            if (y >= 18 && y <= 52 && x >= 42 && x <= 118) {
+              foreheadPixelCount++;
+              if (isSkinTone) foreheadSkinCount++;
+              if (idx + 160 * 4 < data.length) {
+                const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
+                if (Math.abs(gray - downGray) > 22) foreheadEdgeCount++;
+              }
+            }
+
+            // Zone C: Crown & Hairline zone (Y: 8-32, X: 48-112)
+            if (y >= 8 && y <= 32 && x >= 48 && x <= 112) {
+              crownPixelCount++;
+              if (isSkinTone) crownSkinCount++;
+            }
+
+            // Zone D: Lateral Upper Arm / Hand Entry (Y: 15-68)
+            if (y >= 15 && y <= 68) {
+              if (x >= 5 && x <= 42 && isSkinTone) leftUpperSkinCount++;
+              if (x >= 118 && x <= 155 && isSkinTone) rightUpperSkinCount++;
             }
 
             // Head Pose Estimation Sampling
@@ -285,16 +325,41 @@ export const EmployeeForm = () => {
           }
         }
 
+        // Lower Face (Chin) Occlusion calculation
         const chinEdgeDensity = chinPixelCount > 0 ? chinEdgeCount / chinPixelCount : 0;
         const avgLeftJaw = leftJawCount > 0 ? leftJawIntensity / leftJawCount : 0;
         const avgRightJaw = rightJawCount > 0 ? rightJawIntensity / rightJawCount : 0;
         const jawAsymmetry = Math.abs(avgLeftJaw - avgRightJaw);
 
-        // Hand on chin / fist obstruction flag
-        const hasHandOcclusion =
-          chinEdgeDensity > 0.38 ||
-          (jawAsymmetry > 40 && bottomSkinEntryCount > 75) ||
-          (chinEdgeDensity > 0.28 && bottomSkinEntryCount > 140);
+        const hasChinOcclusion =
+          chinEdgeDensity > 0.36 ||
+          (jawAsymmetry > 38 && bottomSkinEntryCount > 65) ||
+          (chinEdgeDensity > 0.26 && bottomSkinEntryCount > 110);
+
+        // Upper Face (Forehead/Brow/Crown) Occlusion calculation
+        const foreheadEdgeDensity = foreheadPixelCount > 0 ? foreheadEdgeCount / foreheadPixelCount : 0;
+        const crownSkinDensity = crownPixelCount > 0 ? crownSkinCount / crownPixelCount : 0;
+        const maxUpperSideSkin = Math.max(leftUpperSkinCount, rightUpperSkinCount);
+
+        const hasForeheadOcclusion =
+          // Case 1: Arm entering laterally with horizontal creases across forehead (user photo 1)
+          (maxUpperSideSkin > 40 && foreheadEdgeDensity > 0.15) ||
+          // Case 2: Arm entering laterally with skin in crown/hairline
+          (maxUpperSideSkin > 45 && crownSkinDensity > 0.15) ||
+          // Case 3: Fingers across forehead (dense horizontal crease shadows)
+          foreheadEdgeDensity > 0.26 ||
+          // Case 4: Skin covering crown with noticeable edges
+          (crownSkinDensity > 0.25 && foreheadEdgeDensity > 0.12) ||
+          // Case 5: Heavy lateral arm entry near forehead/temple
+          maxUpperSideSkin > 90;
+
+        const hasHandOcclusion = hasChinOcclusion || hasForeheadOcclusion;
+        let occlusionZone: "none" | "chin" | "forehead" = "none";
+        if (hasForeheadOcclusion) {
+          occlusionZone = "forehead";
+        } else if (hasChinOcclusion) {
+          occlusionZone = "chin";
+        }
 
         // Yaw & Pitch Ratio Calculations
         const cheekAsymmetryRatio = leftCheekEdge / (rightCheekEdge + 1e-5);
@@ -360,7 +425,9 @@ export const EmployeeForm = () => {
         const isValid = isGoodBrightness && isSharp && !hasHandOcclusion && isPoseAligned;
 
         let label = `✓ Posisi & Sudut ${targetPose.shortLabel} Tepat (Siap Foto)`;
-        if (hasHandOcclusion) {
+        if (hasForeheadOcclusion) {
+          label = "⚠️ Terdeteksi tangan / halangan menutupi dahi atau kening! Harap jauhkan tangan.";
+        } else if (hasChinOcclusion) {
           label = "⚠️ Terdeteksi tangan / halangan menutupi dagu & wajah! Harap jauhkan tangan.";
         } else if (!isPoseAligned) {
           label = directionHint;
@@ -373,6 +440,7 @@ export const EmployeeForm = () => {
         setFqaStatus({
           isValid,
           isOccluded: hasHandOcclusion,
+          occlusionZone,
           isPoseAligned,
           label,
           sharpness: avgSharpness,
@@ -408,6 +476,7 @@ export const EmployeeForm = () => {
       setFqaStatus({
         isValid: true,
         isOccluded: false,
+        occlusionZone: "none",
         isPoseAligned: true,
         label: `✓ Simulator Kamera KYC Aktif (${KYC_POSES[activePoseStep]?.shortLabel})`,
         sharpness: 90,
@@ -458,7 +527,13 @@ export const EmployeeForm = () => {
 
     // 4. Cleanliness & Anti-Occlusion (0 - 20)
     let sClean = isOccluded ? 0 : 20;
-    if (isOccluded) issues.push("Terdeteksi tangan atau halangan menempel pada dagu/wajah");
+    if (isOccluded) {
+      issues.push(
+        fqaStatus.occlusionZone === "forehead"
+          ? "Terdeteksi tangan atau jari menutupi area dahi / kening / wajah atas"
+          : "Terdeteksi tangan atau halangan menempel pada dagu / wajah"
+      );
+    }
 
     const total = cameraError ? 92 : sSharp + sLight + sPose + sClean;
     const passed = total >= 75 && !isOccluded && isAligned;
@@ -895,13 +970,21 @@ export const EmployeeForm = () => {
                         </div>
                       )}
 
-                      {/* Anti-Occlusion Warning Overlay (When Hand on Chin Detected) */}
+                      {/* Anti-Occlusion Warning Overlay (When Hand on Forehead or Chin Detected) */}
                       {fqaStatus.isOccluded && (
                         <div className="absolute inset-x-4 top-4 z-30 p-3 bg-red-900/90 backdrop-blur-md rounded-xl border border-red-500/60 text-white flex items-center gap-2.5 shadow-lg animate-bounce">
                           <span className="text-xl">✋</span>
                           <div className="text-left text-xs font-semibold">
-                            <span className="block font-bold text-red-200">Terdeteksi Halangan / Tangan Menopang Dagu!</span>
-                            <span>Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.</span>
+                            <span className="block font-bold text-red-200">
+                              {fqaStatus.occlusionZone === "forehead"
+                                ? "Terdeteksi Halangan / Tangan Menutupi Dahi & Wajah Atas!"
+                                : "Terdeteksi Halangan / Tangan Menopang Dagu!"}
+                            </span>
+                            <span>
+                              {fqaStatus.occlusionZone === "forehead"
+                                ? "Tolong turunkan tangan dan jauhkan jari/lengan dari area dahi, kening, dan kepala."
+                                : "Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu."}
+                            </span>
                           </div>
                         </div>
                       )}
@@ -927,6 +1010,12 @@ export const EmployeeForm = () => {
                               : "border-slate-600"
                           }`}
                         >
+                          {/* Upper Forehead Safe Zone Marker */}
+                          <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mt-2">
+                            Area Dahi & Alis Bersih
+                          </span>
+                          <div className="w-28 h-0.5 border-b border-dashed border-white/40 mt-1 mb-auto"></div>
+
                           {/* Inside Target Badge */}
                           <div className="my-auto flex flex-col items-center justify-center text-center px-4">
                             <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${
@@ -941,7 +1030,7 @@ export const EmployeeForm = () => {
                           </div>
 
                           {/* Lower Jawline Safe Zone Marker */}
-                          <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-3"></div>
+                          <div className="w-28 h-0.5 border-b border-dashed border-white/40 mb-1"></div>
                           <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mb-2">
                             Area Dagu Bersih
                           </span>
@@ -965,6 +1054,7 @@ export const EmployeeForm = () => {
                               ? "aligned"
                               : "waiting"
                           }
+                          occlusionZone={fqaStatus.occlusionZone}
                           className="h-full"
                         />
                       </div>
@@ -1083,7 +1173,9 @@ export const EmployeeForm = () => {
                       </svg>
                       <span>
                         {fqaStatus.isOccluded
-                          ? "✋ Jauhkan Tangan dari Dagu untuk Mengambil"
+                          ? fqaStatus.occlusionZone === "forehead"
+                            ? "✋ Jauhkan Tangan dari Dahi/Kepala untuk Mengambil"
+                            : "✋ Jauhkan Tangan dari Dagu untuk Mengambil"
                           : !fqaStatus.isPoseAligned
                           ? "⚠️ Sesuaikan Arah Kepala dengan Model 3D"
                           : `📸 Ambil Foto (${currentPose.shortLabel})`}

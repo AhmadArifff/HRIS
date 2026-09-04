@@ -1932,22 +1932,43 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
 
 ---
 
-### 12.3 Algoritma Deteksi Halangan Tangan & Derau Objek (Anti-Occlusion Heuristic)
+### 12.3 Algoritma Multi-Zone Anti-Occlusion (Deteksi Tangan di Dahi, Kening, Kepala, & Dagu)
 
-Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifikasi pra-pemrosesan di sisi klien (*Client-Side Pre-Capture Guard*):
+Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifikasi pra-pemrosesan di sisi klien (*Client-Side Pre-Capture Guard*) dengan segmentasi spasial multi-zona untuk mendeteksi halangan tangan di seluruh area wajah:
 
-1. **Segmentasi Area Kritis Wajah Bawah (Chin & Jawline Zone):**
-   - Reticle oval dibagi menjadi 3 sub-area: *Upper Third* (dahi & mata), *Middle Third* (hidung & pipi), dan *Lower Third* (mulut, rahang, dan dagu).
-   - Area *Lower Third* diperiksa secara intensif untuk mendeteksi intrusi objek eksternal (misal: jari tangan, telapak tangan menopang pipi/dagu, masker, cangkir).
-2. **Kriteria Deteksi Hambatan (Occlusion Triggers):**
-   - **Diskontinuitas Tepi Horizontal:** Munculnya garis kontras tinggi melintang di area dagu/leher menandakan adanya lengan atau telapak tangan yang menempel di wajah.
-   - **Perbedaan Warna Kulit Eksternal (Boundary Intrusion):** Objek yang memotong batas reticle dari arah bawah atau samping dengan kepadatan piksel tinggi.
-   - **Asimetri Kontur Wajah:** Ketidakseimbangan lebar pipi kiri dan kanan akibat tertutup kepalan tangan.
-3. **Respons UI & Guard Clause:**
-   - Apabila terdeteksi tangan/objek di area wajah:
-     - Reticle berubah menjadi **Merah Berkedip**.
-     - Status memunculkan peringatan tegas: `⚠️ Terdeteksi tangan / halangan menutupi dagu & wajah! Harap jauhkan tangan dari area wajah.`
-     - **Tombol capture dikunci** (*disabled*) sampai tangan benar-benar diturunkan dan wajah bebas dari gangguan.
+#### 12.3.1 Kasus Hambatan Wajah Bawah (Lower Face: Hand-on-Chin & Mouth Obstruction)
+- **Area Analisis:** Sub-area *Lower Third* ($Y \in [75, 115], X \in [40, 120]$).
+- **Indikator Heuristik:**
+  1. **Diskontinuitas Tepi Horizontal Rahang:** Adanya lipatan jari atau telapak tangan di dagu menghasilkan densitas tepi `chinEdgeDensity > 0.36`.
+  2. **Intrusi Pergelangan Tangan Bawah:** Piksel warna kulit masuk dari batas bawah reticle ($Y > 105$) melebihi 65 piksel.
+  3. **Asimetri Intensitas Rahang Kiri vs Kanan:** Perbedaan $\Delta I_{\text{jaw}} > 38$ akibat kepalan tangan menopang salah satu sisi rahang.
+- **Respons Sistem:** Flag `hasChinOcclusion = true`, `occlusionZone = "chin"`.
+
+#### 12.3.2 Kasus Solusi Hambatan Wajah Atas (Upper Face: Forehead, Brow, & Lateral Arm Intrusion)
+- **Latar Belakang Kasus:** Pengguna terkadang meletakkan tangan di atas kepala, menutup kening dengan jari, menyentuh rambut, atau posisi hormat/menutupi alis saat pengambilan foto biometrik.
+- **Area Analisis Spasial:**
+  1. **Forehead Safe Zone:** $Y \in [18, 52], X \in [42, 118]$ (area dahi dan alis mata).
+  2. **Crown & Hairline Zone:** $Y \in [8, 32], X \in [48, 112]$ (area puncak rambut dan batas kening).
+  3. **Lateral Arm/Wrist Entry Zone:** $Y \in [15, 68], X \in [5, 42]$ (kiri) & $X \in [118, 155]$ (kanan).
+- **Indikator Heuristik Anti-Occlusion Dahi:**
+  1. **Densitas Tepi Horizontal Dahi (`foreheadEdgeDensity`):** Pada dahi normal tanpa halangan, kulit dahi sangat halus sehingga gradien vertikal $|I_{(x, y)} - I_{(x, y+1)}| > 22$ bernilai sangat rendah ($< 0.08$). Namun saat 4 jari diletakkan melintang di dahi, bayangan celah antar-jari menghasilkan lonjakan densitas tepi drastis ($> 0.26$).
+  2. **Intrusi Lengan Lateral (`maxUpperSideSkin`):** Saat tangan menjangkau dahi, lengan atau pergelangan tangan menembus batas samping frame ($X < 42$ atau $X > 118$) dengan konsentrasi piksel warna kulit $> 45$ piksel.
+  3. **Anomali Piksel Kulit pada Area Mahkota Rambut (`crownSkinDensity`):** Area rambut hitam normal memiliki densitas kulit mendekati nol. Keberadaan piksel kulit $> 25\%$ di area rambut menandakan tangan diletakkan menutupi kepala atas.
+- **Kondisi Pemicu Deteksi:**
+  $$\text{hasForeheadOcclusion} = (S_{\text{lateral}} > 40 \land \rho_{\text{edge}} > 0.15) \lor (S_{\text{lateral}} > 45 \land \rho_{\text{crown}} > 0.15) \lor \rho_{\text{edge}} > 0.26 \lor S_{\text{lateral}} > 90$$
+- **Respons Sistem:** Flag `hasForeheadOcclusion = true`, `occlusionZone = "forehead"`.
+
+#### 12.3.3 Tata Kelola UX & Guard Clause Multi-Zone
+1. **Dual Safe-Zone Reticle Markers:** Bingkai oval panduan dilengkapi dua garis batas putus-putus eksplisit:
+   - Garis atas: `AREA DAHI & ALIS BERSIH`
+   - Garis bawah: `AREA DAGU BERSIH`
+2. **Indikator Status Reaktif & Penguncian Tombol Capture:**
+   - **Reticle Oval:** Berkedip merah menyala (*Crimson Pulse*).
+   - **Banner Video:**
+     - Jika terhalang di dahi: `✋ Terdeteksi Halangan / Tangan Menutupi Dahi atau Kening! Tolong turunkan tangan dan jauhkan jari/lengan dari area dahi, kening, dan kepala.`
+     - Jika terhalang di dagu: `✋ Terdeteksi Halangan / Tangan Menopang Dagu! Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.`
+   - **Model 3D Guide ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)):** Berubah warna menjadi merah dengan badge spesifik: `✋ TANGAN MENUTUPI DAHI` atau `✋ TANGAN MENUTUPI DAGU`.
+   - **Tombol Capture:** **SEKETIKA TERKUNCI (`disabled = true`)** dengan label `✋ Jauhkan Tangan dari Dahi/Kepala untuk Mengambil` atau `✋ Jauhkan Tangan dari Dagu untuk Mengambil`. Pengambilan foto sama sekali tidak dapat dipaksa sebelum tangan dijauhkan.
 
 ---
 
@@ -2085,5 +2106,5 @@ Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/kar
 | **Ambang Batas Kelayakan** | Tidak ada evaluasi kuantitatif | **Minimal Skor 75/100** (Jika $< 75$, foto ditolak & wajib retake) | Mencegah citra buram atau pose palsu masuk database |
 | **Panduan Arah Pose** | Emoticon 2D kartun (`👉`, `🙂`) | **Asset Model 3D Manusia Geometrik** ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)) | Tampilan profesional perbankan, instruksi tolehan akurat |
 | **Pratinjau Pose Sebelumnya** | Belum tersedia | **Thumbnail Pratinjau + Badge Skor** + Tombol Ambil Ulang cepat | Pengguna dapat mengevaluasi kualitas foto sebelum lanjut |
-| **Deteksi Halangan Tangan** | Hanya pengecekan reticle dasar | **Anti-Occlusion Filter** (Segmentasi dagu & deteksi intrusi tangan) | Menghilangkan derau objek asing pada proses ekstraksi |
+| **Deteksi Halangan Tangan (Multi-Zone)** | Hanya dagu / reticle dasar | **Multi-Zone Anti-Occlusion** (Dahi, Kening, Kepala Atas, & Dagu) | Mencegah pendaftaran foto yang terhalang tangan di bagian dahi maupun dagu |
 

@@ -4,10 +4,11 @@ import React from "react";
 interface Kyc3dHeadGuideProps {
   pose: "center" | "right" | "left" | "up" | "down";
   status: "waiting" | "aligned" | "occluded" | "captured";
+  occlusionZone?: "chin" | "forehead" | "none";
   className?: string;
 }
 
-export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({ pose, status, className = "" }) => {
+export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({ pose, status, occlusionZone = "none", className = "" }) => {
   // Color themes based on real-time detection status
   const getTheme = () => {
     switch (status) {
@@ -23,7 +24,12 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({ pose, status, cl
           mesh: "#ef4444", // Red
           glow: "rgba(239, 68, 68, 0.4)",
           border: "#f87171",
-          label: "✋ Terhalang Tangan / Objek",
+          label:
+            occlusionZone === "forehead"
+              ? "✋ Tangan Menutupi Dahi"
+              : occlusionZone === "chin"
+              ? "✋ Tangan Menutupi Dagu"
+              : "✋ Terhalang Tangan / Objek",
         };
       case "captured":
         return {
