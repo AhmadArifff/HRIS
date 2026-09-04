@@ -1,246 +1,347 @@
 "use client";
 import React from "react";
 
-interface Kyc3dHeadGuideProps {
+export interface Kyc3dHeadGuideProps {
   pose: "center" | "right" | "left" | "up" | "down";
   status: "waiting" | "aligned" | "occluded" | "captured" | "not_centered";
-  occlusionZone?: "chin" | "forehead" | "none";
+  occlusionZone?: "chin" | "forehead" | "object" | "none";
   className?: string;
 }
 
-export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({ pose, status, occlusionZone = "none", className = "" }) => {
-  // Color themes based on real-time detection status
+export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
+  pose,
+  status,
+  occlusionZone = "none",
+  className = "",
+}) => {
+  // Dynamic color theme based on real-time detection status
   const getTheme = () => {
     switch (status) {
       case "aligned":
         return {
           mesh: "#10b981", // Emerald green
-          glow: "rgba(16, 185, 129, 0.35)",
-          border: "#34d399",
-          label: "✓ Sudut Rotasi Tepat",
+          glow: "rgba(16, 185, 129, 0.45)",
+          border: "#10b981",
+          ring: "ring-emerald-500/50",
+          label: "✓ SUDUT ROTASI TEPAT",
+          badgeBg: "bg-emerald-950/80 border-emerald-500/60 text-emerald-300",
         };
       case "not_centered":
         return {
           mesh: "#f59e0b", // Amber
-          glow: "rgba(245, 158, 11, 0.3)",
-          border: "#fbbf24",
-          label: "Posisikan Wajah di Oval",
+          glow: "rgba(245, 158, 11, 0.35)",
+          border: "#f59e0b",
+          ring: "ring-amber-500/50",
+          label: "POSISIKAN WAJAH DI OVAL",
+          badgeBg: "bg-amber-950/80 border-amber-500/60 text-amber-300",
         };
       case "occluded":
         return {
           mesh: "#ef4444", // Red
-          glow: "rgba(239, 68, 68, 0.4)",
-          border: "#f87171",
+          glow: "rgba(239, 68, 68, 0.55)",
+          border: "#ef4444",
+          ring: "ring-red-500/60",
           label:
             occlusionZone === "forehead"
-              ? "✋ Tangan Menutupi Dahi / Mata"
+              ? "✋ TANGAN / BENDA MENUTUPI DAHI"
               : occlusionZone === "chin"
-              ? "✋ Tangan Menutupi Mulut / Dagu"
-              : "✋ Terhalang Tangan / Objek",
+              ? "✋ BENDA / TANGAN MENUTUPI MULUT / DAGU"
+              : occlusionZone === "object"
+              ? "✋ TERHALANG BENDA / CANGKIR"
+              : "✋ TERHALANG OBJEK / TANGAN",
+          badgeBg: "bg-red-950/90 border-red-500/80 text-red-300",
         };
       case "captured":
         return {
           mesh: "#06b6d4", // Cyan
-          glow: "rgba(6, 182, 212, 0.3)",
-          border: "#38bdf8",
-          label: "✓ Pose Selesai",
+          glow: "rgba(6, 182, 212, 0.4)",
+          border: "#06b6d4",
+          ring: "ring-cyan-500/50",
+          label: "✓ POSE SELESAI",
+          badgeBg: "bg-cyan-950/80 border-cyan-500/60 text-cyan-300",
         };
       default:
         return {
           mesh: "#38bdf8", // Sky blue
-          glow: "rgba(56, 189, 248, 0.2)",
-          border: "#60a5fa",
-          label: "Ikuti Arah Model 3D",
+          glow: "rgba(56, 189, 248, 0.3)",
+          border: "#38bdf8",
+          ring: "ring-sky-500/40",
+          label: "IKUTI ARAH MODEL 3D",
+          badgeBg: "bg-slate-900/80 border-sky-500/50 text-sky-300",
         };
     }
   };
 
   const theme = getTheme();
 
+  // 3D Perspective Rotation Matrices based on requested Pose
+  const getPoseTransform = () => {
+    switch (pose) {
+      case "right":
+        // Turning to the Right (~25°): Rotate Y clockwise in 3D
+        return {
+          transform: "perspective(500px) rotateY(24deg) scale(1.03) translateZ(10px)",
+          lightGradient: "linear-gradient(90deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.08) 70%, rgba(56,189,248,0.2) 100%)",
+        };
+      case "left":
+        // Turning to the Left (~25°): Rotate Y counter-clockwise in 3D
+        return {
+          transform: "perspective(500px) rotateY(-24deg) scale(1.03) translateZ(10px)",
+          lightGradient: "linear-gradient(270deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.08) 70%, rgba(56,189,248,0.2) 100%)",
+        };
+      case "up":
+        // Tilting Head Upward (~15°): Rotate X backwards
+        return {
+          transform: "perspective(500px) rotateX(-16deg) scale(1.02) translateZ(8px)",
+          lightGradient: "linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.1) 80%, rgba(56,189,248,0.2) 100%)",
+        };
+      case "down":
+        // Tilting Head Downward (~15°): Rotate X forwards
+        return {
+          transform: "perspective(500px) rotateX(16deg) scale(1.02) translateZ(8px)",
+          lightGradient: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.08) 70%, rgba(56,189,248,0.2) 100%)",
+        };
+      case "center":
+      default:
+        return {
+          transform: "perspective(500px) rotateY(0deg) rotateX(0deg) scale(1)",
+          lightGradient: "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.2) 80%)",
+        };
+    }
+  };
+
+  const poseTransform = getPoseTransform();
+
+  // Directional 3D Arrow overlay indicating target head rotation
+  const renderDirectionalArrow = () => {
+    switch (pose) {
+      case "right":
+        return (
+          <div className="absolute -bottom-1 inset-x-0 flex justify-center items-center pointer-events-none z-20 animate-pulse">
+            <svg viewBox="0 0 100 24" className="w-24 h-6 filter drop-shadow">
+              <path d="M 20 18 Q 50 4 80 14" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="3 2" />
+              <polygon points="78,9 86,15 77,18" fill={theme.mesh} />
+            </svg>
+          </div>
+        );
+      case "left":
+        return (
+          <div className="absolute -bottom-1 inset-x-0 flex justify-center items-center pointer-events-none z-20 animate-pulse">
+            <svg viewBox="0 0 100 24" className="w-24 h-6 filter drop-shadow">
+              <path d="M 80 18 Q 50 4 20 14" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="3 2" />
+              <polygon points="22,9 14,15 23,18" fill={theme.mesh} />
+            </svg>
+          </div>
+        );
+      case "up":
+        return (
+          <div className="absolute top-1 inset-x-0 flex justify-center items-center pointer-events-none z-20 animate-bounce">
+            <svg viewBox="0 0 24 30" className="w-6 h-8 filter drop-shadow">
+              <path d="M 12 26 L 12 8" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="3 2" />
+              <polygon points="7,10 12,2 17,10" fill={theme.mesh} />
+            </svg>
+          </div>
+        );
+      case "down":
+        return (
+          <div className="absolute bottom-1 inset-x-0 flex justify-center items-center pointer-events-none z-20 animate-bounce">
+            <svg viewBox="0 0 24 30" className="w-6 h-8 filter drop-shadow">
+              <path d="M 12 4 L 12 22" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="3 2" />
+              <polygon points="7,20 12,28 17,20" fill={theme.mesh} />
+            </svg>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className={`relative flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800 shadow-2xl backdrop-blur-md overflow-hidden ${className}`}>
+    <div
+      className={`relative flex flex-col items-center justify-between p-2.5 rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/80 shadow-2xl backdrop-blur-md overflow-hidden ${className}`}
+    >
       {/* Background Ambient Glow */}
       <div
-        className="absolute -top-10 w-36 h-36 rounded-full blur-2xl pointer-events-none transition-colors duration-500"
+        className="absolute top-1/4 w-44 h-44 rounded-full blur-3xl pointer-events-none transition-all duration-500"
         style={{ backgroundColor: theme.glow }}
-      ></div>
+      />
 
-      {/* 3D Head Model SVG with Real Orthographic Geometric Projection */}
-      <div className="relative w-28 h-36 flex items-center justify-center">
-        <svg viewBox="0 0 140 180" className="w-full h-full filter drop-shadow-md">
-          <defs>
-            <linearGradient id="headSkinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1e293b" />
-              <stop offset="50%" stopColor="#0f172a" />
-              <stop offset="100%" stopColor="#020617" />
-            </linearGradient>
+      {/* DUAL 3D HUMAN MODELS: PEREMPUAN (TOP) & LAKI-LAKI (BOTTOM) */}
+      <div className="w-full flex flex-col gap-2.5 z-10">
+        {/* 1. TOP MODEL: PEREMPUAN (FEMALE) */}
+        <div className="relative group">
+          <div className="flex items-center justify-between px-1 mb-1">
+            <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-wider text-pink-400 dark:text-pink-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
+              1. Perempuan
+            </span>
+            <span className="text-[8px] font-mono text-gray-400">
+              {pose === "center"
+                ? "Lurus"
+                : pose === "right"
+                ? "Kanan (+25°)"
+                : pose === "left"
+                ? "Kiri (-25°)"
+                : pose === "up"
+                ? "Atas (+15°)"
+                : "Bawah (-15°)"}
+            </span>
+          </div>
 
-            <linearGradient id="meshAccent" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor={theme.mesh} stopOpacity="0.9" />
-              <stop offset="100%" stopColor={theme.mesh} stopOpacity="0.2" />
-            </linearGradient>
+          <div
+            className={`relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-slate-950 border transition-all duration-300 ${
+              status === "aligned"
+                ? "border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                : status === "occluded"
+                ? "border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                : "border-slate-800 shadow-inner"
+            }`}
+          >
+            {/* 3D Rotating Avatar Container */}
+            <div
+              className="relative w-full h-full transition-transform duration-500 ease-out origin-center"
+              style={{ transform: poseTransform.transform, transformStyle: "preserve-3d" }}
+            >
+              <img
+                src="/images/kyc/female_avatar.jpg"
+                alt="Model 3D Perempuan"
+                className="w-full h-full object-cover object-top filter contrast-[1.03] select-none"
+                loading="eager"
+              />
 
-            <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-          </defs>
+              {/* Dynamic 3D Directional Lighting Overlay */}
+              <div
+                className="absolute inset-0 pointer-events-none transition-all duration-500 mix-blend-overlay"
+                style={{ background: poseTransform.lightGradient }}
+              />
 
-          {/* 1. POSE: CENTER FRONTAL */}
-          {pose === "center" && (
-            <g className="transition-all duration-500">
-              {/* Head Base Oval Silhouette */}
-              <ellipse cx="70" cy="85" rx="42" ry="56" fill="url(#headSkinGrad)" stroke={theme.border} strokeWidth="2.2" />
-              
-              {/* 3D Contour Topo Lines (Vertical & Horizontal Meridian) */}
-              <path d="M 70 29 C 70 55, 70 115, 70 141" fill="none" stroke="url(#meshAccent)" strokeWidth="1.5" strokeDasharray="3 3" />
-              <path d="M 33 82 C 55 92, 85 92, 107 82" fill="none" stroke="url(#meshAccent)" strokeWidth="1.5" />
-              
-              {/* Eyebrows & Eyes Line */}
-              <path d="M 45 74 Q 54 71 63 75" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 77 75 Q 86 71 95 74" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <circle cx="54" cy="80" r="3.5" fill={theme.mesh} />
-              <circle cx="86" cy="80" r="3.5" fill={theme.mesh} />
-              
-              {/* Nose Bridge & Tip */}
-              <path d="M 70 78 L 70 98 L 65 102 L 75 102 Z" fill="none" stroke={theme.mesh} strokeWidth="1.8" strokeLinejoin="round" />
-              
-              {/* Mouth & Chin Line */}
-              <path d="M 57 118 Q 70 123 83 118" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 64 132 Q 70 135 76 132" fill="none" stroke={theme.mesh} strokeWidth="1.5" strokeLinecap="round" />
+              {/* Biometric KYC Head Contour Grid Overlay */}
+              <svg
+                viewBox="0 0 100 100"
+                className="absolute inset-0 w-full h-full pointer-events-none opacity-40 mix-blend-screen"
+              >
+                <ellipse
+                  cx="50"
+                  cy="45"
+                  rx="26"
+                  ry="34"
+                  fill="none"
+                  stroke={theme.mesh}
+                  strokeWidth="0.8"
+                  strokeDasharray="2 2"
+                />
+                {/* Horizontal Feature Crosshairs */}
+                <line x1="30" y1="42" x2="70" y2="42" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
+                <line x1="42" y1="56" x2="58" y2="56" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
+                {/* Vertical Meridian */}
+                <line x1="50" y1="18" x2="50" y2="76" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="3 3" />
+              </svg>
+            </div>
 
-              {/* Ears */}
-              <path d="M 28 75 C 24 82, 24 95, 29 100" fill="none" stroke={theme.border} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 112 75 C 116 82, 116 95, 111 100" fill="none" stroke={theme.border} strokeWidth="2" strokeLinecap="round" />
-            </g>
-          )}
+            {/* Directional 3D Arrow */}
+            {renderDirectionalArrow()}
 
-          {/* 2. POSE: TURN RIGHT (Perspektif Menoleh ke Kanan) */}
-          {pose === "right" && (
-            <g className="transition-all duration-500 transform translate-x-1">
-              {/* Turned Head Silhouette */}
-              <path d="M 42 35 C 65 25, 98 38, 105 60 C 112 85, 102 120, 80 138 C 65 144, 48 135, 38 120 C 26 100, 26 55, 42 35 Z" fill="url(#headSkinGrad)" stroke={theme.border} strokeWidth="2.2" />
-              
-              {/* Nose Profile Protrusion to Right */}
-              <path d="M 98 75 L 112 92 L 102 96" fill="none" stroke={theme.mesh} strokeWidth="2.2" strokeLinejoin="round" />
-              
-              {/* Shifted Eyes & Brows */}
-              <path d="M 52 70 Q 60 67 70 71" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 82 72 Q 88 69 96 74" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <circle cx="62" cy="77" r="3.5" fill={theme.mesh} />
-              <circle cx="91" cy="79" r="3.2" fill={theme.mesh} />
-              
-              {/* Mouth shifted right */}
-              <path d="M 72 114 Q 85 118 97 114" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
+            {/* Corner Tech Brackets */}
+            <div className="absolute top-1 left-1 w-2 h-2 border-t border-l border-sky-400/50 pointer-events-none" />
+            <div className="absolute top-1 right-1 w-2 h-2 border-t border-r border-sky-400/50 pointer-events-none" />
+            <div className="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-sky-400/50 pointer-events-none" />
+            <div className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-sky-400/50 pointer-events-none" />
+          </div>
+        </div>
 
-              {/* Prominent Left Ear visible */}
-              <path d="M 33 72 C 26 80, 26 95, 33 102" fill="none" stroke={theme.border} strokeWidth="2.2" strokeLinecap="round" />
+        {/* 2. BOTTOM MODEL: LAKI-LAKI (MALE) */}
+        <div className="relative group">
+          <div className="flex items-center justify-between px-1 mb-1">
+            <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-wider text-cyan-400 dark:text-cyan-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              2. Laki-Laki
+            </span>
+            <span className="text-[8px] font-mono text-gray-400">
+              {pose === "center"
+                ? "Lurus"
+                : pose === "right"
+                ? "Kanan (+25°)"
+                : pose === "left"
+                ? "Kiri (-25°)"
+                : pose === "up"
+                ? "Atas (+15°)"
+                : "Bawah (-15°)"}
+            </span>
+          </div>
 
-              {/* 3D Rotation Arrow (Curved Right) */}
-              <path d="M 35 155 Q 70 170 105 158" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="4 2" />
-              <polygon points="108,154 107,164 116,158" fill={theme.mesh} />
-            </g>
-          )}
+          <div
+            className={`relative w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-slate-950 border transition-all duration-300 ${
+              status === "aligned"
+                ? "border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                : status === "occluded"
+                ? "border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                : "border-slate-800 shadow-inner"
+            }`}
+          >
+            {/* 3D Rotating Avatar Container */}
+            <div
+              className="relative w-full h-full transition-transform duration-500 ease-out origin-center"
+              style={{ transform: poseTransform.transform, transformStyle: "preserve-3d" }}
+            >
+              <img
+                src="/images/kyc/male_avatar.jpg"
+                alt="Model 3D Laki-Laki"
+                className="w-full h-full object-cover object-top filter contrast-[1.03] select-none"
+                loading="eager"
+              />
 
-          {/* 3. POSE: TURN LEFT (Perspektif Menoleh ke Kiri) */}
-          {pose === "left" && (
-            <g className="transition-all duration-500 transform -translate-x-1">
-              {/* Turned Head Silhouette */}
-              <path d="M 98 35 C 75 25, 42 38, 35 60 C 28 85, 38 120, 60 138 C 75 144, 92 135, 102 120 C 114 100, 114 55, 98 35 Z" fill="url(#headSkinGrad)" stroke={theme.border} strokeWidth="2.2" />
-              
-              {/* Nose Profile Protrusion to Left */}
-              <path d="M 42 75 L 28 92 L 38 96" fill="none" stroke={theme.mesh} strokeWidth="2.2" strokeLinejoin="round" />
-              
-              {/* Shifted Eyes & Brows */}
-              <path d="M 88 70 Q 80 67 70 71" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 58 72 Q 52 69 44 74" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <circle cx="78" cy="77" r="3.5" fill={theme.mesh} />
-              <circle cx="49" cy="79" r="3.2" fill={theme.mesh} />
-              
-              {/* Mouth shifted left */}
-              <path d="M 68 114 Q 55 118 43 114" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
+              {/* Dynamic 3D Directional Lighting Overlay */}
+              <div
+                className="absolute inset-0 pointer-events-none transition-all duration-500 mix-blend-overlay"
+                style={{ background: poseTransform.lightGradient }}
+              />
 
-              {/* Prominent Right Ear visible */}
-              <path d="M 107 72 C 114 80, 114 95, 107 102" fill="none" stroke={theme.border} strokeWidth="2.2" strokeLinecap="round" />
+              {/* Biometric KYC Head Contour Grid Overlay */}
+              <svg
+                viewBox="0 0 100 100"
+                className="absolute inset-0 w-full h-full pointer-events-none opacity-40 mix-blend-screen"
+              >
+                <ellipse
+                  cx="50"
+                  cy="45"
+                  rx="26"
+                  ry="34"
+                  fill="none"
+                  stroke={theme.mesh}
+                  strokeWidth="0.8"
+                  strokeDasharray="2 2"
+                />
+                {/* Horizontal Feature Crosshairs */}
+                <line x1="30" y1="42" x2="70" y2="42" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
+                <line x1="42" y1="56" x2="58" y2="56" stroke={theme.mesh} strokeWidth="0.6" strokeOpacity="0.7" />
+                {/* Vertical Meridian */}
+                <line x1="50" y1="18" x2="50" y2="76" stroke={theme.mesh} strokeWidth="0.6" strokeDasharray="3 3" />
+              </svg>
+            </div>
 
-              {/* 3D Rotation Arrow (Curved Left) */}
-              <path d="M 105 155 Q 70 170 35 158" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="4 2" />
-              <polygon points="32,154 33,164 24,158" fill={theme.mesh} />
-            </g>
-          )}
+            {/* Directional 3D Arrow */}
+            {renderDirectionalArrow()}
 
-          {/* 4. POSE: TILT UP (Mendongak ke Atas) */}
-          {pose === "up" && (
-            <g className="transition-all duration-500 transform -translate-y-1">
-              {/* Tilted Up Head Silhouette (Expanded Jaw/Chin & Neck) */}
-              <path d="M 42 45 C 55 35, 85 35, 98 45 C 112 60, 112 100, 100 135 C 88 152, 52 152, 40 135 C 28 100, 28 60, 42 45 Z" fill="url(#headSkinGrad)" stroke={theme.border} strokeWidth="2.2" />
-              
-              {/* Nostrils visible from below */}
-              <ellipse cx="65" cy="85" rx="3.5" ry="2" fill={theme.mesh} />
-              <ellipse cx="75" cy="85" rx="3.5" ry="2" fill={theme.mesh} />
-              <path d="M 62 82 Q 70 79 78 82" fill="none" stroke={theme.mesh} strokeWidth="1.5" />
-
-              {/* Raised Eyebrows & Eyes */}
-              <path d="M 45 65 Q 54 60 63 64" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 77 64 Q 86 60 95 65" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <circle cx="54" cy="70" r="3" fill={theme.mesh} />
-              <circle cx="86" cy="70" r="3" fill={theme.mesh} />
-
-              {/* Prominent Chin & Neck Base */}
-              <path d="M 55 104 Q 70 108 85 104" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 50 128 Q 70 136 90 128" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-
-              {/* Vertical Up Arrow */}
-              <path d="M 70 172 L 70 148" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="4 2" />
-              <polygon points="66,150 74,150 70,142" fill={theme.mesh} />
-            </g>
-          )}
-
-          {/* 5. POSE: TILT DOWN (Menunduk ke Bawah) */}
-          {pose === "down" && (
-            <g className="transition-all duration-500 transform translate-y-1">
-              {/* Tilted Down Head Silhouette (Expanded Forehead) */}
-              <path d="M 38 28 C 55 18, 85 18, 102 28 C 116 48, 114 95, 96 122 C 84 135, 56 135, 44 122 C 26 95, 24 48, 38 28 Z" fill="url(#headSkinGrad)" stroke={theme.border} strokeWidth="2.2" />
-              
-              {/* Forehead Brow Ridge Topo Lines */}
-              <path d="M 48 50 Q 70 45 92 50" fill="none" stroke="url(#meshAccent)" strokeWidth="1.5" />
-              
-              {/* Lowered Eyes & Brows */}
-              <path d="M 45 78 Q 54 82 63 79" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <path d="M 77 79 Q 86 82 95 78" fill="none" stroke={theme.mesh} strokeWidth="2" strokeLinecap="round" />
-              <ellipse cx="54" cy="85" rx="3.5" ry="2" fill={theme.mesh} />
-              <ellipse cx="86" cy="85" rx="3.5" ry="2" fill={theme.mesh} />
-
-              {/* Nose Tip pointing downward */}
-              <path d="M 70 76 L 70 102 L 67 106 L 73 106 Z" fill="none" stroke={theme.mesh} strokeWidth="1.8" strokeLinejoin="round" />
-
-              {/* Compressed Chin */}
-              <path d="M 60 116 Q 70 118 80 116" fill="none" stroke={theme.mesh} strokeWidth="1.8" strokeLinecap="round" />
-
-              {/* Vertical Down Arrow */}
-              <path d="M 70 148 L 70 172" fill="none" stroke={theme.mesh} strokeWidth="2.5" strokeDasharray="4 2" />
-              <polygon points="66,170 74,170 70,178" fill={theme.mesh} />
-            </g>
-          )}
-        </svg>
+            {/* Corner Tech Brackets */}
+            <div className="absolute top-1 left-1 w-2 h-2 border-t border-l border-cyan-400/50 pointer-events-none" />
+            <div className="absolute top-1 right-1 w-2 h-2 border-t border-r border-cyan-400/50 pointer-events-none" />
+            <div className="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-cyan-400/50 pointer-events-none" />
+            <div className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-cyan-400/50 pointer-events-none" />
+          </div>
+        </div>
       </div>
 
       {/* Model State Pill */}
-      <div className="mt-2 text-center">
-        <span
-          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase border transition-colors duration-300"
-          style={{
-            color: theme.mesh,
-            borderColor: theme.border,
-            backgroundColor: "rgba(15, 23, 42, 0.8)",
-          }}
+      <div className="mt-2 text-center w-full z-10">
+        <div
+          className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-mono font-bold tracking-wider uppercase border transition-all duration-300 w-full truncate ${theme.badgeBg}`}
         >
           <span
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
+            className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0"
             style={{ backgroundColor: theme.mesh }}
-          ></span>
-          {theme.label}
-        </span>
+          />
+          <span className="truncate">{theme.label}</span>
+        </div>
       </div>
     </div>
   );

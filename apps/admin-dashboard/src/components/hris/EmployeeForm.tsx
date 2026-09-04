@@ -195,7 +195,7 @@ export const EmployeeForm = () => {
     isValid: boolean;
     isFaceCentered: boolean;
     isOccluded: boolean;
-    occlusionZone: "none" | "chin" | "forehead";
+    occlusionZone: "none" | "chin" | "forehead" | "object";
     isPoseAligned: boolean;
     label: string;
     sharpness: number;
@@ -308,17 +308,21 @@ export const EmployeeForm = () => {
         let leftCoreSkin = 0;
         let rightCoreSkin = 0;
 
-        // 3. Anti-Occlusion & Multi-Zone Hand Obstruction Detection (PRD §12.3)
+        // 3. Anti-Occlusion & Multi-Zone Hand / Object Obstruction Detection (PRD §12.3)
         // Zone A: Chin & Jaw (Y: 86-114, X: 48-112)
         let chinEdgeCount = 0;
         let chinPixelCount = 0;
         let chinSkinCount = 0;
+        let chinWhiteObjectCount = 0;
+        let chinForeignCount = 0;
         let bottomSkinEntryCount = 0;
 
         // Zone Mouth & Lips (Y: 64-90, X: 54-106)
         let mouthPixelCount = 0;
         let mouthSkinCount = 0;
         let mouthEdgeCount = 0;
+        let mouthWhiteObjectCount = 0;
+        let mouthForeignCount = 0;
 
         // Zone B: Forehead & Brow (Upper Third: Y: 18-50, X: 50-110)
         let foreheadPixelCount = 0;
@@ -374,6 +378,25 @@ export const EmployeeForm = () => {
               r - b >= 25 &&
               gray >= 60;
 
+            // Artificial Object Detection (White ceramic mug, cup, paper, surgical mask, mobile phone)
+            // Human skin strictly requires high red-to-blue difference (r - b >= 25).
+            // A white/light cup or paper has high luminance and low saturation:
+            const isWhiteObject =
+              gray > 105 &&
+              Math.abs(r - g) <= 22 &&
+              Math.abs(g - b) <= 22 &&
+              Math.abs(r - b) <= 24;
+
+            // Colored foreign object (e.g. teal/cyan print on mug, dark phone chassis, dark fabric mask)
+            const isForeignObject =
+              !isSkinTone &&
+              !isDarkHair &&
+              (isWhiteObject ||
+                (b > r + 10 && b > 55) ||
+                (g > r + 15 && g > 65) ||
+                gray > 130 ||
+                (gray < 50 && r < 50 && g < 50 && b < 50));
+
             // Step 1: Reticle Oval Core Sampling (Center at 80, 60)
             if (y >= 28 && y <= 92 && x >= 48 && x <= 112) {
               if (isSkinTone) {
@@ -387,6 +410,8 @@ export const EmployeeForm = () => {
             if (y >= 64 && y <= 90 && x >= 54 && x <= 106) {
               mouthPixelCount++;
               if (isSkinTone) mouthSkinCount++;
+              if (isWhiteObject) mouthWhiteObjectCount++;
+              if (isForeignObject) mouthForeignCount++;
               if (idx + 160 * 4 < data.length) {
                 const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
                 if (Math.abs(gray - downGray) > 18) mouthEdgeCount++;
@@ -397,6 +422,8 @@ export const EmployeeForm = () => {
             if (y >= 86 && y <= 114 && x >= 48 && x <= 112) {
               chinPixelCount++;
               if (isSkinTone) chinSkinCount++;
+              if (isWhiteObject) chinWhiteObjectCount++;
+              if (isForeignObject) chinForeignCount++;
               if (idx + 160 * 4 < data.length) {
                 const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
                 if (Math.abs(gray - downGray) > 22) chinEdgeCount++;
@@ -505,26 +532,35 @@ export const EmployeeForm = () => {
         const isFacePresent = coreSkinCount >= 180;
         const targetPose = KYC_POSES[activePoseStep];
 
-        // Gate 2: Multi-Zone Anti-Occlusion (EVALUATED FIRST with High Priority)
-        // Zone Mouth & Chin:
+        // Gate 2: Multi-Zone Anti-Occlusion & Foreign Object Shield (PRD §12.3)
+        // Zone Mouth & Chin Skin and Object Metrics:
         const mouthSkinRatio = mouthPixelCount > 0 ? mouthSkinCount / mouthPixelCount : 0;
+        const chinSkinRatio = chinPixelCount > 0 ? chinSkinCount / chinPixelCount : 0;
         const mouthEdgeDensity = mouthPixelCount > 0 ? mouthEdgeCount / mouthPixelCount : 0;
         const chinEdgeDensity = chinPixelCount > 0 ? chinEdgeCount / chinPixelCount : 0;
 
-        const isMouthCovered = mouthSkinRatio > 0.62 && mouthPixelCount > 60;
-        const hasMouthFingers = mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.40;
-        const hasChinHand = (chinEdgeDensity > 0.20 && chinSkinCount > 60) || (bottomSkinEntryCount > 80 && chinSkinCount > 100);
-        const hasChinOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand);
+        // A. Hand Covering Mouth or Chin:
+        const isMouthCovered = mouthSkinRatio > 0.65 && mouthPixelCount > 60 && mouthEdgeCount < 20;
+        const hasMouthFingers = mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.38;
+        const hasChinHand = (chinEdgeDensity > 0.20 && chinSkinCount > 60) || (bottomSkinEntryCount > 75 && chinSkinCount > 90);
+        const hasChinHandOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand);
 
-        // Zone Forehead, Brows, Eyes, & Crown:
+        // B. Object Covering Mouth or Chin (Mug, Cup, Mask, Phone, Document):
+        // In an unobstructed face, if coreSkinCount >= 180, mouth and chin MUST have healthy skin!
+        // When a mug or cup blocks the mouth/chin:
+        // 1) Severe skin deficit in mouth (mouthSkinRatio < 0.22) or chin (chinSkinRatio < 0.18)
+        // 2) Or high cluster of foreign ceramic/plastic/paper object pixels
+        const hasMouthObject = (mouthSkinRatio < 0.22 && mouthPixelCount > 70) || mouthWhiteObjectCount > 30 || mouthForeignCount > 65;
+        const hasChinObject = (chinSkinRatio < 0.18 && chinPixelCount > 80) || chinWhiteObjectCount > 35 || chinForeignCount > 75;
+        const hasObjectOcclusion = isFacePresent && (hasMouthObject || hasChinObject);
+
+        // C. Zone Forehead, Brows, Eyes, & Crown:
         const foreheadIntraSkinDensity = foreheadSkinCount > 0 ? foreheadIntraSkinEdgeCount / foreheadSkinCount : 0;
         const crownSkinDensity = crownPixelCount > 0 ? crownSkinCount / crownPixelCount : 0;
         const eyeEdgeRatio = Math.min(leftEyeEdge, rightEyeEdge) / (Math.max(leftEyeEdge, rightEyeEdge) + 1e-5);
         const maxEyeEdge = Math.max(leftEyeEdge, rightEyeEdge);
 
         // Ocular Asymmetry Check (ONLY evaluated on Center frontal pose!)
-        // On turn poses (left/right), one eye naturally hides behind nose bridge (3D perspective),
-        // which must NEVER trigger a false hand occlusion warning!
         const isOcularOccluded =
           targetPose.id === "center" &&
           maxEyeEdge > 300 &&
@@ -542,24 +578,24 @@ export const EmployeeForm = () => {
             hasTempleHandBridge ||
             (crownSkinDensity > 0.65 && foreheadSkinCount > 140));
 
-        const hasHandOcclusion = hasChinOcclusion || hasForeheadOcclusion;
-        let occlusionZone: "none" | "chin" | "forehead" = "none";
+        const hasHandOcclusion = hasChinHandOcclusion || hasForeheadOcclusion;
+        const hasAnyOcclusion = hasHandOcclusion || hasObjectOcclusion;
+
+        let occlusionZone: "none" | "chin" | "forehead" | "object" = "none";
         if (hasForeheadOcclusion) {
           occlusionZone = "forehead";
-        } else if (hasChinOcclusion) {
+        } else if (hasObjectOcclusion) {
+          occlusionZone = "object";
+        } else if (hasChinHandOcclusion) {
           occlusionZone = "chin";
         }
 
         // Gate 3: Centering Verification (Pose-Adaptive)
-        // For Pose 1 (Center Frontal): Verify face is centered with relaxed tolerance (0.20)
-        // If hand occlusion is present, mark as centered so occlusion alarm takes precedence!
         const faceCenterBalance = Math.min(leftCoreSkin, rightCoreSkin) / (Math.max(leftCoreSkin, rightCoreSkin) + 1e-5);
         let isFaceCentered = false;
         if (targetPose.id === "center") {
-          isFaceCentered = isFacePresent && (faceCenterBalance >= 0.20 || hasHandOcclusion);
+          isFaceCentered = isFacePresent && (faceCenterBalance >= 0.20 || hasAnyOcclusion);
         } else {
-          // For turn poses (right, left, up, down): Side profile naturally shifts skin symmetry.
-          // Centering only requires face to be present inside the oval reticle!
           isFaceCentered = isFacePresent;
         }
 
@@ -576,6 +612,15 @@ export const EmployeeForm = () => {
           // Simulator fallback
           isPoseAligned = true;
           directionHint = "✓ Mode Simulator (Siap Ambil)";
+        } else if (hasAnyOcclusion) {
+          // CRITICAL: Any occlusion immediately voids pose alignment!
+          isPoseAligned = false;
+          directionHint =
+            occlusionZone === "object"
+              ? "✋ Singkirkan cangkir / benda yang menutupi wajah"
+              : occlusionZone === "forehead"
+              ? "✋ Jauhkan tangan dari area dahi dan mata"
+              : "✋ Jauhkan tangan dari area dagu dan mulut";
         } else {
           switch (targetPose.id) {
             case "center":
@@ -592,12 +637,12 @@ export const EmployeeForm = () => {
 
             case "right":
               // Mirrored camera: Turning right presents right cheek on the left side of frame
+              // Must have real turning asymmetry without occlusion voids
               isPoseAligned =
-                leftCoreSkin > rightCoreSkin * 1.08 ||
-                leftCheekSkinCount > rightCheekSkinCount * 1.10 ||
-                leftEyeEdge > rightEyeEdge * 1.12 ||
-                internalCheekRatio > 1.12 ||
-                rightCoreSkin < leftCoreSkin * 0.92;
+                (leftCoreSkin > rightCoreSkin * 1.08 && internalCheekRatio > 1.06) ||
+                (leftCheekSkinCount > rightCheekSkinCount * 1.10 && leftCoreSkin > rightCoreSkin * 1.05) ||
+                (leftEyeEdge > rightEyeEdge * 1.10 && leftCoreSkin > rightCoreSkin * 1.05) ||
+                (internalCheekRatio > 1.15 && leftCoreSkin >= rightCoreSkin);
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kanan Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KANAN (~25°)";
@@ -606,11 +651,10 @@ export const EmployeeForm = () => {
             case "left":
               // Mirrored camera: Turning left presents left cheek on the right side of frame
               isPoseAligned =
-                rightCoreSkin > leftCoreSkin * 1.08 ||
-                rightCheekSkinCount > leftCheekSkinCount * 1.10 ||
-                rightEyeEdge > leftEyeEdge * 1.12 ||
-                internalCheekRatio < 0.88 ||
-                leftCoreSkin < rightCoreSkin * 0.92;
+                (rightCoreSkin > leftCoreSkin * 1.08 && internalCheekRatio < 0.94) ||
+                (rightCheekSkinCount > leftCheekSkinCount * 1.10 && rightCoreSkin > leftCoreSkin * 1.05) ||
+                (rightEyeEdge > leftEyeEdge * 1.10 && rightCoreSkin > leftCoreSkin * 1.05) ||
+                (internalCheekRatio < 0.86 && rightCoreSkin >= leftCoreSkin);
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kiri Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KIRI (~25°)";
@@ -618,10 +662,8 @@ export const EmployeeForm = () => {
 
             case "up":
               isPoseAligned =
-                verticalBalance < 1.15 ||
-                avgLower > avgUpper * 0.90 ||
-                chinSkinCount > 90 ||
-                lowerCount > upperCount * 0.85;
+                chinSkinCount >= 70 &&
+                (verticalBalance < 1.15 || avgLower > avgUpper * 0.90 || chinSkinCount > 90 || lowerCount > upperCount * 0.85);
               directionHint = isPoseAligned
                 ? "✓ Sudut Mendongak ke Atas Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan dongakkan kepala sedikit ke ATAS (~15°)";
@@ -629,9 +671,8 @@ export const EmployeeForm = () => {
 
             case "down":
               isPoseAligned =
-                verticalBalance > 0.85 ||
-                avgUpper > avgLower * 0.95 ||
-                foreheadSkinCount > chinSkinCount * 0.85;
+                foreheadSkinCount >= 60 &&
+                (verticalBalance > 0.85 || avgUpper > avgLower * 0.95 || foreheadSkinCount > chinSkinCount * 0.85);
               directionHint = isPoseAligned
                 ? "✓ Sudut Menunduk ke Bawah Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan tundukkan kepala sedikit ke BAWAH (~15°)";
@@ -641,15 +682,17 @@ export const EmployeeForm = () => {
 
         const isGoodBrightness = avgBrightness >= 50 && avgBrightness <= 230;
         const isSharp = avgSharpness >= 10;
-        const isValid = isFaceCentered && isGoodBrightness && isSharp && !hasHandOcclusion && isPoseAligned;
+        const isValid = isFaceCentered && isGoodBrightness && isSharp && !hasAnyOcclusion && isPoseAligned;
 
         let label = `✓ Posisi & Sudut ${targetPose.shortLabel} Tepat (Siap Foto)`;
         if (!isFacePresent) {
           label = "⚠️ Wajah belum terdeteksi. Posisikan wajah Anda tepat di dalam bingkai oval!";
         } else if (hasForeheadOcclusion) {
-          label = "✋ Terdeteksi halangan / tangan menutupi dahi atau mata! Harap jauhkan tangan.";
-        } else if (hasChinOcclusion) {
-          label = "✋ Terdeteksi halangan / tangan menutupi dagu atau mulut! Harap jauhkan tangan.";
+          label = "✋ Terdeteksi tangan / benda menutupi dahi atau mata! Harap bersihkan area dahi.";
+        } else if (hasObjectOcclusion) {
+          label = "✋ Terdeteksi benda / cangkir menutupi mulut atau dagu! Harap jauhkan benda dari wajah.";
+        } else if (hasChinHandOcclusion) {
+          label = "✋ Terdeteksi tangan menutupi dagu atau mulut! Harap jauhkan tangan dari wajah.";
         } else if (!isFaceCentered) {
           label = leftCoreSkin < rightCoreSkin
             ? "⚠️ Geser kepala sedikit ke kiri agar di tengah oval"
@@ -665,7 +708,7 @@ export const EmployeeForm = () => {
         setFqaStatus({
           isValid,
           isFaceCentered,
-          isOccluded: hasHandOcclusion,
+          isOccluded: hasAnyOcclusion,
           occlusionZone,
           isPoseAligned,
           label,
@@ -763,6 +806,8 @@ export const EmployeeForm = () => {
       issues.push(
         fqaStatus.occlusionZone === "forehead"
           ? "Terdeteksi tangan atau jari menutupi area dahi / kening / mata"
+          : fqaStatus.occlusionZone === "object"
+          ? "Terdeteksi benda atau cangkir menutupi area wajah / mulut / dagu"
           : "Terdeteksi tangan atau halangan menutupi area mulut / dagu"
       );
     }
@@ -1213,11 +1258,15 @@ export const EmployeeForm = () => {
                             <span className="block font-bold text-red-200">
                               {fqaStatus.occlusionZone === "forehead"
                                 ? "Terdeteksi Halangan / Tangan Menutupi Dahi & Mata!"
+                                : fqaStatus.occlusionZone === "object"
+                                ? "Terdeteksi Benda / Cangkir Menutupi Wajah!"
                                 : "Terdeteksi Halangan / Tangan Menutupi Dagu atau Mulut!"}
                             </span>
                             <span>
                               {fqaStatus.occlusionZone === "forehead"
                                 ? "Tolong turunkan tangan dan jauhkan jari/lengan dari area dahi, mata, kening, dan kepala."
+                                : fqaStatus.occlusionZone === "object"
+                                ? "Harap jauhkan cangkir, mug, masker, ponsel, atau benda lain yang menutupi area wajah."
                                 : "Tolong turunkan tangan dan jangan menutupi area bibir, mulut, atau dagu."}
                             </span>
                           </div>
@@ -1586,6 +1635,8 @@ export const EmployeeForm = () => {
                           : fqaStatus.isOccluded
                           ? fqaStatus.occlusionZone === "forehead"
                             ? "✋ Jauhkan Tangan dari Dahi/Mata untuk Mengambil"
+                            : fqaStatus.occlusionZone === "object"
+                            ? "✋ Jauhkan Cangkir/Benda dari Wajah untuk Mengambil"
                             : "✋ Jauhkan Tangan dari Dagu/Mulut untuk Mengambil"
                           : !fqaStatus.isPoseAligned
                           ? "⚠️ Sesuaikan Arah Kepala dengan Model 3D"

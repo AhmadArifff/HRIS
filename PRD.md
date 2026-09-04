@@ -2094,22 +2094,25 @@ Penggunaan emoticon / emoji kartun (seperti `🙂`, `👉`, `👆`) **resmi diti
 *   Mengesankan aplikasi amatir (*toy application*), tidak mencerminkan kredibilitas sistem enterprise berstandar perbankan.
 *   Emoticon kartun bersifat 2D datar sehingga ambigu dan tidak dapat menunjukkan kedalaman rotasi perspektif 3D yang tepat kepada karyawan.
 
-#### 12.7.2 Spesifikasi Komponen Model 3D (`Kyc3dHeadGuide.tsx`)
-Komponen panduan visual dibangun menggunakan proyeksi ortografis 3D geometrik kepala manusia:
-1. **Anatomi Visual 3D Human Silhouette:**
-   - Menampilkan struktur kubah tempurung kepala (*cranium*), pelipis, kontur pipi, lekukan telinga, jembatan hidung, bibir, dan rahang bawah (*mandible*).
-   - Menampilkan garis kontur meridian topologi (*3D topo wireframe mesh*) dan panah vektor rotasi berarah (*directional curved rotation arrow*).
-2. **Visualisasi Spesifik per Pose:**
-   - **Center:** Proyeksi simetris frontal dengan garis meridian tengah dan kontur mata sejajar.
-   - **Right:** Proyeksi profil tolehan kanan, cuping hidung menonjol ke kanan, telinga kiri terlihat dominan, panah rotasi melengkung ke kanan.
-   - **Left:** Proyeksi profil tolehan kiri, cuping hidung menonjol ke kiri, telinga kanan terlihat dominan, panah rotasi melengkung ke kiri.
-   - **Up:** Proyeksi dongakan atas, pembesaran area dagu & leher, lubang hidung terlihat dari bawah (*nostril tilt*), panah vertikal ke atas.
-   - **Down:** Proyeksi tundukan bawah, perluasan bidang dahi & alis mata (*brow ridge*), panah vertikal ke bawah.
-3. **Indikator Status Reaktif 4-Tema:**
-   - **Sky Blue (`#38bdf8` - Waiting):** Menunggu pengguna memposisikan kepala sesuai model 3D.
-   - **Emerald Green (`#10b981` - Aligned):** Kepala telah menoleh dengan sudut presisi, siap dipindai.
-   - **Crimson Red (`#ef4444` - Occluded):** Terdeteksi tangan menempel pada dagu / wajah.
-   - **Cyan (`#06b6d4` - Captured):** Pose telah berhasil diambil dengan skor kelayakan $\ge 75$.
+#### 12.7.2 Spesifikasi Komponen Model 3D Dual-Gender (`Kyc3dHeadGuide.tsx`)
+Komponen panduan visual dibangun menggunakan model 3D manusia asli photorealistic (*Realistic 3D Digital Human Bust*):
+1. **Anatomi Visual 3D Human Model Lengkap:**
+   - Menampilkan wajah manusia asli digital twin lengkap: **rambut, mata, hidung, alis, mulut/bibir, telinga, leher, dan pundak** dengan pakaian kemeja profesional netral.
+   - Menampilkan **2 model gender** yang tersusun vertikal pada panel samping panduan:
+     - **Bagian Atas:** Model 3D Perempuan (*Female Avatar Guide*)
+     - **Bagian Bawah:** Model 3D Laki-Laki (*Male Avatar Guide*)
+2. **Visualisasi Spesifik & Transformasi 3D per Pose:**
+   - **Center:** Kedua model menghadap lurus frontal ke arah kamera (`rotateY(0deg) rotateX(0deg)`).
+   - **Right:** Kedua model menoleh ke kanan (~25°) dengan kedalaman perspektif 3D (`rotateY(24deg)`), memperlihatkan profil samping dan panah rotasi berarah ke kanan.
+   - **Left:** Kedua model menoleh ke kiri (~25°) dengan kedalaman perspektif 3D (`rotateY(-24deg)`), memperlihatkan profil samping dan panah rotasi berarah ke kiri.
+   - **Up:** Kedua model mendongak ke atas (~15°) (`rotateX(-16deg)`), memperlihatkan dagu dan leher dengan panah vertikal ke atas.
+   - **Down:** Kedua model menunduk ke bawah (~15°) (`rotateX(16deg)`), memperlihatkan bagian atas rambut dan dahi dengan panah vertikal ke bawah.
+3. **Indikator Status Reaktif 5-Tema:**
+   - **Sky Blue (`#38bdf8` - Waiting):** Menunggu pengguna memposisikan kepala sesuai model 3D (`IKUTI ARAH MODEL 3D`).
+   - **Emerald Green (`#10b981` - Aligned):** Kepala telah menoleh dengan sudut presisi, siap dipindai (`✓ SUDUT ROTASI TEPAT`).
+   - **Crimson Red (`#ef4444` - Occluded):** Terdeteksi tangan atau benda asing (cangkir, mug, masker, ponsel) menutupi wajah (`✋ OBJEK / TANGAN MENUTUPI WAJAH`).
+   - **Amber (`#f59e0b` - Not Centered):** Wajah berada di luar bingkai oval reticle (`POSISIKAN WAJAH DI OVAL`).
+   - **Cyan (`#06b6d4` - Captured):** Pose telah berhasil diambil dengan skor kelayakan $\ge 75$ (`✓ POSE SELESAI`).
 
 ---
 
@@ -2134,14 +2137,15 @@ Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/kar
 | :--- | :--- | :--- | :--- |
 | **Validasi Pose Tolehan** | Menghadap center tetap bisa diambil | **Kunci Sudut Yaw & Pitch** (Center, Kanan, Kiri, Atas, Bawah wajib sesuai model 3D) | Menjamin keaslian data 5 sudut profil wajah 3D |
 | **Ambang Batas Kelayakan** | Tidak ada evaluasi kuantitatif | **Minimal Skor 75/100** (Jika $< 75$, foto ditolak & wajib retake) | Mencegah citra buram atau pose palsu masuk database |
-| **Panduan Arah Pose** | Emoticon 2D kartun (`👉`, `🙂`) | **Asset Model 3D Manusia Geometrik** ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)) | Tampilan profesional perbankan, instruksi tolehan akurat |
+| **Panduan Arah Pose** | Emoticon 2D kartun (`👉`, `🙂`) | **Dual Model 3D Manusia Asli (Perempuan & Laki-Laki)** ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)) | Anatomi lengkap (rambut, mata, hidung, alis, mulut, telinga, leher, pundak) |
 | **Pratinjau Pose Sebelumnya** | Belum tersedia | **Thumbnail Pratinjau + Badge Skor** + Tombol Ambil Ulang cepat | Pengguna dapat mengevaluasi kualitas foto sebelum lanjut |
 | **Deteksi Halangan Tangan (Multi-Zone)** | Hanya dagu / reticle dasar | **Multi-Zone Anti-Occlusion** (Dahi, Kening, Kepala Atas, & Dagu) | Mencegah pendaftaran foto yang terhalang tangan di bagian dahi maupun dagu |
+| **Deteksi Benda Asing / Cangkir (Mug Shield)** | Cangkir tidak terdeteksi (false-pass) | **Tri-Zone Completeness & Non-Skin Artificial Object Detection** | Menolak cangkir, mug, masker, ponsel yang menutupi mulut/dagu |
 | **Pembedaan Rambut vs Tangan Dahi** | Poni rambut memicu false-positive | **Intra-Skin Crease & Hemoglobin Tone** (Hanya mendeteksi celah antar-kulit tangan) | Bebas salah deteksi rambut poni/kening alami |
 | **Verifikasi Posisi Wajah di Oval** | Tidak ada verifikasi keberadaan | **Face Presence & Oval Reticle Centering Gate** (Kunci jika kepala di luar oval) | Mencegah pengambilan saat wajah bergeser keluar dari oval reticle |
 | **Deteksi Ocular (Mata Tertutup Tangan)** | Keliru dianggap menoleh (*false yaw*) | **Ocular Eye-Pair Symmetry & Temple Bridge** | Deteksi instan saat 4 jari/tangan menutup dahi & mata |
 | **Kekebalan Bayangan Dagu (Shadow Immunity)** | Bayangan samping memicu alarm dagu palsu | **Pure Horizontal Edge Density** (Eliminasi selisih rahang rapuh) | Bebas alarm dagu palsu akibat lampu samping ruangan |
-| **Deteksi Tangan di Mulut/Bibir** | Punggung tangan mulus tidak terdeteksi | **Mouth Masking & Pure Skin Saturation** ($> 0.62$) | Deteksi deterministik saat 4 jari/tangan menutup mulut |
+| **Kekebalan Pose Terhadap Potongan Objek** | Benda menutupi pipi memicu false turn | **Multi-Cue Pose Requirement & Occlusion Lock** | Benda penutup wajah membatalkan semua validasi tolehan |
 | **Kekebalan Latar Belakang Ruangan** | Kusen pintu kontras memicu false turn | **Internal Facial Sampling** ($X \in [52, 72]$ & $[88, 108]$) | Pose center frontal stabil dan tidak terganggu kusen pintu |
 | **Relaksasi Centering 5-Pose** | Menoleh ke kanan/kiri terblokir oval | **Pose-Adaptive Centering Relaxation** | Pose tolehan kanan, kiri, atas, bawah responsif dan mulus |
 | **Isolasi Ocular Pose Tolehan** | Menoleh kiri/kanan memicu alarm tangan | **Pose-Specific Ocular Isolation** (Khusus Center) | Bebas salah deteksi tangan saat menoleh ke kiri/kanan |
