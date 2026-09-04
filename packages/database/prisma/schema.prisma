@@ -135,6 +135,7 @@ model Employee {
   reviewerReviews    PerformanceReview[] @relation("ReviewerReview")
   offboardings       Offboarding[]
   reimbursements     Reimbursement[]
+  biometricProfiles  FaceBiometricProfile[]
 
   @@index([departmentId])
   @@index([positionId])
@@ -198,6 +199,10 @@ model Attendance {
   locationInLatlng    String?   @map("location_in_latlng")
   locationOutLatlng   String?   @map("location_out_latlng")
   imageProofUrl       String?   @map("image_proof_url")
+  faceSimilarityScore Float?    @map("face_similarity_score")
+  isFaceVerified      Boolean?  @default(false) @map("is_face_verified")
+  isSpoofDetected     Boolean?  @default(false) @map("is_spoof_detected")
+  verificationMethod  String?   @default("deepface_arcface") @map("verification_method")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   deletedAt           DateTime? @map("deleted_at")
@@ -210,6 +215,29 @@ model Attendance {
   @@index([recordDate])
   @@index([statusId])
   @@map("attendances")
+}
+
+model FaceBiometricProfile {
+  id                  String    @id @default(uuid())
+  employeeId          String    @map("employee_id")
+  embedding           Json      @map("embedding") // 512-dim Float array
+  modelName           String    @default("ArcFace") @map("model_name")
+  detectorBackend     String    @default("yunet") @map("detector_backend")
+  distanceMetric      String    @default("cosine") @map("distance_metric")
+  confidenceThreshold Float     @default(0.40) @map("confidence_threshold")
+  antiSpoofingEnabled Boolean   @default(true) @map("anti_spoofing_enabled")
+  referenceImageUrl   String?   @map("reference_image_url")
+  qualityScore        Float?    @map("quality_score")
+  isActive            Boolean   @default(true) @map("is_active")
+  registeredAt        DateTime  @default(now()) @map("registered_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+  @@map("face_biometric_profiles")
 }
 
 model LeaveType {

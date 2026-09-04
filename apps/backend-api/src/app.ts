@@ -23,14 +23,15 @@ import { clockIn, getAttendances } from "./controllers/attendance.controller";
 import { getLeaveRequests, createLeaveRequest, updateLeaveStatus } from "./controllers/leave.controller";
 import { getPayrollComponents, createPayrollComponent } from "./controllers/payroll.controller";
 import { getDashboardStats } from "./controllers/dashboard.controller";
+import { enrollFace, getBiometricStatus, resetBiometricProfile } from "./controllers/biometric.controller";
 
 const app: Application = express();
 
 // 1. Security & Global Middlewares
 app.use(helmet());
 app.use(cors({ origin: "*" }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.use(morgan("dev"));
 
 // 2. Global Rate Limiter
@@ -39,6 +40,11 @@ app.use("/api", globalLimiter);
 // 3. Routes
 app.get("/api/health", checkHealth);
 app.get("/api/infrastructure/redis", getRedisStats);
+
+// Biometrics & Face Recognition
+app.post("/api/biometrics/enroll", enrollFace);
+app.get("/api/biometrics/status/:employeeId", getBiometricStatus);
+app.delete("/api/biometrics/:employeeId", resetBiometricProfile);
 
 // Employees
 app.get("/api/employees", getEmployees);

@@ -1,0 +1,10 @@
+{
+  "name": "@hris/biometric-service",
+  "version": "1.0.0",
+  "description": "HRIS Enterprise Face Biometric & Recognition Service",
+  "scripts": {
+    "dev": "uvicorn src.main:app --host 127.0.0.1 --port 5005 --reload",
+    "start": "uvicorn src.main:app --host 0.0.0.0 --port 5005",
+    "build": "echo \"Biometric service ready\""
+  }
+}

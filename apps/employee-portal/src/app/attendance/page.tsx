@@ -111,22 +111,36 @@ export default function AttendancePage() {
     if (!livenessPassed) return;
     setClockInStatus("loading");
 
+    // Capture current frame from video
+    let capturedBase64: string | null = null;
+    if (videoRef.current) {
+      const snapCanvas = document.createElement("canvas");
+      snapCanvas.width = videoRef.current.videoWidth || 640;
+      snapCanvas.height = videoRef.current.videoHeight || 480;
+      const ctx = snapCanvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, snapCanvas.width, snapCanvas.height);
+        capturedBase64 = snapCanvas.toDataURL("image/jpeg", 0.85);
+      }
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/attendance/clock-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          employeeId: "f47ac10b-58cc-4372-a567-0e02b2c3d479", // Dummy for testing
+          employeeId: "f47ac10b-58cc-4372-a567-0e02b2c3d479", // Demo testing employee id
           faceDescriptor: window.tempDescriptor,
-          locationInLatlng: location ? `${location.lat},${location.lng}` : null
-        })
+          selfieBase64: capturedBase64,
+          locationInLatlng: location ? `${location.lat},${location.lng}` : null,
+        }),
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (data.isSuccess || data.success) {
         setClockInStatus("success");
       } else {
-        throw new Error(data.message);
+        throw new Error(data.message || data.error || "Verifikasi wajah gagal");
       }
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : "Terjadi kesalahan server");
@@ -165,6 +179,20 @@ export default function AttendancePage() {
       <div className="px-6 -mt-6">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
           
+          {/* Face Enrollment Quick Link */}
+          <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100 rounded-xl">
+            <div className="text-xs">
+              <p className="font-bold text-cyan-950">Belum daftarkan wajah resmi?</p>
+              <p className="text-cyan-700 text-[11px]">Daftarkan 3 pose wajah untuk presensi berakurasi tinggi.</p>
+            </div>
+            <a
+              href="/biometrics/enroll"
+              className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-xs font-semibold shrink-0 transition shadow-sm"
+            >
+              Daftar Wajah
+            </a>
+          </div>
+
           {/* Location Status */}
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
             <div className={`p-2 rounded-full ${location ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>

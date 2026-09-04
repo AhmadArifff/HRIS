@@ -4,6 +4,7 @@
   "description": "HRIS Database & ORM Client",
   "main": "src/index.ts",
   "scripts": {
+    "build": "prisma generate",
     "generate": "prisma generate",
     "db:push": "prisma db push",
     "format": "prisma format",

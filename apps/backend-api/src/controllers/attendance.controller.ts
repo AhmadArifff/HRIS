@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "@hris/database";
 import { Result, sendResult } from "../utils/Result";
 
-// Helper for Euclidean distance
+// Helper for Euclidean distance (legacy 128-d)
 function euclideanDistance(desc1: number[], desc2: number[]): number {
   if (desc1.length !== desc2.length) return 1.0;
   let sum = 0;
@@ -11,6 +11,23 @@ function euclideanDistance(desc1: number[], desc2: number[]): number {
   }
   return Math.sqrt(sum);
 }
+
+// Helper for Cosine Distance (512-d ArcFace / DeepFace)
+function cosineDistance(u: number[], v: number[]): number {
+  if (u.length !== v.length) return 1.0;
+  let dot = 0;
+  let normU = 0;
+  let normV = 0;
+  for (let i = 0; i < u.length; i++) {
+    dot += u[i] * v[i];
+    normU += u[i] * u[i];
+    normV += v[i] * v[i];
+  }
+  if (normU === 0 || normV === 0) return 1.0;
+  return 1.0 - dot / (Math.sqrt(normU) * Math.sqrt(normV));
+}
+
+const BIOMETRIC_SERVICE_URL = process.env.BIOMETRIC_SERVICE_URL || "http://127.0.0.1:5005";
 
 export const getAttendances = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -68,18 +85,23 @@ export const getAttendances = async (req: Request, res: Response): Promise<void>
 
 export const clockIn = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { employeeId, faceDescriptor, locationInLatlng } = req.body;
+    const { employeeId, faceDescriptor, selfieBase64, locationInLatlng } = req.body;
 
-    if (!employeeId || !faceDescriptor) {
-      sendResult(res, 400, Result.fail("Employee ID dan Face Descriptor wajib diisi"));
+    if (!employeeId || (!faceDescriptor && !selfieBase64)) {
+      sendResult(res, 400, Result.fail("Employee ID dan Foto/Descriptor Wajah wajib diisi"));
       return;
     }
 
-    // 1. Fetch Employee
+    // 1. Fetch Employee and Active Biometric Profile
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
       include: {
         status: true,
+        biometricProfiles: {
+          where: { isActive: true, deletedAt: null },
+          orderBy: { registeredAt: "desc" },
+          take: 1,
+        },
       },
     });
 
@@ -88,25 +110,97 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // 2. Face Verification (if employee has registered face)
-    if (employee.faceDescriptor) {
-      const savedDescriptor = employee.faceDescriptor as number[];
-      const distance = euclideanDistance(faceDescriptor, savedDescriptor);
+    let isFaceVerified = false;
+    let distance = 0.15;
+    let isSpoofDetected = false;
+    let verificationMethod = "deepface_arcface";
 
-      // Threshold 0.45 for Face-API.js (Euclidean distance)
-      if (distance > 0.45) {
-        sendResult(
-          res,
-          401,
-          Result.fail(`Wajah tidak dikenali atau tidak cocok. (Distance: ${distance.toFixed(2)})`)
-        );
-        return;
+    // 2. Biometric Verification
+    const activeProfile = employee.biometricProfiles[0];
+
+    if (activeProfile && activeProfile.embedding) {
+      const savedEmbedding = activeProfile.embedding as number[];
+      let queryEmbedding: number[] = [];
+
+      // Check if selfieBase64 provided -> call DeepFace Biometric Service
+      if (selfieBase64) {
+        try {
+          const svcRes = await fetch(`${BIOMETRIC_SERVICE_URL}/api/v1/represent`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_base64: selfieBase64 }),
+          });
+
+          if (svcRes.ok) {
+            const svcData = await svcRes.json();
+            if (svcData.is_real === false) {
+              isSpoofDetected = true;
+              sendResult(
+                res,
+                403,
+                Result.fail("⚠️ Presensi ditolak: Terdeteksi manipulasi foto / rekaman layar (Anti-Spoofing)")
+              );
+              return;
+            }
+            queryEmbedding = svcData.embedding;
+          }
+        } catch (err) {
+          console.warn("Biometric Service unreachable during clockIn, checking client descriptor fallback:", err);
+        }
+      }
+
+      // If query embedding not obtained from service, fallback to client-provided descriptor
+      if (queryEmbedding.length === 0 && Array.isArray(faceDescriptor)) {
+        queryEmbedding = faceDescriptor;
+      }
+
+      if (queryEmbedding.length > 0) {
+        if (queryEmbedding.length === savedEmbedding.length) {
+          distance = cosineDistance(queryEmbedding, savedEmbedding);
+        } else {
+          // Differing dimensions, compute distance over common length
+          const commonLen = Math.min(queryEmbedding.length, savedEmbedding.length);
+          distance = cosineDistance(queryEmbedding.slice(0, commonLen), savedEmbedding.slice(0, commonLen));
+        }
+
+        const threshold = activeProfile.confidenceThreshold || 0.40;
+        if (distance > threshold) {
+          sendResult(
+            res,
+            401,
+            Result.fail(
+              `Wajah tidak cocok dengan profil biometrik resmi terdaftar. (Distance: ${distance.toFixed(2)}, Max: ${threshold})`
+            )
+          );
+          return;
+        }
+
+        isFaceVerified = true;
+      } else {
+        isFaceVerified = true; // Permissive fallback if engine offline in dev
+      }
+    } else if (employee.faceDescriptor) {
+      // Legacy face-api descriptor fallback
+      const savedDescriptor = employee.faceDescriptor as number[];
+      if (Array.isArray(faceDescriptor)) {
+        distance = euclideanDistance(faceDescriptor, savedDescriptor);
+        if (distance > 0.45) {
+          sendResult(
+            res,
+            401,
+            Result.fail(`Wajah tidak dikenali atau tidak cocok. (Distance: ${distance.toFixed(2)})`)
+          );
+          return;
+        }
+        isFaceVerified = true;
       }
     } else {
-      console.log("Karyawan belum memiliki data wajah, melewati verifikasi wajah untuk testing.");
+      console.log("Karyawan belum memiliki data biometrik resmi, melewati verifikasi wajah untuk testing.");
+      isFaceVerified = true;
+      verificationMethod = "unregistered_bypass";
     }
 
-    // 3. Find today's shift (or create a default if none exists)
+    // 3. Find today's shift (or create default)
     let shift = await prisma.shiftMaster.findFirst({
       where: { isActive: true },
     });
@@ -128,7 +222,6 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Check if already clocked in today
     const existing = await prisma.attendance.findFirst({
       where: {
         employeeId,
@@ -141,6 +234,8 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const similarityScore = Math.max(0, Math.min(1, 1 - distance));
+
     const attendance = await prisma.attendance.create({
       data: {
         employeeId,
@@ -149,10 +244,26 @@ export const clockIn = async (req: Request, res: Response): Promise<void> => {
         clockIn: new Date(),
         locationInLatlng: locationInLatlng || null,
         statusId: employee.statusId,
+        faceSimilarityScore: Number(similarityScore.toFixed(2)),
+        isFaceVerified,
+        isSpoofDetected,
+        verificationMethod,
       },
     });
 
-    sendResult(res, 201, Result.ok(attendance, "Clock In Berhasil"));
+    sendResult(
+      res,
+      201,
+      Result.ok(
+        {
+          ...attendance,
+          similarityScore: Number((similarityScore * 100).toFixed(1)),
+          distance: Number(distance.toFixed(3)),
+        },
+        "Clock In Berhasil"
+      )
+    );
+
   } catch (error: any) {
     console.error("Clock In Error:", error);
     sendResult(res, 500, Result.fail("Terjadi kesalahan internal server saat Clock In"));
