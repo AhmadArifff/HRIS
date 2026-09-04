@@ -106,6 +106,7 @@ export const EmployeeForm = () => {
   const [cameraError, setCameraError] = useState(false);
   const [fqaStatus, setFqaStatus] = useState<{
     isValid: boolean;
+    isFaceCentered: boolean;
     isOccluded: boolean;
     occlusionZone: "none" | "chin" | "forehead";
     isPoseAligned: boolean;
@@ -115,6 +116,7 @@ export const EmployeeForm = () => {
     directionHint: string;
   }>({
     isValid: false,
+    isFaceCentered: false,
     isOccluded: false,
     occlusionZone: "none",
     isPoseAligned: false,
@@ -213,7 +215,13 @@ export const EmployeeForm = () => {
         const avgBrightness = Math.round(totalBrightness / pixelCount);
         const avgSharpness = Math.round(edgeGradient / pixelCount);
 
-        // 2. Anti-Occlusion & Multi-Zone Hand Obstruction Detection (PRD §12.3)
+        // 2. Face Presence & Reticle Centering Gate (PRD §12.3.4)
+        // Reticle Oval Core Zone: X: 48-112, Y: 28-92
+        let coreSkinCount = 0;
+        let leftCoreSkin = 0;
+        let rightCoreSkin = 0;
+
+        // 3. Anti-Occlusion & Multi-Zone Hand Obstruction Detection (PRD §12.3)
         // Zone A: Chin & Jaw (Lower Third: Y: 75-115, X: 40-120)
         let chinEdgeCount = 0;
         let chinPixelCount = 0;
@@ -223,20 +231,16 @@ export const EmployeeForm = () => {
         let rightJawCount = 0;
         let bottomSkinEntryCount = 0;
 
-        // Zone B: Forehead & Brow (Upper Third: Y: 18-52, X: 42-118)
+        // Zone B: Forehead & Brow (Upper Third: Y: 18-52, X: 46-114)
         let foreheadPixelCount = 0;
-        let foreheadEdgeCount = 0;
         let foreheadSkinCount = 0;
+        let foreheadIntraSkinEdgeCount = 0;
 
-        // Zone C: Crown & Hairline (Top: Y: 8-32, X: 48-112)
+        // Zone C: Crown & Hairline (Top: Y: 8-28, X: 54-106)
         let crownPixelCount = 0;
         let crownSkinCount = 0;
 
-        // Zone D: Lateral Upper Arm / Hand Entry (Y: 15-68, Left X: 5-42, Right X: 118-155)
-        let leftUpperSkinCount = 0;
-        let rightUpperSkinCount = 0;
-
-        // 3. Head Pose Estimation (Yaw & Pitch Calculation)
+        // 4. Head Pose Estimation (Yaw & Pitch Calculation)
         // Upper zone (eyes/forehead) vs Lower zone (jawline)
         let upperIntensity = 0;
         let lowerIntensity = 0;
@@ -255,10 +259,36 @@ export const EmployeeForm = () => {
             const b = data[idx + 2];
             const gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-            // Robust Skin-Tone Detection
-            const isSkinTone = r > 70 && g > 40 && b > 25 && r > g && r > b && (r - g) >= 5;
+            // Dark Hair vs Skin-Tone Distinction (Anti-False-Positive for Bangs & Hairline)
+            const isDarkHair = gray < 65 || (r < 75 && g < 70 && b < 70);
 
-            // Zone A: Chin safe zone (Y: 75-115, X: 40-120)
+            // Robust Hemoglobin-based Skin-Tone Detection
+            // Human skin has strong red-over-green and red-over-blue dominance due to blood circulation,
+            // whereas background walls/doors are either neutral cream/yellow (r ≈ g) or extreme brick red.
+            const isSkinTone =
+              !isDarkHair &&
+              r > 75 &&
+              g > 45 &&
+              b > 30 &&
+              r > g &&
+              g > b &&
+              r - g >= 12 &&
+              r - b >= 25 &&
+              gray >= 60;
+
+            // Step 1: Reticle Oval Core Sampling (W: 64px, H: 64px, Center at 80, 60)
+            if (y >= 28 && y <= 92 && x >= 48 && x <= 112) {
+              if (isSkinTone) {
+                coreSkinCount++;
+                if (x <= 78) {
+                  leftCoreSkin++;
+                } else if (x >= 82) {
+                  rightCoreSkin++;
+                }
+              }
+            }
+
+            // Step 2: Zone A: Chin safe zone (Y: 75-115, X: 40-120)
             if (y >= 75 && y <= 115 && x >= 40 && x <= 120) {
               chinPixelCount++;
               if (idx + 160 * 4 < data.length) {
@@ -277,26 +307,42 @@ export const EmployeeForm = () => {
               }
             }
 
-            // Zone B: Forehead & Brow safe zone (Y: 18-52, X: 42-118)
-            if (y >= 18 && y <= 52 && x >= 42 && x <= 118) {
+            // Step 3: Zone B: Forehead & Brow safe zone (Y: 18-52, X: 46-114)
+            if (y >= 18 && y <= 52 && x >= 46 && x <= 114) {
               foreheadPixelCount++;
-              if (isSkinTone) foreheadSkinCount++;
-              if (idx + 160 * 4 < data.length) {
-                const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
-                if (Math.abs(gray - downGray) > 22) foreheadEdgeCount++;
+              if (isSkinTone) {
+                foreheadSkinCount++;
+                if (idx + 160 * 4 < data.length) {
+                  const downR = data[idx + 160 * 4];
+                  const downG = data[idx + 160 * 4 + 1];
+                  const downB = data[idx + 160 * 4 + 2];
+                  const downGray = 0.299 * downR + 0.587 * downG + 0.114 * downB;
+                  const downIsDarkHair = downGray < 65 || (downR < 75 && downG < 70 && downB < 70);
+                  const downIsSkinTone =
+                    !downIsDarkHair &&
+                    downR > 75 &&
+                    downG > 45 &&
+                    downB > 30 &&
+                    downR > downG &&
+                    downG > downB &&
+                    downR - downG >= 12 &&
+                    downR - downB >= 25 &&
+                    downGray >= 60;
+
+                  // Intra-Skin Crease: Only trigger if BOTH adjacent pixels are human skin!
+                  // Bangs/hairline do not trigger this because hair is dark and not skin.
+                  if (downIsSkinTone && Math.abs(gray - downGray) > 20) {
+                    foreheadIntraSkinEdgeCount++;
+                  }
+                }
               }
             }
 
-            // Zone C: Crown & Hairline zone (Y: 8-32, X: 48-112)
-            if (y >= 8 && y <= 32 && x >= 48 && x <= 112) {
+            // Step 4: Zone C: Crown & Hairline zone (Y: 8-28, X: 54-106)
+            // Normally dark hair. If covered by hand/fingers, skin count spikes.
+            if (y >= 8 && y <= 28 && x >= 54 && x <= 106) {
               crownPixelCount++;
               if (isSkinTone) crownSkinCount++;
-            }
-
-            // Zone D: Lateral Upper Arm / Hand Entry (Y: 15-68)
-            if (y >= 15 && y <= 68) {
-              if (x >= 5 && x <= 42 && isSkinTone) leftUpperSkinCount++;
-              if (x >= 118 && x <= 155 && isSkinTone) rightUpperSkinCount++;
             }
 
             // Head Pose Estimation Sampling
@@ -325,33 +371,33 @@ export const EmployeeForm = () => {
           }
         }
 
-        // Lower Face (Chin) Occlusion calculation
+        // Gate 1: Face Presence & Reticle Centering Verification
+        const isFacePresent = coreSkinCount >= 300;
+        const faceSymmetryRatio = Math.min(leftCoreSkin, rightCoreSkin) / (Math.max(leftCoreSkin, rightCoreSkin) + 1e-5);
+        const isFaceCentered = isFacePresent && faceSymmetryRatio >= 0.30;
+
+        // Gate 2: Anti-Occlusion (Evaluated ONLY when face is inside reticle)
         const chinEdgeDensity = chinPixelCount > 0 ? chinEdgeCount / chinPixelCount : 0;
         const avgLeftJaw = leftJawCount > 0 ? leftJawIntensity / leftJawCount : 0;
         const avgRightJaw = rightJawCount > 0 ? rightJawIntensity / rightJawCount : 0;
         const jawAsymmetry = Math.abs(avgLeftJaw - avgRightJaw);
 
         const hasChinOcclusion =
-          chinEdgeDensity > 0.36 ||
-          (jawAsymmetry > 38 && bottomSkinEntryCount > 65) ||
-          (chinEdgeDensity > 0.26 && bottomSkinEntryCount > 110);
+          isFaceCentered &&
+          (chinEdgeDensity > 0.36 ||
+            (jawAsymmetry > 38 && bottomSkinEntryCount > 65) ||
+            (chinEdgeDensity > 0.26 && bottomSkinEntryCount > 110));
 
-        // Upper Face (Forehead/Brow/Crown) Occlusion calculation
-        const foreheadEdgeDensity = foreheadPixelCount > 0 ? foreheadEdgeCount / foreheadPixelCount : 0;
+        const foreheadIntraSkinDensity = foreheadSkinCount > 0 ? foreheadIntraSkinEdgeCount / foreheadSkinCount : 0;
         const crownSkinDensity = crownPixelCount > 0 ? crownSkinCount / crownPixelCount : 0;
-        const maxUpperSideSkin = Math.max(leftUpperSkinCount, rightUpperSkinCount);
 
+        // Forehead occlusion ONLY triggers when actual skin fingers cause intra-skin creases (> 0.12)
+        // or upper head is heavily blocked by hand skin (> 0.65 with creases > 0.04).
+        // Natural bangs/hairline produce ~0.007 and room wall background in crown produces ~0.40, so they are completely immune.
         const hasForeheadOcclusion =
-          // Case 1: Arm entering laterally with horizontal creases across forehead (user photo 1)
-          (maxUpperSideSkin > 40 && foreheadEdgeDensity > 0.15) ||
-          // Case 2: Arm entering laterally with skin in crown/hairline
-          (maxUpperSideSkin > 45 && crownSkinDensity > 0.15) ||
-          // Case 3: Fingers across forehead (dense horizontal crease shadows)
-          foreheadEdgeDensity > 0.26 ||
-          // Case 4: Skin covering crown with noticeable edges
-          (crownSkinDensity > 0.25 && foreheadEdgeDensity > 0.12) ||
-          // Case 5: Heavy lateral arm entry near forehead/temple
-          maxUpperSideSkin > 90;
+          isFaceCentered &&
+          (foreheadIntraSkinDensity > 0.12 ||
+            (crownSkinDensity > 0.65 && foreheadIntraSkinDensity > 0.04));
 
         const hasHandOcclusion = hasChinOcclusion || hasForeheadOcclusion;
         let occlusionZone: "none" | "chin" | "forehead" = "none";
@@ -361,25 +407,30 @@ export const EmployeeForm = () => {
           occlusionZone = "chin";
         }
 
-        // Yaw & Pitch Ratio Calculations
+        // Gate 3: Yaw & Pitch Ratio Calculations (Head Pose Orientation)
         const cheekAsymmetryRatio = leftCheekEdge / (rightCheekEdge + 1e-5);
         const avgUpper = upperCount > 0 ? upperIntensity / upperCount : 1;
         const avgLower = lowerCount > 0 ? lowerIntensity / lowerCount : 1;
         const verticalBalance = avgUpper / (avgLower + 1e-5);
 
-        // Strict Head Pose Orientation Alignment Checking (PRD §12.5)
         const targetPose = KYC_POSES[activePoseStep];
         let isPoseAligned = false;
         let directionHint = "";
 
-        if (cameraError) {
+        if (!isFaceCentered) {
+          isPoseAligned = false;
+          directionHint = !isFacePresent
+            ? "Posisikan wajah tepat di dalam bingkai oval"
+            : leftCoreSkin < rightCoreSkin
+            ? "Geser kepala sedikit ke kiri agar di tengah oval"
+            : "Geser kepala sedikit ke kanan agar di tengah oval";
+        } else if (cameraError) {
           // Simulator fallback
           isPoseAligned = true;
           directionHint = "✓ Mode Simulator (Siap Ambil)";
         } else {
           switch (targetPose.id) {
             case "center":
-              // Must be balanced left-right AND balanced vertically
               isPoseAligned = cheekAsymmetryRatio >= 0.78 && cheekAsymmetryRatio <= 1.28 && verticalBalance >= 0.82 && verticalBalance <= 1.25;
               directionHint = isPoseAligned
                 ? "✓ Posisi Center Sesuai (Lurus ke Depan)"
@@ -387,7 +438,6 @@ export const EmployeeForm = () => {
               break;
 
             case "right":
-              // User turning right causes cheek asymmetry shift in mirrored webcam
               isPoseAligned = cheekAsymmetryRatio > 1.25 || (avgLeftJaw > avgRightJaw * 1.18);
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kanan Sesuai"
@@ -395,7 +445,6 @@ export const EmployeeForm = () => {
               break;
 
             case "left":
-              // User turning left causes inverse asymmetry
               isPoseAligned = cheekAsymmetryRatio < 0.80 || (avgRightJaw > avgLeftJaw * 1.18);
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kiri Sesuai"
@@ -403,7 +452,6 @@ export const EmployeeForm = () => {
               break;
 
             case "up":
-              // User tilting head up lowers relative upper forehead intensity and raises neck/chin
               isPoseAligned = verticalBalance < 0.90 || (avgLower > avgUpper * 1.08);
               directionHint = isPoseAligned
                 ? "✓ Sudut Mendongak ke Atas Sesuai"
@@ -411,7 +459,6 @@ export const EmployeeForm = () => {
               break;
 
             case "down":
-              // User tilting head down raises relative forehead area and shadow on chin
               isPoseAligned = verticalBalance > 1.18 || (avgUpper > avgLower * 1.12);
               directionHint = isPoseAligned
                 ? "✓ Sudut Menunduk ke Bawah Sesuai"
@@ -422,10 +469,14 @@ export const EmployeeForm = () => {
 
         const isGoodBrightness = avgBrightness >= 50 && avgBrightness <= 230;
         const isSharp = avgSharpness >= 11;
-        const isValid = isGoodBrightness && isSharp && !hasHandOcclusion && isPoseAligned;
+        const isValid = isFaceCentered && isGoodBrightness && isSharp && !hasHandOcclusion && isPoseAligned;
 
         let label = `✓ Posisi & Sudut ${targetPose.shortLabel} Tepat (Siap Foto)`;
-        if (hasForeheadOcclusion) {
+        if (!isFacePresent) {
+          label = "⚠️ Wajah belum terdeteksi. Posisikan wajah Anda tepat di dalam bingkai oval!";
+        } else if (!isFaceCentered) {
+          label = `⚠️ ${directionHint}`;
+        } else if (hasForeheadOcclusion) {
           label = "⚠️ Terdeteksi tangan / halangan menutupi dahi atau kening! Harap jauhkan tangan.";
         } else if (hasChinOcclusion) {
           label = "⚠️ Terdeteksi tangan / halangan menutupi dagu & wajah! Harap jauhkan tangan.";
@@ -439,6 +490,7 @@ export const EmployeeForm = () => {
 
         setFqaStatus({
           isValid,
+          isFaceCentered,
           isOccluded: hasHandOcclusion,
           occlusionZone,
           isPoseAligned,
@@ -475,6 +527,7 @@ export const EmployeeForm = () => {
       setCameraActive(false);
       setFqaStatus({
         isValid: true,
+        isFaceCentered: true,
         isOccluded: false,
         occlusionZone: "none",
         isPoseAligned: true,
@@ -503,9 +556,14 @@ export const EmployeeForm = () => {
     sharpness: number,
     brightness: number,
     isAligned: boolean,
-    isOccluded: boolean
+    isOccluded: boolean,
+    isCentered: boolean
   ): { total: number; passed: boolean; issues: string[] } => {
     const issues: string[] = [];
+
+    if (!isCentered && !cameraError) {
+      issues.push("Wajah belum diposisikan tepat di tengah bingkai oval");
+    }
 
     // 1. Sharpness Score (0 - 25)
     let sSharp = Math.min(25, Math.max(0, Math.round((sharpness / 16) * 25)));
@@ -522,7 +580,7 @@ export const EmployeeForm = () => {
     }
 
     // 3. Pose Angle Accuracy Score (0 - 30)
-    let sPose = isAligned ? 30 : 6;
+    let sPose = isAligned && (isCentered || cameraError) ? 30 : 6;
     if (!isAligned) issues.push(`Sudut tolehan kepala tidak sesuai instruksi (${currentPose.title})`);
 
     // 4. Cleanliness & Anti-Occlusion (0 - 20)
@@ -536,7 +594,7 @@ export const EmployeeForm = () => {
     }
 
     const total = cameraError ? 92 : sSharp + sLight + sPose + sClean;
-    const passed = total >= 75 && !isOccluded && isAligned;
+    const passed = total >= 75 && !isOccluded && isAligned && (isCentered || cameraError);
 
     return { total, passed, issues };
   };
@@ -588,7 +646,8 @@ export const EmployeeForm = () => {
       fqaStatus.sharpness,
       fqaStatus.brightness,
       fqaStatus.isPoseAligned,
-      fqaStatus.isOccluded
+      fqaStatus.isOccluded,
+      fqaStatus.isFaceCentered
     );
 
     // GATE: If Quality Score < 75, REJECT & Require Mandatory Retake!
@@ -912,6 +971,8 @@ export const EmployeeForm = () => {
                     className={`flex items-center justify-between text-[11px] px-3.5 py-2.5 rounded-xl border font-mono transition-colors ${
                       fqaStatus.isOccluded
                         ? "bg-red-950/80 text-red-300 border-red-800 animate-pulse"
+                        : !fqaStatus.isFaceCentered
+                        ? "bg-amber-950/80 text-amber-300 border-amber-700/80"
                         : !fqaStatus.isPoseAligned
                         ? "bg-amber-950/70 text-amber-300 border-amber-700/80"
                         : fqaStatus.isValid
@@ -924,7 +985,7 @@ export const EmployeeForm = () => {
                         className={`w-2.5 h-2.5 rounded-full ${
                           fqaStatus.isOccluded
                             ? "bg-red-500 animate-ping"
-                            : !fqaStatus.isPoseAligned
+                            : !fqaStatus.isFaceCentered || !fqaStatus.isPoseAligned
                             ? "bg-amber-400 animate-pulse"
                             : fqaStatus.isValid
                             ? "bg-emerald-400 animate-pulse"
@@ -989,19 +1050,21 @@ export const EmployeeForm = () => {
                         </div>
                       )}
 
-                      {/* Angle Miss Warning Overlay (When Pose Not Turned Right/Left/Up/Down) */}
-                      {!fqaStatus.isPoseAligned && !fqaStatus.isOccluded && cameraActive && (
-                        <div className="absolute inset-x-4 bottom-4 z-30 p-2.5 bg-amber-950/90 backdrop-blur-md rounded-xl border border-amber-500/60 text-amber-200 flex items-center gap-2 shadow-lg">
+                      {/* Face Centering or Pose Miss Warning Overlay */}
+                      {!fqaStatus.isOccluded && (!fqaStatus.isFaceCentered || !fqaStatus.isPoseAligned) && cameraActive && (
+                        <div className="absolute inset-x-4 bottom-4 z-30 p-2.5 bg-amber-950/90 backdrop-blur-md rounded-xl border border-amber-500/60 text-amber-200 flex items-center gap-2 shadow-lg animate-pulse">
                           <span className="text-lg">⚠️</span>
                           <span className="text-xs font-semibold">{fqaStatus.directionHint}</span>
                         </div>
                       )}
 
-                      {/* Dynamic Oval Reticle with Angle Verification Color */}
+                      {/* Dynamic Oval Reticle with Centering & Angle Verification Color */}
                       <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
                         <div
                           className={`w-44 h-56 sm:w-48 sm:h-64 border-2 rounded-[50%] border-dashed flex flex-col items-center justify-center transition-all duration-300 relative ${
-                            fqaStatus.isOccluded
+                            !fqaStatus.isFaceCentered
+                              ? "border-amber-400/80 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
+                              : fqaStatus.isOccluded
                               ? "border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
                               : !fqaStatus.isPoseAligned
                               ? "border-amber-400/80 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
@@ -1019,13 +1082,15 @@ export const EmployeeForm = () => {
                           {/* Inside Target Badge */}
                           <div className="my-auto flex flex-col items-center justify-center text-center px-4">
                             <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${
-                              fqaStatus.isOccluded
+                              !fqaStatus.isFaceCentered
+                                ? "text-amber-300"
+                                : fqaStatus.isOccluded
                                 ? "text-red-400"
                                 : !fqaStatus.isPoseAligned
                                 ? "text-amber-300"
                                 : "text-emerald-300"
                             }`}>
-                              {currentPose.shortLabel}
+                              {!fqaStatus.isFaceCentered ? "Posisikan di Oval" : currentPose.shortLabel}
                             </span>
                           </div>
 
@@ -1048,7 +1113,9 @@ export const EmployeeForm = () => {
                         <Kyc3dHeadGuide
                           pose={currentPose.id}
                           status={
-                            fqaStatus.isOccluded
+                            !fqaStatus.isFaceCentered
+                              ? "not_centered"
+                              : fqaStatus.isOccluded
                               ? "occluded"
                               : fqaStatus.isPoseAligned
                               ? "aligned"
@@ -1158,9 +1225,11 @@ export const EmployeeForm = () => {
                     <button
                       type="button"
                       onClick={handleCaptureCurrentPose}
-                      disabled={fqaStatus.isOccluded || !fqaStatus.isPoseAligned}
+                      disabled={!fqaStatus.isFaceCentered || fqaStatus.isOccluded || !fqaStatus.isPoseAligned}
                       className={`py-3 px-7 text-xs font-extrabold rounded-xl transition shadow-lg flex items-center gap-2 cursor-pointer ${
-                        fqaStatus.isOccluded
+                        !fqaStatus.isFaceCentered
+                          ? "bg-amber-600 text-white opacity-50 cursor-not-allowed shadow-none"
+                          : fqaStatus.isOccluded
                           ? "bg-red-600 text-white opacity-50 cursor-not-allowed shadow-none"
                           : !fqaStatus.isPoseAligned
                           ? "bg-amber-600 text-white opacity-50 cursor-not-allowed shadow-none"
@@ -1172,7 +1241,9 @@ export const EmployeeForm = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       <span>
-                        {fqaStatus.isOccluded
+                        {!fqaStatus.isFaceCentered
+                          ? "⚠️ Posisikan Wajah Tepat di Dalam Oval"
+                          : fqaStatus.isOccluded
                           ? fqaStatus.occlusionZone === "forehead"
                             ? "✋ Jauhkan Tangan dari Dahi/Kepala untuk Mengambil"
                             : "✋ Jauhkan Tangan dari Dagu untuk Mengambil"

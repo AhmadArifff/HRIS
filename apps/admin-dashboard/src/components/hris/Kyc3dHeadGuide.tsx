@@ -3,7 +3,7 @@ import React from "react";
 
 interface Kyc3dHeadGuideProps {
   pose: "center" | "right" | "left" | "up" | "down";
-  status: "waiting" | "aligned" | "occluded" | "captured";
+  status: "waiting" | "aligned" | "occluded" | "captured" | "not_centered";
   occlusionZone?: "chin" | "forehead" | "none";
   className?: string;
 }
@@ -18,6 +18,13 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({ pose, status, oc
           glow: "rgba(16, 185, 129, 0.35)",
           border: "#34d399",
           label: "✓ Sudut Rotasi Tepat",
+        };
+      case "not_centered":
+        return {
+          mesh: "#f59e0b", // Amber
+          glow: "rgba(245, 158, 11, 0.3)",
+          border: "#fbbf24",
+          label: "Posisikan Wajah di Oval",
         };
       case "occluded":
         return {

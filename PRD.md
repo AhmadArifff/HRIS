@@ -1944,19 +1944,23 @@ Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifi
   3. **Asimetri Intensitas Rahang Kiri vs Kanan:** Perbedaan $\Delta I_{\text{jaw}} > 38$ akibat kepalan tangan menopang salah satu sisi rahang.
 - **Respons Sistem:** Flag `hasChinOcclusion = true`, `occlusionZone = "chin"`.
 
-#### 12.3.2 Kasus Solusi Hambatan Wajah Atas (Upper Face: Forehead, Brow, & Lateral Arm Intrusion)
-- **Latar Belakang Kasus:** Pengguna terkadang meletakkan tangan di atas kepala, menutup kening dengan jari, menyentuh rambut, atau posisi hormat/menutupi alis saat pengambilan foto biometrik.
-- **Area Analisis Spasial:**
-  1. **Forehead Safe Zone:** $Y \in [18, 52], X \in [42, 118]$ (area dahi dan alis mata).
-  2. **Crown & Hairline Zone:** $Y \in [8, 32], X \in [48, 112]$ (area puncak rambut dan batas kening).
-  3. **Lateral Arm/Wrist Entry Zone:** $Y \in [15, 68], X \in [5, 42]$ (kiri) & $X \in [118, 155]$ (kanan).
-- **Indikator Heuristik Anti-Occlusion Dahi:**
-  1. **Densitas Tepi Horizontal Dahi (`foreheadEdgeDensity`):** Pada dahi normal tanpa halangan, kulit dahi sangat halus sehingga gradien vertikal $|I_{(x, y)} - I_{(x, y+1)}| > 22$ bernilai sangat rendah ($< 0.08$). Namun saat 4 jari diletakkan melintang di dahi, bayangan celah antar-jari menghasilkan lonjakan densitas tepi drastis ($> 0.26$).
-  2. **Intrusi Lengan Lateral (`maxUpperSideSkin`):** Saat tangan menjangkau dahi, lengan atau pergelangan tangan menembus batas samping frame ($X < 42$ atau $X > 118$) dengan konsentrasi piksel warna kulit $> 45$ piksel.
-  3. **Anomali Piksel Kulit pada Area Mahkota Rambut (`crownSkinDensity`):** Area rambut hitam normal memiliki densitas kulit mendekati nol. Keberadaan piksel kulit $> 25\%$ di area rambut menandakan tangan diletakkan menutupi kepala atas.
+#### 12.3.2 Kasus Solusi Hambatan Wajah Atas (Upper Face: Forehead, Brow, & Crown) & Eliminasi False-Positive Rambut
+- **Latar Belakang Kasus & Evaluasi Masalah:**
+  - Pengguna terkadang meletakkan 4 jari atau telapak tangan secara horizontal menutupi dahi/kening, atau menaruh tangan di atas kepala.
+  - Pada iterasi awal, sampling warna kulit di tepi samping layar ($X < 42$) keliru mendeteksi dinding ruangan bercat kuning/krem muda sebagai kulit, serta tepi poni rambut alami dihitung sebagai garis celah jari sehingga memicu *false positive* permanen.
+- **Formulasi Diskriminator Warna Kulit Manusia Asli vs Rambut Alami:**
+  1. **Spektrum Rambut Hitam Alami (`isDarkHair`):**
+     $$gray < 65 \quad \lor \quad (R < 75 \land G < 70 \land B < 70)$$
+  2. **Spektrum Hemoglobin Kulit Manusia Asli (`isSkinTone`):**
+     $$\neg\text{isDarkHair} \land R > 75 \land G > 45 \land B > 30 \land R > G \land G > B \land (R - G) \ge 12 \land (R - B) \ge 25 \land gray \ge 60$$
+     *Nilai ini secara deterministik menolak warna dinding kamar kuning/krem ($R - G < 10$) dan menolak dinding merah bata tanpa merusak deteksi kulit manusia.*
+- **Indikator Heuristik Intra-Skin Crease Detection:**
+  - **Prinsip Dasar:** Jari-jari tangan yang menempel di dahi menghasilkan bayangan celah di antara dua permukaan kulit. Oleh karena itu, gradien vertikal $|gray_{(x, y)} - gray_{(x, y+1)}| > 20$ **HANYA DIHITUNG JIKA KEDUA PIKSEL TERSEBUT ADALAH KULIT MANUSIA** (`isUpperSkin && isLowerSkin`).
+  - Rambut poni gelap bukan kulit manusia, sehingga batas tepinya tidak akan pernah memicu *intra-skin crease*.
+  - Pada dahi normal (dengan atau tanpa poni), kulit dahi mulus sehingga $\text{intraSkinDensity} < 0.06$.
+  - Pada tangan melintang di dahi, $\text{intraSkinDensity} > 0.16$.
 - **Kondisi Pemicu Deteksi:**
-  $$\text{hasForeheadOcclusion} = (S_{\text{lateral}} > 40 \land \rho_{\text{edge}} > 0.15) \lor (S_{\text{lateral}} > 45 \land \rho_{\text{crown}} > 0.15) \lor \rho_{\text{edge}} > 0.26 \lor S_{\text{lateral}} > 90$$
-- **Respons Sistem:** Flag `hasForeheadOcclusion = true`, `occlusionZone = "forehead"`.
+  $$\text{hasForeheadOcclusion} = \text{isFaceCentered} \land (\rho_{\text{intraSkin}} > 0.16 \lor \rho_{\text{crownSkin}} > 0.38)$$
 
 #### 12.3.3 Tata Kelola UX & Guard Clause Multi-Zone
 1. **Dual Safe-Zone Reticle Markers:** Bingkai oval panduan dilengkapi dua garis batas putus-putus eksplisit:
@@ -1969,6 +1973,22 @@ Sebelum tombol capture pada setiap pose dapat ditekan, sistem menjalankan verifi
      - Jika terhalang di dagu: `✋ Terdeteksi Halangan / Tangan Menopang Dagu! Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.`
    - **Model 3D Guide ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)):** Berubah warna menjadi merah dengan badge spesifik: `✋ TANGAN MENUTUPI DAHI` atau `✋ TANGAN MENUTUPI DAGU`.
    - **Tombol Capture:** **SEKETIKA TERKUNCI (`disabled = true`)** dengan label `✋ Jauhkan Tangan dari Dahi/Kepala untuk Mengambil` atau `✋ Jauhkan Tangan dari Dagu untuk Mengambil`. Pengambilan foto sama sekali tidak dapat dipaksa sebelum tangan dijauhkan.
+
+#### 12.3.4 Face Presence & Oval Reticle Centering Gate (Verifikasi Keberadaan & Posisi Wajah)
+- **Latar Belakang Masalah:**
+  Pada Langkah 2 (Menoleh ke Kanan), pengguna bergeser ke luar oval reticle. Sistem sebelumnya tetap mengevaluasi tangan padahal wajah tidak berada di dalam reticle.
+- **Spesifikasi Teknis Centering Gate:**
+  1. **Area Inti Oval Reticle:** $X \in [48, 112], Y \in [28, 92]$ (pada kanvas $160 \times 120$).
+  2. **Total Piksel Kulit Inti (`coreSkinCount`):** Wajah normal di dalam reticle memiliki $\ge 300$ piksel kulit. Jika $< 300$, maka `isFacePresent = false`.
+  3. **Rasio Simetri Sumbu Horizontal Oval:**
+     $$\text{symmetryRatio} = \frac{\min(\text{leftCoreSkin}, \text{rightCoreSkin})}{\max(\text{leftCoreSkin}, \text{rightCoreSkin}) + 1e-5} \ge 0.30$$
+     Jika $\text{symmetryRatio} < 0.30$, wajah bergeser ke samping luar bingkai oval.
+  4. **Hierarki Evaluasi Mutlak:**
+     Pengecekan *Anti-Occlusion* (tangan di dahi atau dagu) dan *Head Pose Orientation* (Yaw & Pitch) **HANYA DIJALANKAN JIKA `isFaceCentered === true`**.
+     Jika wajah belum berada di tengah oval:
+     - Banner & Status Bar: `⚠️ Posisikan wajah Anda tepat di dalam bingkai oval` atau instruksi terarah `⚠️ Geser kepala sedikit ke kiri/kanan agar di tengah oval`.
+     - Model 3D Guide: Status `not_centered` (kuning amber) dengan badge `Posisikan Wajah di Oval`.
+     - Tombol Capture: Terkunci (`disabled = true`) dengan label `⚠️ Posisikan Wajah Tepat di Dalam Oval`.
 
 ---
 
@@ -2100,11 +2120,13 @@ Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/kar
 
 ### 12.9 Matriks Verifikasi & Kepatuhan Fitur KYC Biometrik 5-Pose
 
-| Komponen Fitur | Spesifikasi Awal | Standar Baru (Seksi 12.5 - 12.8) | Dampak Keamanan & Akurasi |
+| Komponen Fitur | Spesifikasi Awal | Standar Baru (Seksi 12.3 - 12.8) | Dampak Keamanan & Akurasi |
 | :--- | :--- | :--- | :--- |
 | **Validasi Pose Tolehan** | Menghadap center tetap bisa diambil | **Kunci Sudut Yaw & Pitch** (Center, Kanan, Kiri, Atas, Bawah wajib sesuai model 3D) | Menjamin keaslian data 5 sudut profil wajah 3D |
 | **Ambang Batas Kelayakan** | Tidak ada evaluasi kuantitatif | **Minimal Skor 75/100** (Jika $< 75$, foto ditolak & wajib retake) | Mencegah citra buram atau pose palsu masuk database |
 | **Panduan Arah Pose** | Emoticon 2D kartun (`👉`, `🙂`) | **Asset Model 3D Manusia Geometrik** ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)) | Tampilan profesional perbankan, instruksi tolehan akurat |
 | **Pratinjau Pose Sebelumnya** | Belum tersedia | **Thumbnail Pratinjau + Badge Skor** + Tombol Ambil Ulang cepat | Pengguna dapat mengevaluasi kualitas foto sebelum lanjut |
 | **Deteksi Halangan Tangan (Multi-Zone)** | Hanya dagu / reticle dasar | **Multi-Zone Anti-Occlusion** (Dahi, Kening, Kepala Atas, & Dagu) | Mencegah pendaftaran foto yang terhalang tangan di bagian dahi maupun dagu |
+| **Pembedaan Rambut vs Tangan Dahi** | Poni rambut memicu false-positive | **Intra-Skin Crease & Hemoglobin Tone** (Hanya mendeteksi celah antar-kulit tangan) | Bebas salah deteksi rambut poni/kening alami |
+| **Verifikasi Posisi Wajah di Oval** | Tidak ada verifikasi keberadaan | **Face Presence & Oval Reticle Centering Gate** (Kunci jika kepala di luar oval) | Mencegah pengambilan saat wajah bergeser keluar dari oval reticle |
 
