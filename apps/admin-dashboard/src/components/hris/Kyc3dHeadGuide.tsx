@@ -35,7 +35,7 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({ pose, status, oc
             occlusionZone === "forehead"
               ? "✋ Tangan Menutupi Dahi / Mata"
               : occlusionZone === "chin"
-              ? "✋ Tangan Menutupi Dagu"
+              ? "✋ Tangan Menutupi Mulut / Dagu"
               : "✋ Terhalang Tangan / Objek",
         };
       case "captured":

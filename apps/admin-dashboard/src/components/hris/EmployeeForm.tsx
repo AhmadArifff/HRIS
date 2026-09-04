@@ -222,42 +222,47 @@ export const EmployeeForm = () => {
         let rightCoreSkin = 0;
 
         // 3. Anti-Occlusion & Multi-Zone Hand Obstruction Detection (PRD §12.3)
-        // Zone A: Chin & Jaw (Lower Third: Y: 75-115, X: 40-120)
+        // Zone A: Chin & Jaw (Y: 86-114, X: 48-112)
         let chinEdgeCount = 0;
         let chinPixelCount = 0;
-        let leftJawIntensity = 0;
-        let rightJawIntensity = 0;
-        let leftJawCount = 0;
-        let rightJawCount = 0;
+        let chinSkinCount = 0;
         let bottomSkinEntryCount = 0;
 
-        // Zone B: Forehead & Brow (Upper Third: Y: 18-52, X: 46-114)
+        // Zone Mouth & Lips (Y: 64-90, X: 54-106)
+        let mouthPixelCount = 0;
+        let mouthSkinCount = 0;
+        let mouthEdgeCount = 0;
+
+        // Zone B: Forehead & Brow (Upper Third: Y: 18-50, X: 50-110)
         let foreheadPixelCount = 0;
         let foreheadSkinCount = 0;
         let foreheadIntraSkinEdgeCount = 0;
 
-        // Zone C: Crown & Hairline (Top: Y: 8-28, X: 54-106)
+        // Zone C: Crown & Hairline (Top: Y: 8-26, X: 54-106)
         let crownPixelCount = 0;
         let crownSkinCount = 0;
 
-        // Zone D: Eye-Pair Ocular Feature Sampling (Left: X: 48-74, Right: X: 86-112, Y: 44-68)
+        // Zone D: Eye-Pair Ocular Feature Sampling (Left: X: 50-74, Right: X: 86-110, Y: 42-64)
         let leftEyeEdge = 0;
         let rightEyeEdge = 0;
 
-        // Zone E: Lateral Temple Hand Bridge (Left: X: 24-46, Right: X: 114-136, Y: 30-66)
+        // Zone E: Lateral Temple Hand Bridge (Left: X: 20-46, Right: X: 114-140, Y: 26-66)
         let leftTempleSkinCount = 0;
         let rightTempleSkinCount = 0;
 
-        // 4. Head Pose Estimation (Yaw & Pitch Calculation)
-        // Upper zone (eyes/forehead) vs Lower zone (jawline)
+        // 4. Background-Immune Internal Facial Sampling (Pose Estimation)
+        // ONLY sample INSIDE facial oval boundaries (X: 52-72 and X: 88-108, Y: 50-80)
+        // Eliminates false triggers from background doors/walls outside X: 48 or X: 112!
+        let leftCheekInternalEdge = 0;
+        let rightCheekInternalEdge = 0;
+        let leftCheekSkinCount = 0;
+        let rightCheekSkinCount = 0;
+
+        // Upper Zone (Forehead/Eyes: Y: 22-54, X: 52-108) vs Lower Zone (Mouth/Chin: Y: 68-102, X: 52-108)
         let upperIntensity = 0;
         let lowerIntensity = 0;
         let upperCount = 0;
         let lowerCount = 0;
-
-        // Left Cheek vs Right Cheek intensity & edge features
-        let leftCheekEdge = 0;
-        let rightCheekEdge = 0;
 
         for (let y = 0; y < 120; y++) {
           for (let x = 0; x < 160; x++) {
@@ -271,8 +276,6 @@ export const EmployeeForm = () => {
             const isDarkHair = gray < 65 || (r < 75 && g < 70 && b < 70);
 
             // Robust Hemoglobin-based Skin-Tone Detection
-            // Human skin has strong red-over-green and red-over-blue dominance due to blood circulation,
-            // whereas background walls/doors are either neutral cream/yellow (r ≈ g) or extreme brick red.
             const isSkinTone =
               !isDarkHair &&
               r > 75 &&
@@ -284,39 +287,40 @@ export const EmployeeForm = () => {
               r - b >= 25 &&
               gray >= 60;
 
-            // Step 1: Reticle Oval Core Sampling (W: 64px, H: 64px, Center at 80, 60)
+            // Step 1: Reticle Oval Core Sampling (Center at 80, 60)
             if (y >= 28 && y <= 92 && x >= 48 && x <= 112) {
               if (isSkinTone) {
                 coreSkinCount++;
-                if (x <= 78) {
-                  leftCoreSkin++;
-                } else if (x >= 82) {
-                  rightCoreSkin++;
-                }
+                if (x <= 78) leftCoreSkin++;
+                else if (x >= 82) rightCoreSkin++;
               }
             }
 
-            // Step 2: Zone A: Chin safe zone (Y: 75-115, X: 40-120)
-            if (y >= 75 && y <= 115 && x >= 40 && x <= 120) {
-              chinPixelCount++;
+            // Step 2: Mouth & Lips Zone (Y: 64-90, X: 54-106)
+            if (y >= 64 && y <= 90 && x >= 54 && x <= 106) {
+              mouthPixelCount++;
+              if (isSkinTone) mouthSkinCount++;
               if (idx + 160 * 4 < data.length) {
                 const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
-                if (Math.abs(gray - downGray) > 28) chinEdgeCount++;
+                if (Math.abs(gray - downGray) > 18) mouthEdgeCount++;
               }
-              if (x < 80) {
-                leftJawIntensity += gray;
-                leftJawCount++;
-              } else {
-                rightJawIntensity += gray;
-                rightJawCount++;
+            }
+
+            // Step 3: Chin & Lower Jaw Zone (Y: 86-114, X: 48-112)
+            if (y >= 86 && y <= 114 && x >= 48 && x <= 112) {
+              chinPixelCount++;
+              if (isSkinTone) chinSkinCount++;
+              if (idx + 160 * 4 < data.length) {
+                const downGray = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
+                if (Math.abs(gray - downGray) > 22) chinEdgeCount++;
               }
               if (y > 105 && isSkinTone) {
                 bottomSkinEntryCount++;
               }
             }
 
-            // Step 3: Zone B: Forehead & Brow safe zone (Y: 18-52, X: 46-114)
-            if (y >= 18 && y <= 52 && x >= 46 && x <= 114) {
+            // Step 4: Forehead & Brow Safe Zone (Y: 18-50, X: 50-110)
+            if (y >= 18 && y <= 50 && x >= 50 && x <= 110) {
               foreheadPixelCount++;
               if (isSkinTone) {
                 foreheadSkinCount++;
@@ -337,8 +341,6 @@ export const EmployeeForm = () => {
                     downR - downB >= 25 &&
                     downGray >= 60;
 
-                  // Intra-Skin Crease: Only trigger if BOTH adjacent pixels are human skin!
-                  // Bangs/hairline do not trigger this because hair is dark and not skin.
                   if (downIsSkinTone && Math.abs(gray - downGray) > 20) {
                     foreheadIntraSkinEdgeCount++;
                   }
@@ -346,16 +348,15 @@ export const EmployeeForm = () => {
               }
             }
 
-            // Step 4: Zone C: Crown & Hairline zone (Y: 8-28, X: 54-106)
-            // Normally dark hair. If covered by hand/fingers, skin count spikes.
-            if (y >= 8 && y <= 28 && x >= 54 && x <= 106) {
+            // Step 5: Crown & Hairline Zone (Top: Y: 8-26, X: 54-106)
+            if (y >= 8 && y <= 26 && x >= 54 && x <= 106) {
               crownPixelCount++;
               if (isSkinTone) crownSkinCount++;
             }
 
-            // Step 5: Eye-Pair Ocular Sampling (Y: 44-68, Left: X: 48-74, Right: X: 86-112)
-            if (y >= 44 && y <= 68) {
-              if (x >= 48 && x <= 74) {
+            // Step 6: Eye-Pair Ocular Sampling (Left: X: 50-74, Right: X: 86-110, Y: 42-64)
+            if (y >= 42 && y <= 64) {
+              if (x >= 50 && x <= 74) {
                 if (idx + 4 < data.length) {
                   const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
                   leftEyeEdge += Math.abs(gray - nxt);
@@ -364,7 +365,7 @@ export const EmployeeForm = () => {
                   const dwn = 0.299 * data[idx + 160 * 4] + 0.587 * data[idx + 160 * 4 + 1] + 0.114 * data[idx + 160 * 4 + 2];
                   leftEyeEdge += Math.abs(gray - dwn);
                 }
-              } else if (x >= 86 && x <= 112) {
+              } else if (x >= 86 && x <= 110) {
                 if (idx + 4 < data.length) {
                   const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
                   rightEyeEdge += Math.abs(gray - nxt);
@@ -376,77 +377,75 @@ export const EmployeeForm = () => {
               }
             }
 
-            // Step 6: Lateral Temple Hand Bridge (Y: 30-66, Left: X: 24-46, Right: X: 114-136)
-            if (y >= 30 && y <= 66) {
-              if (x >= 24 && x <= 46 && isSkinTone) leftTempleSkinCount++;
-              if (x >= 114 && x <= 136 && isSkinTone) rightTempleSkinCount++;
+            // Step 7: Lateral Temple Hand Bridge (Left: X: 20-46, Right: X: 114-140, Y: 26-66)
+            if (y >= 26 && y <= 66) {
+              if (x >= 20 && x <= 46 && isSkinTone) leftTempleSkinCount++;
+              if (x >= 114 && x <= 140 && isSkinTone) rightTempleSkinCount++;
             }
 
-            // Head Pose Estimation Sampling
-            // Upper zone (Forehead/Eyes: Y: 25-55, X: 40-120)
-            if (y >= 25 && y <= 55 && x >= 40 && x <= 120) {
-              upperIntensity += gray;
-              upperCount++;
-            }
-            // Lower zone (Mouth/Chin: Y: 70-100, X: 40-120)
-            if (y >= 70 && y <= 100 && x >= 40 && x <= 120) {
-              lowerIntensity += gray;
-              lowerCount++;
-            }
-
-            // Left cheek (X: 30-65, Y: 45-85) vs Right cheek (X: 95-130, Y: 45-85)
-            if (y >= 45 && y <= 85) {
-              if (x >= 30 && x <= 65 && idx + 4 < data.length) {
-                const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
-                leftCheekEdge += Math.abs(gray - nxt);
+            // Step 8: Internal Cheek Sampling (Strictly INSIDE Face Oval: Left: X: 52-72, Right: X: 88-108, Y: 50-80)
+            // IMMUNE to background walls/doors/windows outside the oval!
+            if (y >= 50 && y <= 80) {
+              if (x >= 52 && x <= 72) {
+                if (isSkinTone) leftCheekSkinCount++;
+                if (idx + 4 < data.length) {
+                  const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
+                  leftCheekInternalEdge += Math.abs(gray - nxt);
+                }
+              } else if (x >= 88 && x <= 108) {
+                if (isSkinTone) rightCheekSkinCount++;
+                if (idx + 4 < data.length) {
+                  const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
+                  rightCheekInternalEdge += Math.abs(gray - nxt);
+                }
               }
-              if (x >= 95 && x <= 130 && idx + 4 < data.length) {
-                const nxt = 0.299 * data[idx + 4] + 0.587 * data[idx + 5] + 0.114 * data[idx + 6];
-                rightCheekEdge += Math.abs(gray - nxt);
+            }
+
+            // Step 9: Vertical Lighting Balance Sampling (Internal Facial Area)
+            if (x >= 52 && x <= 108) {
+              if (y >= 22 && y <= 54) {
+                upperIntensity += gray;
+                upperCount++;
+              } else if (y >= 68 && y <= 102) {
+                lowerIntensity += gray;
+                lowerCount++;
               }
             }
           }
         }
 
-        // Gate 1: Face Presence & Reticle Centering Verification
-        const isFacePresent = coreSkinCount >= 300;
-        const faceSymmetryRatio = Math.min(leftCoreSkin, rightCoreSkin) / (Math.max(leftCoreSkin, rightCoreSkin) + 1e-5);
-        const isFaceCentered = isFacePresent && faceSymmetryRatio >= 0.30;
+        // Gate 1: Face Presence Verification
+        const isFacePresent = coreSkinCount >= 180;
+        const targetPose = KYC_POSES[activePoseStep];
 
-        // Gate 2: Anti-Occlusion (Evaluated ONLY when face is inside reticle)
+        // Gate 2: Multi-Zone Anti-Occlusion (EVALUATED FIRST with High Priority)
+        // Zone Mouth & Chin:
+        const mouthSkinRatio = mouthPixelCount > 0 ? mouthSkinCount / mouthPixelCount : 0;
+        const mouthEdgeDensity = mouthPixelCount > 0 ? mouthEdgeCount / mouthPixelCount : 0;
         const chinEdgeDensity = chinPixelCount > 0 ? chinEdgeCount / chinPixelCount : 0;
 
-        // Clean Chin Occlusion: HANYA mendeteksi celah jari melintang rapat atau tangan masif dari bawah.
-        // HAPUS heuristik asimetri bayangan lampu kamar yang rentan false-positive!
-        const hasChinOcclusion =
-          isFaceCentered &&
-          (chinEdgeDensity > 0.40 ||
-            (chinEdgeDensity > 0.28 && bottomSkinEntryCount > 130));
+        const isMouthCovered = mouthSkinRatio > 0.62 && mouthPixelCount > 60;
+        const hasMouthFingers = mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.40;
+        const hasChinHand = (chinEdgeDensity > 0.20 && chinSkinCount > 60) || (bottomSkinEntryCount > 80 && chinSkinCount > 100);
+        const hasChinOcclusion = isFacePresent && (isMouthCovered || hasMouthFingers || hasChinHand);
 
+        // Zone Forehead, Brows, Eyes, & Crown:
         const foreheadIntraSkinDensity = foreheadSkinCount > 0 ? foreheadIntraSkinEdgeCount / foreheadSkinCount : 0;
         const crownSkinDensity = crownPixelCount > 0 ? crownSkinCount / crownPixelCount : 0;
-
-        // Ocular Eye-Pair Symmetry Check
         const eyeEdgeRatio = Math.min(leftEyeEdge, rightEyeEdge) / (Math.max(leftEyeEdge, rightEyeEdge) + 1e-5);
         const maxEyeEdge = Math.max(leftEyeEdge, rightEyeEdge);
-        const isOcularOccluded = maxEyeEdge > 400 && eyeEdgeRatio < 0.35;
+        const isOcularOccluded = maxEyeEdge > 300 && eyeEdgeRatio < 0.38;
 
-        // Lateral Temple Hand Intrusion Bridge
         const hasTempleHandBridge =
-          (leftTempleSkinCount > 65 || rightTempleSkinCount > 65) &&
-          (eyeEdgeRatio < 0.50 || foreheadIntraSkinDensity > 0.03);
+          (leftTempleSkinCount > 45 || rightTempleSkinCount > 45) &&
+          (eyeEdgeRatio < 0.50 || foreheadIntraSkinDensity > 0.03 || foreheadSkinCount > 200);
 
-        // Forehead / Upper Face Occlusion Triggers:
-        // 1. Intra-skin creases antar-jari di dahi (> 0.10)
-        // 2. Oklusi mata/alis akibat tertutup tangan (isOcularOccluded)
-        // 3. Tangan lateral masuk menutupi pelipis/mata (hasTempleHandBridge)
-        // 4. Mahkota rambut atas tertutup kulit tangan masif (> 0.65)
         const hasForeheadOcclusion =
-          isFaceCentered &&
-          (foreheadIntraSkinDensity > 0.10 ||
+          isFacePresent &&
+          (foreheadIntraSkinDensity > 0.08 ||
             isOcularOccluded ||
             hasTempleHandBridge ||
-            (crownSkinDensity > 0.65 && foreheadIntraSkinDensity > 0.04));
+            (crownSkinDensity > 0.60 && foreheadSkinCount > 120));
 
         const hasHandOcclusion = hasChinOcclusion || hasForeheadOcclusion;
         let occlusionZone: "none" | "chin" | "forehead" = "none";
@@ -456,61 +455,79 @@ export const EmployeeForm = () => {
           occlusionZone = "chin";
         }
 
-        // Gate 3: Yaw & Pitch Ratio Calculations (Head Pose Orientation)
-        const cheekAsymmetryRatio = leftCheekEdge / (rightCheekEdge + 1e-5);
+        // Gate 3: Centering Verification (Pose-Adaptive)
+        // For Pose 1 (Center Frontal): Verify face is centered with relaxed tolerance (0.20)
+        // If hand occlusion is present, mark as centered so occlusion alarm takes precedence!
+        const faceCenterBalance = Math.min(leftCoreSkin, rightCoreSkin) / (Math.max(leftCoreSkin, rightCoreSkin) + 1e-5);
+        let isFaceCentered = false;
+        if (targetPose.id === "center") {
+          isFaceCentered = isFacePresent && (faceCenterBalance >= 0.20 || hasHandOcclusion);
+        } else {
+          // For turn poses (right, left, up, down): Side profile naturally shifts skin symmetry.
+          // Centering only requires face to be present inside the oval reticle!
+          isFaceCentered = isFacePresent;
+        }
+
+        // Gate 4: Background-Immune Pose Orientation Alignment
+        const internalCheekRatio = leftCheekInternalEdge / (rightCheekInternalEdge + 1e-5);
         const avgUpper = upperCount > 0 ? upperIntensity / upperCount : 1;
         const avgLower = lowerCount > 0 ? lowerIntensity / lowerCount : 1;
         const verticalBalance = avgUpper / (avgLower + 1e-5);
-        const avgLeftJaw = leftJawCount > 0 ? leftJawIntensity / leftJawCount : 1;
-        const avgRightJaw = rightJawCount > 0 ? rightJawIntensity / rightJawCount : 1;
 
-        const targetPose = KYC_POSES[activePoseStep];
         let isPoseAligned = false;
         let directionHint = "";
 
-        if (!isFaceCentered) {
-          isPoseAligned = false;
-          directionHint = !isFacePresent
-            ? "Posisikan wajah tepat di dalam bingkai oval"
-            : leftCoreSkin < rightCoreSkin
-            ? "Geser kepala sedikit ke kiri agar di tengah oval"
-            : "Geser kepala sedikit ke kanan agar di tengah oval";
-        } else if (cameraError) {
+        if (cameraError) {
           // Simulator fallback
           isPoseAligned = true;
           directionHint = "✓ Mode Simulator (Siap Ambil)";
         } else {
           switch (targetPose.id) {
             case "center":
-              isPoseAligned = cheekAsymmetryRatio >= 0.78 && cheekAsymmetryRatio <= 1.28 && verticalBalance >= 0.82 && verticalBalance <= 1.25;
+              isPoseAligned =
+                internalCheekRatio >= 0.45 &&
+                internalCheekRatio <= 2.20 &&
+                eyeEdgeRatio >= 0.38 &&
+                verticalBalance >= 0.65 &&
+                verticalBalance <= 1.50;
               directionHint = isPoseAligned
                 ? "✓ Posisi Center Sesuai (Lurus ke Depan)"
                 : "⚠️ Wajah miring/menoleh, harap menatap lurus tepat ke depan";
               break;
 
             case "right":
-              isPoseAligned = cheekAsymmetryRatio > 1.25 || (avgLeftJaw > avgRightJaw * 1.18);
+              // Mirrored camera: Turning right presents right cheek on the left side of frame
+              isPoseAligned =
+                leftCoreSkin > rightCoreSkin * 1.15 ||
+                leftCheekSkinCount > rightCheekSkinCount * 1.20 ||
+                leftEyeEdge > rightEyeEdge * 1.25 ||
+                internalCheekRatio > 1.25;
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kanan Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KANAN (~25°)";
               break;
 
             case "left":
-              isPoseAligned = cheekAsymmetryRatio < 0.80 || (avgRightJaw > avgLeftJaw * 1.18);
+              // Mirrored camera: Turning left presents left cheek on the right side of frame
+              isPoseAligned =
+                rightCoreSkin > leftCoreSkin * 1.15 ||
+                rightCheekSkinCount > leftCheekSkinCount * 1.20 ||
+                rightEyeEdge > leftEyeEdge * 1.25 ||
+                internalCheekRatio < 0.80;
               directionHint = isPoseAligned
                 ? "✓ Sudut Menoleh ke Kiri Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan menolehkan wajah ke KIRI (~25°)";
               break;
 
             case "up":
-              isPoseAligned = verticalBalance < 0.90 || (avgLower > avgUpper * 1.08);
+              isPoseAligned = verticalBalance < 1.08 || avgLower > avgUpper * 0.95 || chinSkinCount > 140;
               directionHint = isPoseAligned
                 ? "✓ Sudut Mendongak ke Atas Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan dongakkan kepala sedikit ke ATAS (~15°)";
               break;
 
             case "down":
-              isPoseAligned = verticalBalance > 1.18 || (avgUpper > avgLower * 1.12);
+              isPoseAligned = verticalBalance > 0.90 || avgUpper > avgLower * 1.05;
               directionHint = isPoseAligned
                 ? "✓ Sudut Menunduk ke Bawah Sesuai"
                 : "⚠️ Arah kepala belum sesuai: Silakan tundukkan kepala sedikit ke BAWAH (~15°)";
@@ -519,18 +536,20 @@ export const EmployeeForm = () => {
         }
 
         const isGoodBrightness = avgBrightness >= 50 && avgBrightness <= 230;
-        const isSharp = avgSharpness >= 11;
+        const isSharp = avgSharpness >= 10;
         const isValid = isFaceCentered && isGoodBrightness && isSharp && !hasHandOcclusion && isPoseAligned;
 
         let label = `✓ Posisi & Sudut ${targetPose.shortLabel} Tepat (Siap Foto)`;
         if (!isFacePresent) {
           label = "⚠️ Wajah belum terdeteksi. Posisikan wajah Anda tepat di dalam bingkai oval!";
-        } else if (!isFaceCentered) {
-          label = `⚠️ ${directionHint}`;
         } else if (hasForeheadOcclusion) {
-          label = "⚠️ Terdeteksi tangan / halangan menutupi dahi atau mata! Harap jauhkan tangan.";
+          label = "✋ Terdeteksi halangan / tangan menutupi dahi atau mata! Harap jauhkan tangan.";
         } else if (hasChinOcclusion) {
-          label = "⚠️ Terdeteksi tangan / halangan menutupi dagu & wajah! Harap jauhkan tangan.";
+          label = "✋ Terdeteksi halangan / tangan menutupi dagu atau mulut! Harap jauhkan tangan.";
+        } else if (!isFaceCentered) {
+          label = leftCoreSkin < rightCoreSkin
+            ? "⚠️ Geser kepala sedikit ke kiri agar di tengah oval"
+            : "⚠️ Geser kepala sedikit ke kanan agar di tengah oval";
         } else if (!isPoseAligned) {
           label = directionHint;
         } else if (!isGoodBrightness) {
@@ -640,7 +659,7 @@ export const EmployeeForm = () => {
       issues.push(
         fqaStatus.occlusionZone === "forehead"
           ? "Terdeteksi tangan atau jari menutupi area dahi / kening / mata"
-          : "Terdeteksi tangan atau halangan menempel pada dagu / wajah"
+          : "Terdeteksi tangan atau halangan menutupi area mulut / dagu"
       );
     }
 
@@ -1090,12 +1109,12 @@ export const EmployeeForm = () => {
                             <span className="block font-bold text-red-200">
                               {fqaStatus.occlusionZone === "forehead"
                                 ? "Terdeteksi Halangan / Tangan Menutupi Dahi & Mata!"
-                                : "Terdeteksi Halangan / Tangan Menopang Dagu!"}
+                                : "Terdeteksi Halangan / Tangan Menutupi Dagu atau Mulut!"}
                             </span>
                             <span>
                               {fqaStatus.occlusionZone === "forehead"
                                 ? "Tolong turunkan tangan dan jauhkan jari/lengan dari area dahi, mata, kening, dan kepala."
-                                : "Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu."}
+                                : "Tolong turunkan tangan dan jangan menutupi area bibir, mulut, atau dagu."}
                             </span>
                           </div>
                         </div>
@@ -1297,7 +1316,7 @@ export const EmployeeForm = () => {
                           : fqaStatus.isOccluded
                           ? fqaStatus.occlusionZone === "forehead"
                             ? "✋ Jauhkan Tangan dari Dahi/Mata untuk Mengambil"
-                            : "✋ Jauhkan Tangan dari Dagu untuk Mengambil"
+                            : "✋ Jauhkan Tangan dari Dagu/Mulut untuk Mengambil"
                           : !fqaStatus.isPoseAligned
                           ? "⚠️ Sesuaikan Arah Kepala dengan Model 3D"
                           : `📸 Ambil Foto (${currentPose.shortLabel})`}

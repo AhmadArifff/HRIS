@@ -1934,63 +1934,54 @@ Perekaman dilakukan secara terpandu bertahap (*Interactive Stepper*):
 
 ### 12.3 Algoritma Multi-Zone Anti-Occlusion (Deteksi Tangan di Dahi, Kening, Kepala, & Dagu)
 
-#### 12.3.1 Kasus Solusi Hambatan Wajah Bawah (Lower Face: Chin & Jawline) & Eliminasi False-Positive Bayangan Rahang
-- **Area Analisis:** Sub-area *Lower Third* ($Y \in [75, 115], X \in [40, 120]$).
-- **Evaluasi False-Positive Bayangan (Shadow Immunity):**
-  - Pada pengujian lapangan, pencahayaan ruangan dari samping atas menimbulkan bayangan tajam pada salah satu sisi rahang/leher.
-  - Aturan awal yang mengukur selisih intensitas rahang ($\Delta I_{\text{jaw}} > 38$) secara keliru menuduh bayangan lampu samping sebagai "tangan menopang dagu" padahal wajah pengguna bersih tanpa tangan.
-  - **Penyempurnaan Algoritma (Shadow-Immune Heuristic):**
-    - Metrik asimetri intensitas rahang rapuh resmi **DIELIMINASI**.
-    - Deteksi tangan pada dagu kini murni bertumpu pada **Lipatan Tepi Jari Horizontal Nyata** (`chinEdgeDensity > 0.40`) atau kombinasi tepi terarah dengan intrusi pergelangan tangan masif dari bawah reticle (`chinEdgeDensity > 0.28 && bottomSkinEntryCount > 130`).
+#### 12.3.1 Kasus Solusi Hambatan Wajah Bawah (Lower Face: Mouth, Lips, Chin & Jawline)
+- **Area Analisis:** Sub-area *Mouth & Lips Zone* ($Y \in [64, 90], X \in [54, 106]$) dan *Chin & Lower Jaw Zone* ($Y \in [86, 114], X \in [48, 112]$).
+- **Latar Belakang Masalah (Tangan Menutupi Mulut/Kumis Lolos Deteksi):**
+  - Pada pengujian, pengguna meletakkan 4 jari atau telapak tangan secara horizontal menutupi mulut dan kumis.
+  - Punggung tangan manusia memiliki permukaan kulit yang mulus tanpa garis bergerigi ekstrem, sehingga aturan lama yang menuntut densitas tepi $> 0.40$ gagal mendeteksinya.
+- **Penyempurnaan Algoritma (Mouth Masking & Pure Horizontal Edge):**
+  1. **Saturasi Kulit Tangan di Zona Mulut (`mouthSkinRatio`):** Pada wajah normal, bibir memiliki rona merah/gelap, celah rongga bibir, dan kumis sehingga rasio kulit hemoglobin $\le 0.55$. Saat ditutupi tangan, zona mulut dipenuhi kulit mulus ($\text{mouthSkinRatio} > 0.62$), memicu oklusi secara deterministik.
+  2. **Lipatan Jari Melintang di Bibir (`mouthEdgeDensity > 0.12 && mouthSkinRatio > 0.40`):** Mendeteksi tepi horizontal antara punggung jari dengan kulit hidung/pipi.
+  3. **Tangan Menopang Dagu / Rahang:** Mendeteksi kombinasi lipatan tepi dagu horizontal tajam (`chinEdgeDensity > 0.20 && chinSkinCount > 60`) atau intrusi pergelangan tangan masif dari bawah reticle (`bottomSkinEntryCount > 80 && chinSkinCount > 100`).
 - **Respons Sistem:** Flag `hasChinOcclusion = true`, `occlusionZone = "chin"`.
 
-#### 12.3.2 Kasus Solusi Hambatan Dahi, Kening, & Ocular Occlusion (Mata Tertutup Tangan)
-- **Latar Belakang Kasus & Evaluasi Masalah (Miss-Detection & False Turn Diagnosis):**
-  - Pengguna terkadang menempelkan 4 jari dan telapak tangan secara rapat menutupi dahi dan salah satu mata (sebagaimana terlihat pada pengujian kamera).
-  - Karena jari tangan menempel rapat dan disinari lampu, celah bayangan antar-jari menjadi minimal ($\rho_{\text{intraSkin}} < 0.12$).
-  - Tanpa deteksi mata tertutup, sistem lolos dari evaluasi anti-occlusion lalu masuk ke evaluasi pose yaw. Tangan di samping pelipis menaikkan tepi pipi, sehingga sistem secara keliru mendiagnosis *"Wajah miring/menoleh, harap menatap lurus tepat ke depan"*, alih-alih mendeteksi tangan yang menutupi wajah!
-- **Formulasi Solusi Tri-Zone Upper Face Anti-Occlusion:**
-  1. **Ocular Eye-Pair Symmetry Check (Deteksi Mata Tertutup Tangan):**
-     - Mengukur densitas tepi pupil/kelopak mata kiri ($X \in [50, 72], Y \in [44, 60]$) dan mata kanan ($X \in [88, 110], Y \in [44, 60]$).
-     - Mata manusia yang terlihat normal memiliki tepi tajam (pupil, alis, lipatan kelopak mata).
-     - Saat tangan menutupi salah satu mata:
-       $$\text{eyeRatio} = \frac{\min(E_{\text{left}}, E_{\text{right}})}{\max(E_{\text{left}}, E_{\text{right}}) + 1e-5} < 0.35$$
-       Disertai saturasi kulit pada area mata tertutup ($\text{skinDensity} \ge 0.50$). Kondisi ini secara instan dan deterministik menandai penutupan mata/dahi oleh tangan.
-  2. **Lateral Temple Bridge Detection (Jembatan Lengan/Telapak Tangan dari Samping):**
-     - Memindai intrusi piksel kulit dari samping kiri ($X \in [15, 42]$) atau kanan ($X \in [118, 145]$) pada ketinggian pelipis ($Y \in [30, 65]$).
-     - Jika terdeteksi lengan/pergelangan masuk ($\text{templeSkinCount} > 65$) yang terhubung dengan dahi/mata tertutup, sistem memicu oklusi dahi.
-  3. **Intra-Skin Crease Sampling (Celah Jari pada Dahi):**
-     - Menghitung gradien vertikal $|gray_{(x, y)} - gray_{(x, y+1)}| > 20$ khusus di antara piksel kulit manusia asli (`isUpperSkin && isLowerSkin`), imun dari rambut poni alami.
-- **Kondisi Pemicu Deteksi Forehead & Ocular Occlusion:**
-  $$\text{hasForeheadOcclusion} = \text{isFaceCentered} \land (\rho_{\text{intraSkin}} > 0.14 \lor \text{isEyeOccluded} \lor (\text{hasTempleBridge} \land \rho_{\text{intraSkin}} > 0.08) \lor \rho_{\text{crownSkin}} > 0.35)$$
-
-#### 12.3.3 Tata Kelola UX & Guard Clause Multi-Zone
-1. **Dual Safe-Zone Reticle Markers:** Bingkai oval panduan dilengkapi dua garis batas putus-putus eksplisit:
-   - Garis atas: `AREA DAHI & ALIS BERSIH`
-   - Garis bawah: `AREA DAGU BERSIH`
-2. **Indikator Status Reaktif & Penguncian Tombol Capture:**
-   - **Reticle Oval:** Berkedip merah menyala (*Crimson Pulse*).
-   - **Banner Video:**
-     - Jika terhalang di dahi/mata: `✋ Terdeteksi Halangan / Tangan Menutupi Dahi atau Mata! Tolong turunkan tangan dan jauhkan jari/lengan dari area dahi, mata, dan kening.`
-     - Jika terhalang di dagu: `✋ Terdeteksi Halangan / Tangan Menopang Dagu! Tolong turunkan tangan dan jangan menempelkan jari/kepalan pada wajah atau dagu.`
-   - **Model 3D Guide ([`Kyc3dHeadGuide.tsx`](file:///apps/admin-dashboard/src/components/hris/Kyc3dHeadGuide.tsx)):** Berubah warna menjadi merah dengan badge spesifik: `✋ TANGAN MENUTUPI DAHI / MATA` atau `✋ TANGAN MENUTUPI DAGU`.
-   - **Tombol Capture:** **SEKETIKA TERKUNCI (`disabled = true`)** dengan label `✋ Jauhkan Tangan dari Dahi/Mata untuk Mengambil` atau `✋ Jauhkan Tangan dari Dagu untuk Mengambil`. Pengambilan foto sama sekali tidak dapat dipaksa sebelum tangan dijauhkan.
-
-#### 12.3.4 Face Presence & Oval Reticle Centering Gate (Verifikasi Keberadaan & Posisi Wajah)
+#### 12.3.2 Kasus Solusi Hambatan Wajah Atas (Upper Face: Forehead, Brow, Eyes, & Crown) & Eliminasi False Turn
 - **Latar Belakang Masalah:**
-  Pada Langkah 2 (Menoleh ke Kanan), pengguna bergeser ke luar oval reticle. Sistem sebelumnya tetap mengevaluasi tangan padahal wajah tidak berada di dalam reticle.
-- **Spesifikasi Teknis Centering Gate:**
-  1. **Area Inti Oval Reticle:** $X \in [48, 112], Y \in [28, 92]$ (pada kanvas $160 \times 120$).
-  2. **Total Piksel Kulit Inti (`coreSkinCount`):** Wajah normal di dalam reticle memiliki $\ge 300$ piksel kulit. Jika $< 300$, maka `isFacePresent = false`.
-  3. **Rasio Simetri Sumbu Horizontal Oval:**
-     $$\text{symmetryRatio} = \frac{\min(\text{leftCoreSkin}, \text{rightCoreSkin})}{\max(\text{leftCoreSkin}, \text{rightCoreSkin}) + 1e-5} \ge 0.30$$
-     Jika $\text{symmetryRatio} < 0.30$, wajah bergeser ke samping luar bingkai oval.
-  4. **Hierarki Evaluasi Mutlak:**
-     Pengecekan *Anti-Occlusion* (tangan di dahi atau dagu) dan *Head Pose Orientation* (Yaw & Pitch) **HANYA DIJALANKAN JIKA `isFaceCentered === true`**.
-     Jika wajah belum berada di tengah oval:
-     - Banner & Status Bar: `⚠️ Posisikan wajah Anda tepat di dalam bingkai oval` atau instruksi terarah `⚠️ Geser kepala sedikit ke kiri/kanan agar di tengah oval`.
-     - Model 3D Guide: Status `not_centered` (kuning amber) dengan badge `Posisikan Wajah di Oval`.
-     - Tombol Capture: Terkunci (`disabled = true`) dengan label `⚠️ Posisikan Wajah Tepat di Dalam Oval`.
+  - Pengguna menaruh tangan di dahi/kening dan menutupi mata. Kehadiran tangan di satu sisi sebelumnya merusak rasio simetri kulit di oval core ($< 0.30$), sehingga sistem secara keliru menuduh pengguna *"Geser kepala sedikit ke kanan"*, alih-alih mendeteksi tangan di dahi!
+- **Hierarki Prioritas Mutlak (Anti-Occlusion First):**
+  - Deteksi oklusi tangan dievaluasi **SEBELUM** evaluasi centering atau pose alignment.
+  - Selama wajah hadir di kamera (`isFacePresent = coreSkinCount >= 180`), jika terdeteksi oklusi tangan di dahi atau mulut, sistem seketika memicu alarm tangan dan mengunci tombol capture (tidak membingungkan pengguna dengan perintah geser kepala).
+- **Indikator Heuristik Ocular & Forehead:**
+  1. **Ocular Eye-Pair Symmetry Check:** $\text{eyeEdgeRatio} < 0.38$ saat kontur mata aktif menandai salah satu mata/alis tertutup tangan.
+  2. **Lateral Temple Hand Bridge:** Intrusi kulit dari samping luar ($X \in [20, 46]$ atau $X \in [114, 140], Y \in [26, 66]$) melebihi 45 piksel yang terhubung ke dahi/mata.
+  3. **Intra-Skin Crease Sampling:** Gradien celah antar-kulit dahi $\rho_{\text{intraSkin}} > 0.08$.
+  4. **Crown Hand Saturation:** Tangan ditaruh di atas kepala ($\rho_{\text{crown}} > 0.60 \land \text{foreheadSkin} > 120$).
+- **Respons Sistem:** Flag `hasForeheadOcclusion = true`, `occlusionZone = "forehead"`.
+
+#### 12.3.3 Background-Immune Internal Facial Sampling (Eliminasi Gangguan Kusen Pintu & Latar Belakang Ruangan)
+- **Latar Belakang Masalah (Pose Center Gagal Akibat Latar Belakang):**
+  - Pada feed kamera ruangan pengguna, di sebelah kiri frame ($X \in [25, 48]$) terdapat kusen pintu kayu coklat dengan dinding kuning terang di belakangnya yang memiliki kontras sangat tinggi.
+  - Aturan awal yang mengukur pipi hingga $X = 30$ menyebabkan tepi kusen pintu terhitung sebagai tepi pipi kiri, sehingga `leftCheekEdge` selalu tinggi dan rasio asimetri selalu $> 1.30$. Pengguna yang duduk lurus terus-menerus dituduh *"Wajah miring/menoleh"*.
+- **Solusi Internal Facial Sampling:**
+  - Seluruh sampling pipi untuk evaluasi tolehan **DIBATASI KETAT HANYA DI DALAM OVAL WAJAH**:
+    - Pipi Kiri Internal: $X \in [52, 72], Y \in [50, 80]$
+    - Pipi Kanan Internal: $X \in [88, 108], Y \in [50, 80]$
+  - Area $X < 50$ dan $X > 110$ diabaikan total, sehingga kusen pintu, jam dinding, atau lemari di latar belakang **100% TIDAK MEMPENGARUHI HASIL DETEKSI POSE CENTER**.
+- **Kondisi Validasi Center Frontal:**
+  $$0.45 \le \frac{E_{\text{left\_internal}}}{E_{\text{right\_internal}}} \le 2.20 \quad \land \quad \text{eyeEdgeRatio} \ge 0.38 \quad \land \quad 0.65 \le \frac{\bar{I}_{\text{upper}}}{\bar{I}_{\text{lower}}} \le 1.50$$
+
+#### 12.3.4 Pose-Adaptive Centering Relaxation (Responsif pada 5 Pose e-KYC)
+- **Latar Belakang Masalah (Pose Kanan, Kiri, Atas, Bawah Sulit Lolos):**
+  - Ketika pengguna menoleh ke kanan atau kiri, profil samping wajah secara alami memperlihatkan lebih banyak kulit di satu sisi dan rambut hitam di sisi lainnya.
+  - Memaksakan syarat simetri kulit $\ge 0.30$ pada pose menoleh membuat pengguna terkunci pada status *"⚠️ Geser kepala sedikit ke kanan/kiri"* dan tidak pernah bisa mengambil foto pose tolehan.
+- **Relaksasi Adaptif per Pose:**
+  1. **Pose 1 (Center Frontal):** Menggunakan toleransi simetri tengah yang ramah ($\ge 0.20$). Jika ada oklusi tangan, centering otomatis dianggap terpenuhi agar alarm tangan tampil dominan.
+  2. **Pose 2 - 5 (Menoleh Kanan, Kiri, Mendongak, Menunduk):** Centering gate hanya memastikan wajah berada di dalam reticle oval (`isFacePresent = coreSkinCount >= 180`), tanpa menuntut simetri frontal.
+  3. **Deteksi Tolehan Responsif:**
+     - **Menoleh Kanan (Pose 2):** Mendeteksi pergeseran massa kulit ke kiri frame cermin (`leftCoreSkin > rightCoreSkin * 1.15` atau `leftCheekSkin > rightCheekSkin * 1.20` atau `internalCheekRatio > 1.25`).
+     - **Menoleh Kiri (Pose 3):** Mendeteksi pergeseran massa kulit ke kanan frame cermin (`rightCoreSkin > leftCoreSkin * 1.15` atau `rightCheekSkin > leftCheekSkin * 1.20` atau `internalCheekRatio < 0.80`).
+     - **Mendongak Atas (Pose 4):** Mendeteksi dominasi leher/dagu (`verticalBalance < 1.08` atau `avgLower > avgUpper * 0.95` atau `chinSkinCount > 140`).
+     - **Menunduk Bawah (Pose 5):** Mendeteksi dominasi dahi atas (`verticalBalance > 0.90` atau `avgUpper > avgLower * 1.05`).
 
 ---
 
@@ -2133,4 +2124,7 @@ Untuk memberikan visibilitas penuh dan kepastian kualitas kepada operator HR/kar
 | **Verifikasi Posisi Wajah di Oval** | Tidak ada verifikasi keberadaan | **Face Presence & Oval Reticle Centering Gate** (Kunci jika kepala di luar oval) | Mencegah pengambilan saat wajah bergeser keluar dari oval reticle |
 | **Deteksi Ocular (Mata Tertutup Tangan)** | Keliru dianggap menoleh (*false yaw*) | **Ocular Eye-Pair Symmetry & Temple Bridge** | Deteksi instan saat 4 jari/tangan menutup dahi & mata |
 | **Kekebalan Bayangan Dagu (Shadow Immunity)** | Bayangan samping memicu alarm dagu palsu | **Pure Horizontal Edge Density** (Eliminasi selisih rahang rapuh) | Bebas alarm dagu palsu akibat lampu samping ruangan |
+| **Deteksi Tangan di Mulut/Bibir** | Punggung tangan mulus tidak terdeteksi | **Mouth Masking & Pure Skin Saturation** ($> 0.62$) | Deteksi deterministik saat 4 jari/tangan menutup mulut |
+| **Kekebalan Latar Belakang Ruangan** | Kusen pintu kontras memicu false turn | **Internal Facial Sampling** ($X \in [52, 72]$ & $[88, 108]$) | Pose center frontal stabil dan tidak terganggu kusen pintu |
+| **Relaksasi Centering 5-Pose** | Menoleh ke kanan/kiri terblokir oval | **Pose-Adaptive Centering Relaxation** | Pose tolehan kanan, kiri, atas, bawah responsif dan mulus |
 
