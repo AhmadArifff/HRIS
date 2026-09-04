@@ -30,14 +30,14 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
     ]);
 
     const stats = {
-      totalEmployees: totalEmployees || 45, // Graceful fallback if fresh DB
-      presentToday: presentToday || 42,
-      attendancePercentage: totalEmployees > 0 ? Math.round((presentToday / totalEmployees) * 100) : 93,
-      pendingLeaves: pendingLeaves || 5,
-      activeJobs: activeJobs || 3,
+      totalEmployees,
+      presentToday,
+      attendancePercentage: totalEmployees > 0 ? Math.round((presentToday / totalEmployees) * 100) : 0,
+      pendingLeaves,
+      activeJobs,
     };
 
-    sendResult(res, 200, Result.ok(stats, "Berhasil mengambil statistik dashboard"));
+    sendResult(res, 200, Result.ok(stats, "Berhasil mengambil statistik dashboard dari database Supabase"));
   } catch (error: any) {
     console.error("Dashboard Stats Error:", error);
     sendResult(res, 500, Result.fail(error.message || "Gagal mengambil statistik dashboard"));

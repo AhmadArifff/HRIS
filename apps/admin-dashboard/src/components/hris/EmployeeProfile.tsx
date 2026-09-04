@@ -64,25 +64,11 @@ export const EmployeeProfile = () => {
       if (json.success && json.data) {
         setEmployee(json.data);
       } else {
-        // Fallback default mock
-        setEmployee({
-          id: employeeId,
-          employeeCode: employeeId,
-          firstName: "Budi",
-          lastName: "Santoso",
-          email: "budi.santoso@perusahaan.com",
-          phone: "+62 812 3456 7890",
-          birthDate: "1990-08-15",
-          joinDate: "2021-01-01",
-          avatarUrl: "/images/user/user-01.jpg",
-          departmentName: "Teknologi & Informasi",
-          positionTitle: "Senior Software Engineer",
-          statusName: "Active",
-          isFaceEnrolled: false,
-        });
+        setEmployee(null);
       }
     } catch (err) {
       console.error("Failed to fetch employee details", err);
+      setEmployee(null);
     } finally {
       setLoading(false);
     }
@@ -156,7 +142,17 @@ export const EmployeeProfile = () => {
     );
   }
 
-  const isEnrolled = biometricStatus?.isEnrolled || employee?.isFaceEnrolled;
+  if (!employee) {
+    return (
+      <div className="p-12 border border-gray-200 rounded-2xl bg-white dark:bg-white/[0.03] dark:border-gray-800 text-center">
+        <span className="text-4xl mb-3 block">👤</span>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-white">Karyawan Tidak Ditemukan</h3>
+        <p className="text-xs text-gray-500 mt-1">Data dengan ID &quot;{employeeId}&quot; tidak terdaftar di database Supabase.</p>
+      </div>
+    );
+  }
+
+  const isEnrolled = biometricStatus?.isEnrolled || employee.isFaceEnrolled;
 
   return (
     <div className="space-y-6">

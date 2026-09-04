@@ -2249,7 +2249,7 @@ graph TD
 3. **Pencahayaan Studio Sinematik & Storyboard Reticle:**
    - Dilengkapi 4 titik pencahayaan (Key light, Fill light, Rim light pembentuk siluet kepala, dan Bottom bounce).
    - Reticle target lingkaran storyboard dan panah petunjuk sudut arah pandang beranimasi memandu pengguna secara intuitif.
-   - Tersedia selector gender `[👩 Perempuan]` dan `[👨 Laki-Laki]`.
+   - Menggunakan 1 Model 3D Interaktif Realistis Utama terpadu (`LeePerrySmith.glb`) dengan pelacakan pose kepala 3D tanpa pembagian gender.
 
 #### 12.11.2 Kekebalan Dinding Ruangan & Kumis/Jenggot pada Deteksi Oklusi (Room-Wall & Facial-Hair Occlusion Immunity)
 1. **Eliminasi Kesalahan Alarm Dinding Hijau/Berwarna (Anti-Green-Wall False Positive):**
@@ -2284,4 +2284,28 @@ graph TD
 2. **Kekebalan terhadap Kredensial Supabase Storage:**
    - Jika Supabase Storage mengalami kegagalan otentikasi (misal token anon berakhiran `.placeholder`), sistem tidak lagi menggunakan template `/images/user/user-01.jpg`, melainkan otomatis menggunakan berkas foto fisik lokal yang telah tersimpan.
    - URL foto profil resmi karyawan di tabel `users.avatar_url` dan `face_biometric_profiles.reference_image_url` secara konsisten menunjuk pada berkas foto asli.
+
+#### 12.11.6 Unifikasi Model 3D KYC Tunggal & Pembersihan Total Dummy Data (Pure Supabase Live Data)
+1. **Unifikasi Panduan Model 3D KYC Tunggal:**
+   - Menghilangkan tombol pemilih gender (`[👩 Perempuan]` dan `[👨 Laki-Laki]`) pada modul panduan biometrik KYC.
+   - Mengkonsolidasikan representasi panduan visual ke **1 Model 3D Scan Manusia Asli Terpadu** (`LeePerrySmith.glb`) dengan tekstur fotorealistik resolusi tinggi dan normal map tangent-space.
+   - Header panduan 3D diperbarui dengan badge elegan `[👤 MODEL 3D INTERAKTIF]` dan indikator rotasi dinamis terkalibrasi (`Center (0°)`, `Menoleh Kanan (+25°)`, `Menoleh Kiri (-25°)`, `Mendongak Atas (+15°)`, `Menunduk Bawah (-15°)`).
+2. **Pembersihan Total Seluruh Dummy / Mock Data:**
+   - **Backend API (`apps/backend-api`):**
+     - Menghapus array `fallbackEmployees` pada `employee.controller.ts`. Endpoint `/api/employees` dan `/api/employees/:id` murni melakukan kueri live ke tabel `employees` database PostgreSQL Supabase via Prisma ORM.
+     - Menghapus angka-angka fallback palsu (`|| 45`, `|| 42`, `|| 5`, `|| 3`) pada `dashboard.controller.ts`. Metrik statistik dashboard (`totalEmployees`, `presentToday`, `attendancePercentage`, `pendingLeaves`, `activeJobs`) dihitung secara akurat dari data transaksi riil database.
+     - Menambahkan controller `getJobPostings` pada `applicant.controller.ts` dan meregistrasikan rute `/api/jobs` untuk mengambil data lowongan langsung dari tabel `job_postings`.
+   - **Admin Dashboard (`apps/admin-dashboard`):**
+     - Menghapus `mockEmployeeData` pada `EmployeeTable.tsx`.
+     - Menghapus `mockAttendanceData` pada `AttendanceTable.tsx`.
+     - Menghapus `mockLeaveData` pada `LeaveTable.tsx` dan mengintegrasikan fetching live dari `/api/leave` dengan *empty state* informatif saat belum ada permohonan.
+     - Menghapus `mockAssignments` dan data karyawan statis pada `ShiftTable.tsx`. Karyawan pada form plotting shift sekarang di-load langsung dari `/api/employees` dan tabel plotting memiliki *empty state*.
+     - Menghapus fallback mock karyawan pada `EmployeeProfile.tsx`, menggantikannya dengan penanganan `Karyawan Tidak Ditemukan` bila ID tidak terdaftar di database.
+     - Menghapus `mockJobs` pada root landing page `page.tsx` dan menghubungkannya ke endpoint live `/api/jobs`.
+     - Mengubah komponen `HrisMetrics` dan `DashboardSummaryCards` agar me-reset nilai awal ke 0 dan mengambil data aktual dari `/api/dashboard/stats`.
+     - Membuat komponen `RecentActivities.tsx` yang memantau aliran data absensi riil dari database Supabase dengan visualisasi *live feed*.
+     - Memperbarui `UserDropdown.tsx` agar nama profil awal adalah `Admin HRD` generik sebelum disinkronkan dengan sesi Better Auth.
+   - **Employee Portal (`apps/employee-portal`):**
+     - Menggantikan teks statis "Budi Santoso" pada banner selamat datang `page.tsx` dengan pembacaan dinamis dari sesi karyawan yang sedang aktif (`sessionStorage.getItem("hris_employee_name")`).
+
 

@@ -7,8 +7,6 @@ export interface KycThreeAvatarProps {
   pose: "center" | "right" | "left" | "up" | "down";
   status?: "waiting" | "aligned" | "occluded" | "captured" | "not_centered";
   occlusionZone?: "chin" | "forehead" | "object" | "none";
-  gender?: "female" | "male";
-  onGenderChange?: (gender: "female" | "male") => void;
   className?: string;
   showReticle?: boolean;
 }
@@ -17,25 +15,11 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
   pose,
   status = "waiting",
   occlusionZone = "none",
-  gender: initialGender = "female",
-  onGenderChange,
   className = "",
   showReticle = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeGender, setActiveGender] = useState<"female" | "male">(initialGender);
   const [isLoadingModel, setIsLoadingModel] = useState<boolean>(true);
-
-  useEffect(() => {
-    setActiveGender(initialGender);
-  }, [initialGender]);
-
-  const handleGenderToggle = (newGender: "female" | "male") => {
-    setActiveGender(newGender);
-    if (onGenderChange) {
-      onGenderChange(newGender);
-    }
-  };
 
   // Dynamic status theme
   const getTheme = () => {
@@ -179,9 +163,7 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
 
     setIsLoadingModel(true);
 
-    const isFemale = activeGender === "female";
-
-    // Load Photorealistic 3D Human Head Scan (Lee Perry-Smith scan with gender-adaptive textures & proportions)
+    // Load Primary Photorealistic 3D Human Head Scan
     loader.load(
       "/models/LeePerrySmith.glb",
       (gltf) => {
@@ -190,19 +172,16 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
 
         const model = gltf.scene;
 
-        // Texture Mapping:
-        // Female: Warm, smooth, radiant complexion (Map-COL-female.jpg) with soft normal bump
-        // Male: Original scanned masculine skin tone (Map-COL.jpg) with defined pores
-        const textureFile = isFemale ? "/models/Map-COL-female.jpg" : "/models/Map-COL.jpg";
-        const diffuseMap = texLoader.load(textureFile);
+        // Realistic PBR Texture Mapping with Tangent Normal Bump
+        const diffuseMap = texLoader.load("/models/Map-COL.jpg");
         const normalMap = texLoader.load("/models/Infinite-Level_02_Tangent_SmoothUV.jpg");
         diffuseMap.colorSpace = THREE.SRGBColorSpace;
 
         const skinMat = new THREE.MeshStandardMaterial({
           map: diffuseMap,
           normalMap: normalMap,
-          normalScale: isFemale ? new THREE.Vector2(0.35, 0.35) : new THREE.Vector2(0.85, 0.85),
-          roughness: isFemale ? 0.48 : 0.62,
+          normalScale: new THREE.Vector2(0.85, 0.85),
+          roughness: 0.60,
           metalness: 0.05,
         });
 
@@ -212,16 +191,8 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
           }
         });
 
-        // Gender-adaptive anatomical scaling:
-        // Female: Slender jawline, softer chin taper, graceful female bust profile
-        // Male: Standard masculine 3D head scan scale
-        if (isFemale) {
-          model.scale.set(0.224, 0.238, 0.218);
-          model.position.set(0, -0.16, 0);
-        } else {
-          model.scale.set(0.24, 0.24, 0.24);
-          model.position.set(0, -0.15, 0);
-        }
+        model.scale.set(0.24, 0.24, 0.24);
+        model.position.set(0, -0.15, 0);
 
         headPivot.add(model);
       },
@@ -273,7 +244,7 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
       renderer.dispose();
       if (container) container.innerHTML = "";
     };
-  }, [activeGender]);
+  }, []);
 
   const getPoseLabel = () => {
     switch (pose) {
@@ -294,33 +265,11 @@ export const KycThreeAvatar: React.FC<KycThreeAvatarProps> = ({
     <div
       className={`relative flex flex-col items-center justify-between p-2.5 rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/80 shadow-2xl backdrop-blur-md overflow-hidden ${className}`}
     >
-      {/* Top Bar: Model Gender Selector & Pose Angle Telemetry */}
+      {/* Top Bar: Unified 3D Model Guide Status & Pose Angle Telemetry */}
       <div className="w-full flex items-center justify-between px-1 mb-2 z-30">
-        <div className="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800">
-          <button
-            type="button"
-            onClick={() => handleGenderToggle("female")}
-            className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 ${
-              activeGender === "female"
-                ? "bg-pink-600 text-white shadow-sm"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <span>👩</span>
-            <span>Perempuan</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleGenderToggle("male")}
-            className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 ${
-              activeGender === "male"
-                ? "bg-cyan-600 text-white shadow-sm"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <span>👨</span>
-            <span>Laki-Laki</span>
-          </button>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-sky-400 shadow-sm">
+          <span className="text-xs">👤</span>
+          <span className="text-[10px] font-bold tracking-wider uppercase font-mono">Model 3D Interaktif</span>
         </div>
 
         {/* Dynamic Pose Angle Badge */}

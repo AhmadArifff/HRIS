@@ -6,12 +6,13 @@ import { API_BASE_URL } from "@/lib/api";
 
 export const HrisMetrics = () => {
   const [stats, setStats] = useState({
-    totalEmployees: 45,
-    presentToday: 42,
-    attendancePercentage: 93,
-    pendingLeaves: 5,
-    activeJobs: 3,
+    totalEmployees: 0,
+    presentToday: 0,
+    attendancePercentage: 0,
+    pendingLeaves: 0,
+    activeJobs: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -23,6 +24,8 @@ export const HrisMetrics = () => {
         }
       } catch (err) {
         console.error("Failed to fetch dashboard stats", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchStats();

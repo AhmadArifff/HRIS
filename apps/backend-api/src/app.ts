@@ -19,7 +19,7 @@ import {
   updatePosition,
   deletePosition,
 } from "./controllers/master.controller";
-import { getApplicants, createApplicant, updateApplicantStage } from "./controllers/applicant.controller";
+import { getApplicants, createApplicant, updateApplicantStage, getJobPostings } from "./controllers/applicant.controller";
 import { clockIn, clockOut, getAttendances, getTodayAttendance } from "./controllers/attendance.controller";
 import { getLeaveRequests, createLeaveRequest, updateLeaveStatus } from "./controllers/leave.controller";
 import { getPayrollComponents, createPayrollComponent } from "./controllers/payroll.controller";
@@ -97,6 +97,7 @@ app.post("/api/leave", createLeaveRequest);
 app.put("/api/leave/:id/status", updateLeaveStatus);
 
 // Recruitment ATS
+app.get("/api/jobs", getJobPostings);
 app.get("/api/applicants", getApplicants);
 app.post("/api/applicants", createApplicant);
 app.put("/api/applicants/:id/status", updateApplicantStage);

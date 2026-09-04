@@ -7,8 +7,8 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [userName, setUserName] = useState("Budi Santoso");
-  const [userEmail, setUserEmail] = useState("hrd@hriscorp.dev");
+  const [userName, setUserName] = useState("Admin HRD");
+  const [userEmail, setUserEmail] = useState("admin@hriscorp.dev");
   const [userRole, setUserRole] = useState("Administrator HRD");
 
   useEffect(() => {

@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Badge from "../ui/badge/Badge";
 import { ToastContainer, ToastMessage } from "../ui/toast/Toast";
 import { Clock } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 export interface MasterShift {
   id: string;
@@ -40,23 +41,16 @@ export const calculateTotalWorkHours = (start: string, end: string): number => {
 };
 
 const mockMasterShifts: MasterShift[] = [
-  { id: "SFT-01", name: "Shift Pagi (Normal)", startTime: "08:00", endTime: "17:00", totalWorkHours: 9.0, toleranceMinutes: 15, activeEmployees: 32 },
-  { id: "SFT-02", name: "Shift Siang", startTime: "13:00", endTime: "21:00", totalWorkHours: 8.0, toleranceMinutes: 10, activeEmployees: 12 },
-  { id: "SFT-03", name: "Shift Malam", startTime: "21:00", endTime: "06:00", totalWorkHours: 9.0, toleranceMinutes: 15, activeEmployees: 8 },
-];
-
-const mockAssignments: ShiftAssignment[] = [
-  { id: "SA-101", employeeCode: "EMP-001", employeeName: "Budi Santoso", department: "IT", shiftName: "Shift Pagi (Normal)", date: "2026-08-08" },
-  { id: "SA-102", employeeCode: "EMP-002", employeeName: "Siti Aminah", department: "Human Resources", shiftName: "Shift Pagi (Normal)", date: "2026-08-08" },
-  { id: "SA-103", employeeCode: "EMP-003", employeeName: "Andi Saputra", department: "Marketing", shiftName: "Shift Siang", date: "2026-08-08" },
-  { id: "SA-104", employeeCode: "EMP-004", employeeName: "Rina Gunawan", department: "Finance", shiftName: "Shift Pagi (Normal)", date: "2026-08-08" },
-  { id: "SA-105", employeeCode: "EMP-005", employeeName: "Dedi Setiawan", department: "IT", shiftName: "Shift Malam", date: "2026-08-08" },
+  { id: "SFT-01", name: "Shift Pagi (Normal)", startTime: "08:00", endTime: "17:00", totalWorkHours: 9.0, toleranceMinutes: 15, activeEmployees: 3 },
+  { id: "SFT-02", name: "Shift Siang", startTime: "13:00", endTime: "21:00", totalWorkHours: 8.0, toleranceMinutes: 10, activeEmployees: 0 },
+  { id: "SFT-03", name: "Shift Malam", startTime: "21:00", endTime: "06:00", totalWorkHours: 9.0, toleranceMinutes: 15, activeEmployees: 0 },
 ];
 
 export const ShiftTable: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"master" | "assignment">("master");
   const [shifts, setShifts] = useState<MasterShift[]>(mockMasterShifts);
-  const [assignments, setAssignments] = useState<ShiftAssignment[]>(mockAssignments);
+  const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
+  const [employeeList, setEmployeeList] = useState<{ id: string; employeeCode: string; name: string; department: string }[]>([]);
   
   // Toast notifications state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -83,11 +77,36 @@ export const ShiftTable: React.FC = () => {
   const [newTolerance, setNewTolerance] = useState(15);
 
   // Assign Shift Form State
-  const [assignEmpName, setAssignEmpName] = useState("Budi Santoso");
-  const [assignEmpCode, setAssignEmpCode] = useState("EMP-001");
-  const [assignDepartment, setAssignDepartment] = useState("IT");
+  const [assignEmpName, setAssignEmpName] = useState("");
+  const [assignEmpCode, setAssignEmpCode] = useState("");
+  const [assignDepartment, setAssignDepartment] = useState("");
   const [assignShiftName, setAssignShiftName] = useState("Shift Pagi (Normal)");
-  const [assignDate, setAssignDate] = useState("2026-08-09");
+  const [assignDate, setAssignDate] = useState(() => new Date().toISOString().split("T")[0]);
+
+  // Fetch real employees from Supabase
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/employees`);
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          const emps = result.data.map((e: { id: string; employeeCode?: string; name: string; department?: string; departmentName?: string }) => ({
+            id: e.id,
+            employeeCode: e.employeeCode || e.id.slice(0, 7),
+            name: e.name,
+            department: e.department || e.departmentName || "General",
+          }));
+          setEmployeeList(emps);
+          setAssignEmpName(emps[0].name);
+          setAssignEmpCode(emps[0].employeeCode);
+          setAssignDepartment(emps[0].department);
+        }
+      } catch (err) {
+        console.error("Failed to fetch live employees for shift assignment", err);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   // Handle Add Master Shift Submit
   const handleAddShiftSubmit = (e: React.FormEvent) => {
@@ -308,30 +327,42 @@ export const ShiftTable: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                    {assignments.map((a) => (
-                      <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                        <td className="px-6 py-4 font-mono text-xs text-gray-500">{a.id}</td>
-                        <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                          <div>
-                            <span>{a.employeeName}</span>
-                            <span className="block text-xs font-mono text-gray-400">{a.employeeCode}</span>
+                    {assignments.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center justify-center">
+                            <span className="text-3xl mb-2">⏱️</span>
+                            <p className="font-medium text-gray-700 dark:text-gray-300">Belum ada plotting shift karyawan</p>
+                            <p className="text-xs text-gray-400 mt-1">Gunakan tombol &quot;+ Plotting Shift Karyawan&quot; untuk menetapkan jadwal ke karyawan database.</p>
                           </div>
                         </td>
-                        <td className="px-6 py-4">{a.department}</td>
-                        <td className="px-6 py-4">
-                          <Badge color="info">{a.shiftName}</Badge>
-                        </td>
-                        <td className="px-6 py-4 font-mono">{a.date}</td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => setEditingAssignment(a)}
-                            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-                          >
-                            Ubah Shift
-                          </button>
-                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      assignments.map((a) => (
+                        <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                          <td className="px-6 py-4 font-mono text-xs text-gray-500">{a.id}</td>
+                          <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                            <div>
+                              <span>{a.employeeName}</span>
+                              <span className="block text-xs font-mono text-gray-400">{a.employeeCode}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">{a.department}</td>
+                          <td className="px-6 py-4">
+                            <Badge color="info">{a.shiftName}</Badge>
+                          </td>
+                          <td className="px-6 py-4 font-mono">{a.date}</td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => setEditingAssignment(a)}
+                              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                            >
+                              Ubah Shift
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -536,18 +567,26 @@ export const ShiftTable: React.FC = () => {
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pilih Karyawan</label>
                 <select
-                  value={assignEmpName}
+                  value={assignEmpCode}
                   onChange={(e) => {
-                    setAssignEmpName(e.target.value);
-                    if (e.target.value === "Budi Santoso") { setAssignEmpCode("EMP-001"); setAssignDepartment("IT"); }
-                    else if (e.target.value === "Siti Aminah") { setAssignEmpCode("EMP-002"); setAssignDepartment("HR"); }
-                    else { setAssignEmpCode("EMP-003"); setAssignDepartment("Marketing"); }
+                    const selected = employeeList.find((emp) => emp.employeeCode === e.target.value);
+                    if (selected) {
+                      setAssignEmpCode(selected.employeeCode);
+                      setAssignEmpName(selected.name);
+                      setAssignDepartment(selected.department);
+                    }
                   }}
                   className="w-full h-11 px-4 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none"
                 >
-                  <option value="Budi Santoso">Budi Santoso (EMP-001 - IT)</option>
-                  <option value="Siti Aminah">Siti Aminah (EMP-002 - HR)</option>
-                  <option value="Andi Saputra">Andi Saputra (EMP-003 - Marketing)</option>
+                  {employeeList.length === 0 ? (
+                    <option value="">Tidak ada karyawan terdaftar</option>
+                  ) : (
+                    employeeList.map((emp) => (
+                      <option key={emp.id} value={emp.employeeCode}>
+                        {emp.name} ({emp.employeeCode} - {emp.department})
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 

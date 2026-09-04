@@ -175,3 +175,32 @@ export const updateApplicantStage = async (req: Request, res: Response): Promise
     sendResult(res, 500, Result.fail(error.message || "Gagal mengubah tahapan lamaran"));
   }
 };
+
+export const getJobPostings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const jobs = await prisma.jobPosting.findMany({
+      where: { deletedAt: null },
+      include: {
+        department: true,
+        status: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const formatted = jobs.map((job) => ({
+      id: job.id,
+      title: job.title,
+      department: job.department?.name || "General",
+      location: "Jakarta (Hybrid)",
+      type: "Full-Time",
+      description: job.description,
+      requirements: job.requirements,
+    }));
+
+    sendResult(res, 200, Result.ok(formatted, "Berhasil mengambil data lowongan kerja"));
+  } catch (error: any) {
+    console.error("Get Job Postings Error:", error);
+    sendResult(res, 500, Result.fail(error.message || "Gagal mengambil data lowongan kerja"));
+  }
+};
+

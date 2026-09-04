@@ -46,21 +46,6 @@ export interface EmployeeData {
   joinDate: string;
 }
 
-const mockEmployeeData: EmployeeData[] = [
-  { id: 1, emp_id: "EMP-001", name: "Budi Santoso", position: "Software Engineer", department: "IT", status: "Active", avatar: "/images/user/user-01.jpg", email: "budi.santoso@company.com", joinDate: "15 Jan 2023" },
-  { id: 2, emp_id: "EMP-002", name: "Siti Aminah", position: "HR Manager", department: "Human Resources", status: "Active", avatar: "/images/user/user-02.jpg", email: "siti.aminah@company.com", joinDate: "01 Mar 2022" },
-  { id: 3, emp_id: "EMP-003", name: "Agus Pratama", position: "Marketing Specialist", department: "Marketing", status: "On Leave", avatar: "/images/user/user-03.jpg", email: "agus.pratama@company.com", joinDate: "10 Jun 2023" },
-  { id: 4, emp_id: "EMP-004", name: "Rina Kusuma", position: "Financial Analyst", department: "Finance", status: "Active", avatar: "/images/user/user-04.jpg", email: "rina.kusuma@company.com", joinDate: "05 Nov 2021" },
-  { id: 5, emp_id: "EMP-005", name: "Dedi Setiawan", position: "IT Support", department: "IT", status: "Terminated", avatar: "/images/user/user-05.jpg", email: "dedi.setiawan@company.com", joinDate: "12 Feb 2024" },
-  { id: 6, emp_id: "EMP-006", name: "Anita Larasati", position: "Product Designer", department: "Design", status: "Active", avatar: "/images/user/user-01.jpg", email: "anita.larasati@company.com", joinDate: "20 Jul 2022" },
-  { id: 7, emp_id: "EMP-007", name: "Fajar Nugraha", position: "Backend Developer", department: "IT", status: "Active", avatar: "/images/user/user-02.jpg", email: "fajar.nugraha@company.com", joinDate: "18 Sep 2023" },
-  { id: 8, emp_id: "EMP-008", name: "Dewi Lestari", position: "Recruiter", department: "Human Resources", status: "Active", avatar: "/images/user/user-03.jpg", email: "dewi.lestari@company.com", joinDate: "02 Feb 2023" },
-  { id: 9, emp_id: "EMP-009", name: "Eko Prasetyo", position: "Accountant", department: "Finance", status: "On Leave", avatar: "/images/user/user-04.jpg", email: "eko.prasetyo@company.com", joinDate: "14 Apr 2022" },
-  { id: 10, emp_id: "EMP-010", name: "Maya Indah", position: "Copywriter", department: "Marketing", status: "Active", avatar: "/images/user/user-05.jpg", email: "maya.indah@company.com", joinDate: "11 Aug 2023" },
-  { id: 11, emp_id: "EMP-011", name: "Hendra Wijaya", position: "DevOps Lead", department: "IT", status: "Active", avatar: "/images/user/user-01.jpg", email: "hendra.wijaya@company.com", joinDate: "01 Dec 2020" },
-  { id: 12, emp_id: "EMP-012", name: "Nadia Putri", position: "QA Engineer", department: "IT", status: "Active", avatar: "/images/user/user-02.jpg", email: "nadia.putri@company.com", joinDate: "05 May 2024" },
-];
-
 export const EmployeeTable: React.FC = () => {
   const [data, setData] = useState<EmployeeData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

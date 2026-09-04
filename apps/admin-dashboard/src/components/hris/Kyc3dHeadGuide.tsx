@@ -15,16 +15,12 @@ export const Kyc3dHeadGuide: React.FC<Kyc3dHeadGuideProps> = ({
   occlusionZone = "none",
   className = "",
 }) => {
-  const [selectedGender, setSelectedGender] = useState<"female" | "male">("female");
-
   return (
     <div className={`w-full ${className}`}>
       <KycThreeAvatar
         pose={pose}
         status={status}
         occlusionZone={occlusionZone}
-        gender={selectedGender}
-        onGenderChange={setSelectedGender}
         className="w-full"
       />
     </div>

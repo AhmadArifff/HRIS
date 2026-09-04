@@ -1,7 +1,20 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function EmployeeDashboard() {
+  const [employeeName, setEmployeeName] = useState("Karyawan");
+  const [employeeRole, setEmployeeRole] = useState("Staff");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedName = sessionStorage.getItem("hris_employee_name") || localStorage.getItem("hris_employee_name");
+      const storedRole = sessionStorage.getItem("hris_employee_role") || localStorage.getItem("hris_employee_role");
+      if (storedName) setEmployeeName(storedName);
+      if (storedRole) setEmployeeRole(storedRole);
+    }
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Welcome Banner */}
@@ -11,10 +24,10 @@ export default function EmployeeDashboard() {
             Employee Self-Service
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Selamat Datang Kembali, Budi Santoso 👋
+            Selamat Datang Kembali, {employeeName} 👋
           </h1>
           <p className="mt-2 text-sm sm:text-base text-white/80">
-            Software Engineer · Divisi IT (Kantor Pusat Jakarta). Semoga harimu menyenangkan dan produktif!
+            {employeeRole} · HRIS Enterprise Portal. Semoga harimu menyenangkan dan produktif!
           </p>
         </div>
         {/* Background Decorative Circles */}

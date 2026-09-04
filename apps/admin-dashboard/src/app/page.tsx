@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ToastContainer, ToastMessage } from "@/components/ui/toast/Toast";
 import { EmployeeFaceAuthModal } from "@/components/auth/EmployeeFaceAuthModal";
+import { API_BASE_URL } from "@/lib/api";
 
 interface JobOpening {
   id: string;
@@ -12,16 +13,25 @@ interface JobOpening {
   type: string;
 }
 
-const mockJobs: JobOpening[] = [
-  { id: "JOB-01", title: "Senior Full Stack Engineer", department: "IT & Software", location: "Jakarta (Hybrid)", type: "Full-Time" },
-  { id: "JOB-02", title: "HR Operations Specialist", department: "Human Resources", location: "Jakarta (Onsite)", type: "Full-Time" },
-  { id: "JOB-03", title: "UI/UX Product Designer", department: "Design & Product", location: "Remote", type: "Full-Time" },
-  { id: "JOB-04", title: "Payroll & Compensation Analyst", department: "Finance & HR", location: "Surabaya", type: "Full-Time" },
-];
-
 export default function RootLandingPage() {
+  const [jobs, setJobs] = useState<JobOpening[]>([]);
   const [showFaceAuthModal, setShowFaceAuthModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobOpening | null>(null);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/jobs`);
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) {
+          setJobs(result.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch jobs", err);
+      }
+    };
+    fetchJobs();
+  }, []);
   const [applicantName, setApplicantName] = useState("");
   const [applicantEmail, setApplicantEmail] = useState("");
   const [applicantPhone, setApplicantPhone] = useState("");
@@ -273,31 +283,41 @@ export default function RootLandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockJobs.map((job) => (
-              <div key={job.id} className="p-6 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="px-3 py-1 rounded-full bg-brand-500/10 text-brand-400 text-xs font-medium border border-brand-500/20">{job.department}</span>
-                    <span className="text-xs text-slate-500 font-mono">{job.type}</span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-white">{job.title}</h3>
-                  <p className="text-sm text-slate-400 mt-1 flex items-center gap-1">
-                    <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-                    {job.location}
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                  <span className="text-xs text-slate-500">ID: {job.id}</span>
-                  <button
-                    onClick={() => setSelectedJob(job)}
-                    className="px-4 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-xl transition"
-                  >
-                    Lamar Posisi Ini
-                  </button>
-                </div>
+            {jobs.length === 0 ? (
+              <div className="col-span-full py-16 text-center rounded-2xl bg-slate-950 border border-slate-800 p-8">
+                <span className="text-4xl mb-3 block">💼</span>
+                <h4 className="text-base font-semibold text-white">Belum Ada Lowongan Terbuka</h4>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  Saat ini seluruh formasi telah terpenuhi di sistem Supabase. Pantau halaman ini secara berkala untuk lowongan selanjutnya.
+                </p>
               </div>
-            ))}
+            ) : (
+              jobs.map((job) => (
+                <div key={job.id} className="p-6 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="px-3 py-1 rounded-full bg-brand-500/10 text-brand-400 text-xs font-medium border border-brand-500/20">{job.department}</span>
+                      <span className="text-xs text-slate-500 font-mono">{job.type}</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">{job.title}</h3>
+                    <p className="text-sm text-slate-400 mt-1 flex items-center gap-1">
+                      <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                      {job.location}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-xs text-slate-500">ID: {job.id}</span>
+                    <button
+                      onClick={() => setSelectedJob(job)}
+                      className="px-4 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-xl transition"
+                    >
+                      Lamar Posisi Ini
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

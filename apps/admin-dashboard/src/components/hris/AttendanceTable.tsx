@@ -24,20 +24,9 @@ export interface AttendanceRecord {
   verificationMethod?: string;
 }
 
-const mockAttendanceData: AttendanceRecord[] = [
-  { id: "EMP-001", name: "Budi Santoso", department: "IT", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "07:55", clockOut: "17:05", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.06, verificationMethod: "ArcFace" },
-  { id: "EMP-002", name: "Siti Aminah", department: "Human Resources", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "08:25", clockOut: "--:--", lateDurationMinutes: 25, earlyLeaveMinutes: 0, status: "Terlambat", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.11, verificationMethod: "ArcFace" },
-  { id: "EMP-003", name: "Andi Saputra", department: "Marketing", shiftName: "Shift Siang", shiftHours: "13:00 - 21:00", date: "2026-08-08", clockIn: "12:50", clockOut: "21:05", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Remote (WFH)", isFaceVerified: true, faceSimilarityScore: 0.08, verificationMethod: "ArcFace" },
-  { id: "EMP-004", name: "Rina Gunawan", department: "Finance", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "--:--", clockOut: "--:--", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Mangkir", location: "-", isFaceVerified: false },
-  { id: "EMP-005", name: "Dedi Setiawan", department: "IT", shiftName: "Shift Malam", shiftHours: "21:00 - 06:00", date: "2026-08-08", clockIn: "21:00", clockOut: "06:00", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Cabang", isFaceVerified: true, faceSimilarityScore: 0.04, verificationMethod: "ArcFace" },
-  { id: "EMP-006", name: "Anita Larasati", department: "Design", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "08:40", clockOut: "16:30", lateDurationMinutes: 40, earlyLeaveMinutes: 30, status: "Terlambat", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.09, verificationMethod: "ArcFace" },
-  { id: "EMP-007", name: "Fajar Nugraha", department: "IT", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "--:--", clockOut: "--:--", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Izin", location: "-", isFaceVerified: false },
-  { id: "EMP-008", name: "Dewi Lestari", department: "Human Resources", shiftName: "Shift Pagi", shiftHours: "08:00 - 17:00", date: "2026-08-08", clockIn: "07:50", clockOut: "17:00", lateDurationMinutes: 0, earlyLeaveMinutes: 0, status: "Hadir", location: "Kantor Pusat", isFaceVerified: true, faceSimilarityScore: 0.05, verificationMethod: "ArcFace" },
-];
-
 export const AttendanceTable: React.FC = () => {
-  const [records, setRecords] = useState<AttendanceRecord[]>(mockAttendanceData);
-  const [loading, setLoading] = useState(false);
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,11 +39,14 @@ export const AttendanceTable: React.FC = () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/attendance`);
         const result = await res.json();
-        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        if (result.success && Array.isArray(result.data)) {
           setRecords(result.data);
+        } else {
+          setRecords([]);
         }
       } catch (err) {
         console.error("Failed to fetch live attendances", err);
+        setRecords([]);
       } finally {
         setLoading(false);
       }

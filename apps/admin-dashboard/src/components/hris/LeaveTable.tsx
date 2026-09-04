@@ -15,16 +15,8 @@ export interface LeaveRecord {
   status: "Approved" | "Pending" | "Rejected";
 }
 
-const mockLeaveData: LeaveRecord[] = [
-  { id: "LV-20260801", name: "Andi Saputra", department: "Marketing", type: "Cuti Tahunan", duration: "2 Hari", date: "10 Ags 2026 - 11 Ags 2026", status: "Pending" },
-  { id: "LV-20260802", name: "Rina Gunawan", department: "Finance", type: "Cuti Sakit", duration: "1 Hari", date: "08 Ags 2026", status: "Approved" },
-  { id: "LV-20260803", name: "Budi Santoso", department: "IT", type: "Cuti Melahirkan (Istri)", duration: "3 Hari", date: "15 Ags 2026 - 17 Ags 2026", status: "Pending" },
-  { id: "LV-20260804", name: "Siti Aminah", department: "Human Resources", type: "Cuti Tahunan", duration: "5 Hari", date: "01 Sep 2026 - 05 Sep 2026", status: "Approved" },
-  { id: "LV-20260805", name: "Dedi Setiawan", department: "IT", type: "Cuti Penting", duration: "1 Hari", date: "20 Ags 2026", status: "Rejected" },
-];
-
 export const LeaveTable: React.FC = () => {
-  const [data, setData] = useState<LeaveRecord[]>(mockLeaveData);
+  const [data, setData] = useState<LeaveRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
@@ -37,11 +29,14 @@ export const LeaveTable: React.FC = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/leave`);
       const result = await res.json();
-      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+      if (result.success && Array.isArray(result.data)) {
         setData(result.data);
+      } else {
+        setData([]);
       }
     } catch (err) {
       console.error("Failed to fetch live leave requests", err);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -252,59 +247,78 @@ export const LeaveTable: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {displayedRecords.map((record) => (
-                  <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
-                    <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
-                      <div>
-                        <span>{record.name}</span>
-                        <span className="block text-xs font-normal text-gray-400">{record.department}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <span className="font-medium text-gray-800 dark:text-white">{record.type}</span>
-                        <span className="block text-xs text-gray-400">Durasi: {record.duration}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono text-xs">
-                      {record.date}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge
-                        color={
-                          record.status === "Approved"
-                            ? "success"
-                            : record.status === "Pending"
-                            ? "warning"
-                            : "error"
-                        }
-                      >
-                        {record.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {record.status === "Pending" ? (
+                {displayedRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                      {loading ? (
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleApprove(record.id, record.name)}
-                            className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-sm"
-                          >
-                            Setujui
-                          </button>
-                          <button
-                            onClick={() => openRejectModal(record)}
-                            className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
-                          >
-                            Tolak
-                          </button>
+                          <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+                          <span>Memuat data pengajuan cuti...</span>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400 italic">Telah Diproses</span>
+                        <div className="flex flex-col items-center justify-center">
+                          <span className="text-3xl mb-2">📋</span>
+                          <p className="font-medium text-gray-700 dark:text-gray-300">Belum ada permohonan cuti</p>
+                          <p className="text-xs text-gray-400 mt-1">Semua permohonan cuti karyawan dari database Supabase akan tampil di sini.</p>
+                        </div>
                       )}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  displayedRecords.map((record) => (
+                    <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                      <td className="px-6 py-4 font-mono text-xs text-gray-500">{record.id}</td>
+                      <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">
+                        <div>
+                          <span>{record.name}</span>
+                          <span className="block text-xs font-normal text-gray-400">{record.department}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <span className="font-medium text-gray-800 dark:text-white">{record.type}</span>
+                          <span className="block text-xs text-gray-400">Durasi: {record.duration}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono text-xs">
+                        {record.date}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge
+                          color={
+                            record.status === "Approved"
+                              ? "success"
+                              : record.status === "Pending"
+                              ? "warning"
+                              : "error"
+                          }
+                        >
+                          {record.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {record.status === "Pending" ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleApprove(record.id, record.name)}
+                              className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-sm"
+                            >
+                              Setujui
+                            </button>
+                            <button
+                              onClick={() => openRejectModal(record)}
+                              className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+                            >
+                              Tolak
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Telah Diproses</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
